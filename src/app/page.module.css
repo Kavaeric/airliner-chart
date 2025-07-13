@@ -1,61 +1,61 @@
 .container {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 2rem;
-  font-family: var(--font-geist-sans);
+	max-width: 1200px;
+	margin: 0 auto;
+	padding: 2rem;
+	font-family: var(--font-geist-sans);
 }
 
 .container h1 {
-  font-size: 2.5rem;
-  font-weight: 700;
-  margin-bottom: 1rem;
-  color: var(--foreground);
+	font-size: 2.5rem;
+	font-weight: 700;
+	margin-bottom: 1rem;
+	color: var(--foreground);
 }
 
 .container p {
-  font-size: 1.1rem;
-  color: var(--foreground);
-  margin-bottom: 2rem;
+	font-size: 1.1rem;
+	color: var(--foreground);
+	margin-bottom: 2rem;
 }
 
 .chartContainer {
-  background: var(--background);
-  border: 1px solid var(--gray-alpha-200);
-  border-radius: 8px;
-  padding: 2rem;
-  min-height: 400px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
+	background: var(--background);
+	border: 1px solid var(--gray-alpha-200);
+	border-radius: 8px;
+	padding: 2rem;
+	min-height: 400px;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
 }
 
 .chartContainer p {
-  font-size: 1.2rem;
-  color: var(--foreground);
-  margin-bottom: 1rem;
+	font-size: 1.2rem;
+	color: var(--foreground);
+	margin-bottom: 1rem;
 }
 
 .chartContainer pre {
-  background: var(--gray-alpha-100);
-  padding: 1rem;
-  border-radius: 4px;
-  font-family: var(--font-geist-mono);
-  font-size: 0.9rem;
-  overflow-x: auto;
-  max-width: 100%;
+	background: var(--gray-alpha-100);
+	padding: 1rem;
+	border-radius: 4px;
+	font-family: var(--font-geist-mono);
+	font-size: 0.9rem;
+	overflow-x: auto;
+	max-width: 100%;
 }
 
 @media (max-width: 768px) {
-  .container {
-    padding: 1rem;
-  }
-  
-  .container h1 {
-    font-size: 2rem;
-  }
-  
-  .chartContainer {
-    padding: 1rem;
-  }
+	.container {
+		padding: 1rem;
+	}
+
+	.container h1 {
+		font-size: 2rem;
+	}
+
+	.chartContainer {
+		padding: 1rem;
+	}
 }
