@@ -5,14 +5,14 @@ import styles from './page.module.css';
 import Papa, { ParseResult } from 'papaparse';
 
 interface AirlinerData {
-  Airliner: string;
-  Category: string;
-  Manufacturer: string;
-  "First delivery": number;
-  "Range (km)": number;
-  "PAX capacity (min)": number;
-  "PAX capacity (mean)": number;
-  "PAX capacity (max)": number;
+  airliner: string;
+  category: string;
+  manufacturer: string;
+  firstDelivery: number;
+  rangeKm: number;
+  paxCapacityMin: number;
+  paxCapacityMean: number;
+  paxCapacityMax: number;
 }
 
 export default function Home() {
@@ -24,7 +24,7 @@ export default function Home() {
       try {
         const response = await fetch('/data/airliners-sample.csv');
         const csvText = await response.text();
-        Papa.parse<AirlinerData>(csvText, {
+        Papa.parse(csvText, {
           header: true,
           skipEmptyLines: true,
           transform: (value, field) => {
@@ -37,8 +37,19 @@ export default function Home() {
             }
             return value;
           },
-          complete: (results: ParseResult<AirlinerData>) => {
-            setData(results.data);
+          complete: (results: ParseResult<any>) => {
+            // Transform the data to use camelCase property names
+            const transformedData: AirlinerData[] = results.data.map((row: any) => ({
+              airliner: row.Airliner,
+              category: row.Category,
+              manufacturer: row.Manufacturer,
+              firstDelivery: row["First delivery"],
+              rangeKm: row["Range (km)"],
+              paxCapacityMin: row["PAX capacity (min)"],
+              paxCapacityMean: row["PAX capacity (mean)"],
+              paxCapacityMax: row["PAX capacity (max)"]
+            }));
+            setData(transformedData);
             setLoading(false);
           },
           error: (error: any) => {
