@@ -1,10 +1,16 @@
 "use client";
 
 // Import React hooks for state management and side effects
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import styles from "./page.module.css";
 // Import PapaParse for robust CSV parsing with TypeScript support
 import Papa, { ParseResult } from "papaparse";
+
+// Import visx components for data visualization
+import { Group } from "@visx/group";
+import { Circle } from "@visx/shape";
+import { scaleLinear } from "@visx/scale";
+import { AxisLeft, AxisBottom } from "@visx/axis";
 
 // Define the structure of our airliner data with proper TypeScript typing
 // This interface ensures type safety and provides IntelliSense in the editor
@@ -19,11 +25,21 @@ interface AirlinerData {
 	paxCapacityMax: number; 	// Maximum passenger capacity
 }
 
+// Helper function to find min and max values in an array
+const extent = (data: AirlinerData[], accessor: (d: AirlinerData) => number): [number, number] => {
+	const values = data.map(accessor);
+	return [Math.min(...values), Math.max(...values)];
+};
+
 export default function Home() {
 	// State to store the parsed airliner data
 	const [data, setData] = useState<AirlinerData[]>([]);
 	// State to track loading status for better UX
 	const [loading, setLoading] = useState(true);
+	// State to track chart dimensions for responsive behavior
+	const [chartDimensions, setChartDimensions] = useState({ width: 0, height: 0 });
+	// Ref to access the chart container DOM element
+	const chartContainerRef = useRef<HTMLDivElement>(null);
 
 	// useEffect runs when the component mounts (empty dependency array [])
 	// This is where we fetch and parse the CSV data
@@ -98,27 +114,130 @@ export default function Home() {
 		loadData();
 	}, []); // Empty dependency array means this effect runs only once on mount
 
+	// Effect to handle responsive chart sizing
+	useEffect(() => {
+		const updateChartSize = () => {
+			if (chartContainerRef.current) {
+				const { width, height } = chartContainerRef.current.getBoundingClientRect();
+				setChartDimensions({ width, height });
+			}
+		};
+
+		// Update size immediately
+		updateChartSize();
+
+		// Add resize listener for responsive behavior
+		window.addEventListener('resize', updateChartSize);
+		
+		// Cleanup: remove event listener when component unmounts
+		return () => window.removeEventListener('resize', updateChartSize);
+	}, []);
+
 	// Show loading state while data is being fetched
 	if (loading) {
 		return (
-			<div className={styles.container}>
-				<h1>Airliner Chart</h1>
-				<p>Loading data...</p>
+			<div className={styles.mainContainer}>
+				<div className={styles.headerContainer}>
+					<h1>Airliner Chart</h1>
+					<p>Loading data...</p>
+				</div>
+				<div className={styles.chartContainer} ref={chartContainerRef} />
 			</div>
 		);
 	}
 
+	// Chart margins (fixed padding around the chart area)
+	const margin = { top: 20, right: 20, bottom: 60, left: 60 };
+
+	// Calculate the actual chart area (subtract margins from container size)
+	const chartWidth = chartDimensions.width - margin.left - margin.right;
+	const chartHeight = chartDimensions.height - margin.top - margin.bottom;
+
+	// Only render chart if we have dimensions and data
+	if (chartDimensions.width === 0 || chartDimensions.height === 0 || data.length === 0) {
+		return (
+			<div className={styles.mainContainer}>
+				<div className={styles.headerContainer}>
+					<h1>Airliner Chart</h1>
+					<p>Data loaded: {data.length} airliners</p>
+				</div>
+				<div className={styles.chartContainer} ref={chartContainerRef}>
+					<p>Loading chart...</p>
+				</div>
+			</div>
+		);
+	}
+
+	// Create scales for x and y axes
+	// extent() finds the min and max values in the data
+	const xScale = scaleLinear<number>({
+		domain: extent(data, (d: AirlinerData) => d.rangeKm),
+		range: [0, chartWidth],
+		nice: true, // Round domain to nice round numbers
+	});
+
+	const yScale = scaleLinear<number>({
+		domain: extent(data, (d: AirlinerData) => d.paxCapacityMean),
+		range: [chartHeight, 0], // Note: y-axis is inverted (0 at top)
+		nice: true,
+	});
+
 	// Main component render
 	return (
-		<div className={styles.container}>
-			<h1>Airliner Chart</h1>
-			<p>Data loaded: {data.length} airliners</p>
+		<div className={styles.mainContainer}>
+			<div className={styles.headerContainer}>
+				<h1>Airliner Chart</h1>
+				<p>Data loaded: {data.length} airliners</p>
+			</div>
 
-			{/* Visx scatter plot will go here */}
-			<div className={styles.chartContainer}>
-				<p>Scatter plot coming soon...</p>
-				{/* Display first 3 records as JSON for debugging/verification */}
-				<pre>{JSON.stringify(data.slice(0, 3), null, 2)}</pre>
+			{/* Visx scatter plot - now responsive to container size */}
+			<div className={styles.chartContainer} ref={chartContainerRef}>
+				<svg width={chartDimensions.width} height={chartDimensions.height}>
+					{/* Main chart group - positioned with margins */}
+					<Group left={margin.left} top={margin.top}>
+						{/* Render each data point as a circle */}
+						{data.map((d: AirlinerData, i: number) => {
+							const x = xScale(d.rangeKm);
+							const y = yScale(d.paxCapacityMean);
+							
+							return (
+								<Circle
+									key={i}
+									cx={x}
+									cy={y}
+									r={4}
+									fill="#3182ce"
+									opacity={0.8}
+								/>
+							);
+						})}
+
+						{/* Y-axis (left side) */}
+						<AxisLeft
+							scale={yScale}
+							label="Passenger Capacity (mean)"
+							labelOffset={40}
+							labelProps={{
+								fill: "#374151",
+								fontSize: 12,
+								textAnchor: "middle",
+							}}
+						/>
+
+						{/* X-axis (bottom) */}
+						<AxisBottom
+							top={chartHeight}
+							scale={xScale}
+							label="Range (km)"
+							labelOffset={40}
+							labelProps={{
+								fill: "#374151",
+								fontSize: 12,
+								textAnchor: "middle",
+							}}
+						/>
+					</Group>
+				</svg>
 			</div>
 		</div>
 	);
