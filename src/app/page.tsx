@@ -8,11 +8,11 @@ interface AirlinerData {
   Airliner: string;
   Category: string;
   Manufacturer: string;
-  "First delivery": string;
-  "Range (km)": string;
-  "PAX capacity (min)": string;
-  "PAX capacity (mean)": string;
-  "PAX capacity (max)": string;
+  "First delivery": number;
+  "Range (km)": number;
+  "PAX capacity (min)": number;
+  "PAX capacity (mean)": number;
+  "PAX capacity (max)": number;
 }
 
 export default function Home() {
@@ -27,6 +27,16 @@ export default function Home() {
         Papa.parse<AirlinerData>(csvText, {
           header: true,
           skipEmptyLines: true,
+          transform: (value, field) => {
+            // Convert numeric fields to numbers
+            if (field === "First delivery" || field === "Range (km)" || 
+                field === "PAX capacity (min)" || field === "PAX capacity (mean)" || 
+                field === "PAX capacity (max)") {
+              const num = parseInt(value);
+              return isNaN(num) ? 0 : num;
+            }
+            return value;
+          },
           complete: (results: ParseResult<AirlinerData>) => {
             setData(results.data);
             setLoading(false);
