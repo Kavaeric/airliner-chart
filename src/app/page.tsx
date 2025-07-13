@@ -2,16 +2,17 @@
 
 import { useState, useEffect } from 'react';
 import styles from './page.module.css';
+import Papa, { ParseResult } from 'papaparse';
 
 interface AirlinerData {
-  airliner: string;
-  category: string;
-  manufacturer: string;
-  firstDelivery: number;
-  rangeKm: number;
-  paxCapacityMin: number;
-  paxCapacityMean: number;
-  paxCapacityMax: number;
+  Airliner: string;
+  Category: string;
+  Manufacturer: string;
+  "First delivery": string;
+  "Range (km)": string;
+  "PAX capacity (min)": string;
+  "PAX capacity (mean)": string;
+  "PAX capacity (max)": string;
 }
 
 export default function Home() {
@@ -23,32 +24,20 @@ export default function Home() {
       try {
         const response = await fetch('/data/airliners-sample.csv');
         const csvText = await response.text();
-        
-        // Parse CSV data
-        const lines = csvText.split('\n');
-        const headers = lines[0].split(',');
-        const parsedData: AirlinerData[] = [];
-        
-        for (let i = 1; i < lines.length; i++) {
-          if (lines[i].trim()) {
-            const values = lines[i].split(',');
-            parsedData.push({
-              airliner: values[0],
-              category: values[1],
-              manufacturer: values[2],
-              firstDelivery: parseInt(values[3]),
-              rangeKm: parseInt(values[4]),
-              paxCapacityMin: parseInt(values[5]),
-              paxCapacityMean: parseInt(values[6]),
-              paxCapacityMax: parseInt(values[7])
-            });
-          }
-        }
-        
-        setData(parsedData);
+        Papa.parse<AirlinerData>(csvText, {
+          header: true,
+          skipEmptyLines: true,
+          complete: (results: ParseResult<AirlinerData>) => {
+            setData(results.data);
+            setLoading(false);
+          },
+          error: (error: any) => {
+            console.error('PapaParse error:', error);
+            setLoading(false);
+          },
+        });
       } catch (error) {
         console.error('Error loading data:', error);
-      } finally {
         setLoading(false);
       }
     };
