@@ -9,14 +9,14 @@ import Papa, { ParseResult } from "papaparse";
 // Define the structure of our airliner data with proper TypeScript typing
 // This interface ensures type safety and provides IntelliSense in the editor
 interface AirlinerData {
-	airliner: string; // Aircraft model name (e.g., "A320neo")
-	category: string; // Aircraft category (e.g., "Narrow-body", "Wide-body")
-	manufacturer: string; // Aircraft manufacturer (e.g., "Airbus", "Boeing")
-	firstDelivery: number; // Year of first delivery
-	rangeKm: number; // Flight range in kilometers
-	paxCapacityMin: number; // Minimum passenger capacity
-	paxCapacityMean: number; // Average passenger capacity
-	paxCapacityMax: number; // Maximum passenger capacity
+	airliner: string; 			// Aircraft model name (e.g., "A320neo")
+	category: string; 			// Aircraft category (e.g., "Narrow-body", "Wide-body")
+	manufacturer: string; 		// Aircraft manufacturer (e.g., "Airbus", "Boeing")
+	firstDelivery: number; 		// Year of first delivery
+	rangeKm: number; 			// Flight range in kilometers
+	paxCapacityMin: number; 	// Minimum passenger capacity
+	paxCapacityMean: number; 	// Average passenger capacity
+	paxCapacityMax: number; 	// Maximum passenger capacity
 }
 
 export default function Home() {
@@ -53,7 +53,7 @@ export default function Home() {
 							field === "PAX capacity (mean)" ||
 							field === "PAX capacity (max)"
 						) {
-							const num = parseInt(value);
+							const num = parseFloat(value);
 							// Return 0 if parsing fails (NaN), otherwise return the number
 							return isNaN(num) ? 0 : num;
 						}
@@ -70,10 +70,10 @@ export default function Home() {
 								category: row.Category,
 								manufacturer: row.Manufacturer,
 								firstDelivery: row["First delivery"], // Note: bracket notation for spaces
-								rangeKm: row["Range (km)"], // Note: bracket notation for spaces
-								paxCapacityMin: row["PAX capacity (min)"], // Note: bracket notation for spaces
-								paxCapacityMean: row["PAX capacity (mean)"], // Note: bracket notation for spaces
-								paxCapacityMax: row["PAX capacity (max)"], // Note: bracket notation for spaces
+								rangeKm: row["Range (km)"],
+								paxCapacityMin: row["PAX capacity (min)"],
+								paxCapacityMean: row["PAX capacity (mean)"],
+								paxCapacityMax: row["PAX capacity (max)"],
 							}));
 
 						// Update state with the transformed data
