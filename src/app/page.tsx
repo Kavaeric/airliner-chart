@@ -97,6 +97,7 @@ export default function Home() {
 			<div className={styles.headerContainer}>
 				<h1>Airliner Chart</h1>
 				<p><b>Data loaded:</b> {data.length} airliners</p>
+				<p><a href="https://www.youtube.com/watch?v=WBpLrVCRS84">🎵 Cheers Elephant &mdash; Airliner 🎵</a></p>
 
 				{/*<div className={styles.dataTableContainer}>
 					<table className={styles.dataTable}>
