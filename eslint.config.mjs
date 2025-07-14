@@ -1,18 +1,12 @@
-import { FlatCompat } from '@eslint/eslintrc'
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+	reactStrictMode: true,
+	...(process.env.NODE_ENV === 'production' && {
+		basePath: "/airliner-chart",
+		output: "export",
+		trailingSlash: true,
+		images: { unoptimized: true }
+	})
+};
 
-const compat = new FlatCompat({
-  // import.meta.dirname is available after Node.js v20.11.0
-  baseDirectory: import.meta.dirname,
-})
- 
-const eslintConfig = [
-  ...compat.config({
-    extends: ['next'],
-    rules: {
-      'react/no-unescaped-entities': 'off',
-      '@next/next/no-page-custom-font': 'off',
-    },
-  }),
-]
- 
-export default eslintConfig
+module.exports = nextConfig;
