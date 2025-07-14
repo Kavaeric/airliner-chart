@@ -3,9 +3,30 @@
 	flex-direction: column;
 	width: 100vw;
 	height: 100vh;
-	margin: 0;
 	padding: 0;
+	margin: 0;
 	font-family: var(--font-geist-sans);
+}
+
+.dataTableContainer {
+	width: 100%;
+	padding: 2rem;
+	background: var(--background);
+	border-bottom: 1px solid var(--gray-alpha-200);
+}
+
+.dataTable {
+	border-collapse: collapse;
+}
+
+.dataTable thead tr {
+	border-bottom: 1px solid #fff;
+}
+
+.dataTable th,
+.dataTable td {
+	padding: 0.5rem 1rem;
+	text-align: left;
 }
 
 .headerContainer {
@@ -17,46 +38,82 @@
 }
 
 .headerContainer h1 {
+	margin-bottom: 1rem;
 	font-size: 2.5rem;
 	font-weight: 700;
-	margin-bottom: 1rem;
 	color: var(--foreground);
 }
 
 .headerContainer p {
+	margin-bottom: 0;
 	font-size: 1.1rem;
 	color: var(--foreground);
-	margin-bottom: 0;
 }
 
 .chartContainer {
+	display: grid;
 	flex: 1;
-	background: var(--background);
-	display: flex;
-	flex-direction: column;
-	align-items: center;
-	justify-content: center;
+	grid-template:
+		"yAxis chartArea" 1fr "bottomLeft xAxis" auto / auto 1fr;
+	width: 100%;
+	height: 100%;
+	min-height: 0; /* Allows flex child to shrink */
 	padding: 2rem;
-	overflow: hidden;
+	overflow: visible; /* Allow axis labels to overflow */
+	background: var(--background);
+}
+
+.yAxis {
+	position: relative; /* For proper overflow handling */
+	display: flex;
+	grid-area: yAxis;
+	align-items: stretch;
+	justify-content: flex-end;
+	width: 6em;
+	overflow: visible; /* Allow axis labels to overflow */
+}
+
+.xAxis {
+	position: relative; /* For proper overflow handling */
+	display: flex;
+	grid-area: xAxis;
+	align-items: flex-start;
+	justify-content: flex-start;
+	height: 6em;
+	overflow: visible; /* Allow axis labels to overflow */
+}
+
+.bottomLeft {
+	grid-area: bottomLeft;
+}
+
+.chartArea {
+	position: relative; /* For proper layering */
+	z-index: 1; /* Ensure chart appears above axis labels */
+	grid-area: chartArea;
+	width: 100%;
+	height: 100%;
+	min-height: 0; /* Critical: allows grid item to shrink */
+	overflow: hidden; /* Prevent content from expanding beyond bounds */
 }
 
 .chartContainer p {
+	margin-bottom: 1rem;
 	font-size: 1.2rem;
 	color: var(--foreground);
-	margin-bottom: 1rem;
 }
 
 .chartContainer pre {
-	background: var(--gray-alpha-100);
+	max-width: 100%;
 	padding: 1rem;
-	border-radius: 4px;
+	overflow-x: auto;
 	font-family: var(--font-geist-mono);
 	font-size: 0.9rem;
-	overflow-x: auto;
-	max-width: 100%;
+	background: var(--gray-alpha-100);
+	border-radius: 4px;
 }
 
-@media (max-width: 768px) {
+@media (width <= 768px) {
 	.headerContainer {
 		padding: 1rem;
 	}
