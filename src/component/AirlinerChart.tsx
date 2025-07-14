@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { AirlinerData } from "../types/airliner";
 import { useChartDimensions } from "../lib/use-chart-dimensions";
 import { useChartScales } from "../lib/use-chart-scales";
@@ -16,31 +17,54 @@ interface AirlinerChartProps {
 
 /**
  * AirlinerChart Component
- * 
- * A complete airliner data visualisation using a 2x2 grid layout.
- * This component handles the specific airliner data visualisation
- * while using reusable hooks and components for the layout.
+ *
+ * Top-level chart orchestrator. Handles:
+ * - Container and padding measurement (via useChartDimensions)
+ * - Axis measurement (child-to-parent via onDimensionsChange)
+ * - Chart area calculation (subtracts axis sizes and padding)
+ * - Scale creation (data-to-pixel mapping)
+ * - Passing all layout and scale info to child components
+ *
+ * This architecture ensures robust, race-condition-free measurement and
+ * clear separation of layout, measurement, and rendering concerns.
  */
 export default function AirlinerChart({ data, className }: AirlinerChartProps) {
-	// Get chart dimensions and axis tracking
-	const {
-		chartContainerRef,
-		setYAxisDimensions,
-		setXAxisDimensions,
-		chartDimensions,
-		isReady
-	} = useChartDimensions();
+	// Measure container size and padding only (no axis logic here)
+	const [layout, chartContainerRef] = useChartDimensions();
 
-	// Create scales from airliner data
-	const { xScale, yScale, isValid } = useChartScales(data, chartDimensions, {
-		xAccessor: (d: AirlinerData) => d.rangeKm,
+	// Axis dimensions are measured by the axis components and reported up
+	const [yAxisDims, setYAxisDims] = useState<{ width: number; height: number }>({ width: 0, height: 0 });
+	const [xAxisDims, setXAxisDims] = useState<{ width: number; height: number }>({ width: 0, height: 0 });
+
+	// Calculate the available chart area (subtract axis sizes and padding)
+	const chartWidth = layout.chartDimensions.chartWidth;
+	const chartHeight = layout.chartDimensions.chartHeight;
+	const padding = layout.chartDimensions.padding;
+	const chartAreaWidth = Math.max(0, chartWidth - yAxisDims.width - padding);
+	const chartAreaHeight = Math.max(0, chartHeight - xAxisDims.height - padding);
+
+	// Create scales for mapping data to pixel space
+	const scaleConfig = {
+		xAccessor: (d: AirlinerData) => d.rangeKM,
 		yAccessor: (d: AirlinerData) => d.paxCapacityMean,
 		xLabel: "Range (km)",
-		yLabel: "Passenger Capacity (mean)"
-	});
+		yLabel: "Passenger Capacity",
+		// Custom margin for axes (domain will be padded by ± value)
+		xMargin: 200,
+		yMargin: 0
+	};
 
-	// Don't render if dimensions aren't ready
-	if (!isReady) {
+	// Generate D3 scales that map data values to pixel coordinates
+	// xScale: converts range values (km) to horizontal pixel positions
+	// yScale: converts passenger capacity values to vertical pixel positions
+	const { xScale, yScale } = useChartScales(data, { width: chartAreaWidth, height: chartAreaHeight }, scaleConfig);
+
+	// Adapt tick count to chart size
+	const xTickCount = Math.max(2, Math.floor(chartAreaWidth / 100));
+	const yTickCount = Math.max(2, Math.floor(chartAreaHeight / 50));
+
+	// Wait for container measurement before rendering chart
+	if (!layout.isReady) {
 		return (
 			<ChartGrid className={className} ref={chartContainerRef}>
 				<p>Loading chart...</p>
@@ -50,30 +74,36 @@ export default function AirlinerChart({ data, className }: AirlinerChartProps) {
 
 	return (
 		<ChartGrid className={className} ref={chartContainerRef}>
-			{/* Y Axis */}
+			{/* Y Axis: measures its own size and reports up, receives scale and layout info */}
 			<YAxis
 				className={gridAreas.yAxis}
 				yScale={yScale}
-				height={chartDimensions.chartHeight}
-				label="Passenger Capacity (mean)"
-				onDimensionsChange={setYAxisDimensions}
+				width={yAxisDims.width}
+				height={chartAreaHeight}
+				label={scaleConfig.yLabel}
+				tickCount={yTickCount}
+				onDimensionsChange={setYAxisDims}
 			/>
 
-			{/* Main Scatter Plot */}
+			{/* X Axis: measures its own size and reports up, receives scale and layout info */}
+			<XAxis
+				className={gridAreas.xAxis}
+				xScale={xScale}
+				width={chartAreaWidth}
+				height={xAxisDims.height}
+				label={scaleConfig.xLabel}
+				tickCount={xTickCount}
+				onDimensionsChange={setXAxisDims}
+			/>
+			
+			{/* Main Scatter Plot: receives all layout and scale info */}
 			<AirlinerScatterPlot
 				className={gridAreas.chartArea}
 				data={data}
 				xScale={xScale}
 				yScale={yScale}
-			/>
-
-			{/* X Axis */}
-			<XAxis
-				className={gridAreas.xAxis}
-				xScale={xScale}
-				width={chartDimensions.chartWidth}
-				label="Range (km)"
-				onDimensionsChange={setXAxisDimensions}
+				width={chartAreaWidth}
+				height={chartAreaHeight}
 			/>
 
 			{/* Bottom-left cell (empty for now) */}

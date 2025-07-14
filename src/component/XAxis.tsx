@@ -1,45 +1,61 @@
 "use client";
 
+import { useEffect, useRef } from "react";
 import { AxisBottom } from "@visx/axis";
-import { useResponsiveSize } from "../lib/use-responsive-size";
-import { scaleLinear } from "@visx/scale";
-import { useEffect } from "react";
 
 interface XAxisProps {
 	xScale: any; // visx has broken types, any is the only way to get it to work
 	width: number;
+	height: number;
 	label?: string;
+	tickCount?: number;
 	className?: string;
-	onDimensionsChange?: (dimensions: { width: number; height: number }) => void;
+	onDimensionsChange?: (dims: { width: number; height: number }) => void;
 }
 
-export default function XAxis({ xScale, width, label, className, onDimensionsChange }: XAxisProps) {
-	const [dimensions, containerRef] = useResponsiveSize();
+/**
+ * XAxis Component
+ *
+ * Renders the bottom axis for the chart using visx.
+ * - Measures its own rendered size using a ref and ResizeObserver
+ * - Reports its dimensions up to the parent via onDimensionsChange
+ * - Receives all layout and scale info as props
+ *
+ * This enables robust, race-condition-free axis measurement and layout.
+ */
+export default function XAxis({ xScale, width, height, label, tickCount, className, onDimensionsChange }: XAxisProps) {
+	const ref = useRef<HTMLDivElement>(null);
 
-	// Use provided width if available, otherwise use measured width
-	const axisWidth = width || dimensions.width;
-
-	// Notify parent of dimension changes
+	// Measure the axis size after mount and on resize, report up
 	useEffect(() => {
-		if (onDimensionsChange && axisWidth > 0 && dimensions.height > 0) {
-			onDimensionsChange({ width: axisWidth, height: dimensions.height });
-		}
-	}, [dimensions, axisWidth, onDimensionsChange]);
+		if (!ref.current) return;
+		const measure = () => {
+			const rect = ref.current!.getBoundingClientRect();
+			if (onDimensionsChange) {
+				onDimensionsChange({ width: rect.width, height: rect.height });
+			}
+		};
+		measure();
+		const ro = new window.ResizeObserver(measure);
+		ro.observe(ref.current);
+		return () => ro.disconnect();
+	}, [width, height, onDimensionsChange]);
 
-	// If the axis width is 0, return an empty div
-	if (axisWidth === 0) {
-		return <div ref={containerRef} className={className} />;
+	// If not ready, render an empty div (prevents layout shift)
+	if (width === 0 || height === 0) {
+		return <div className={className} ref={ref} />;
 	}
 
 	return (
-		<div ref={containerRef} className={className}>
-			<svg width={axisWidth} height={dimensions.height} style={{ overflow: 'visible' }}>
+		<div className={className} style={{ width: width, height: height }} ref={ref}>
+			<svg width={width} height={height} style={{ overflow: 'visible' }}>
 				<AxisBottom
 					scale={xScale}
 					top={0}
 					label={label}
 					labelOffset={40}
 					stroke="#fff"
+					numTicks={tickCount}
 					labelProps={{
 						fill: "#fff",
 						fontSize: 18,

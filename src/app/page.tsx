@@ -96,29 +96,7 @@ export default function Home() {
 			{/* Header section with data info */}
 			<div className={styles.headerContainer}>
 				<h1>Airliner Chart</h1>
-				<p><b>Data loaded:</b> {data.length} airliners</p>
 				<p><a href="https://www.youtube.com/watch?v=WBpLrVCRS84">🎵 Cheers Elephant &mdash; Airliner 🎵</a></p>
-
-				{/*<div className={styles.dataTableContainer}>
-					<table className={styles.dataTable}>
-						<thead>
-							<tr>
-								<th>Airliner</th>
-								<th>Mean Pax</th>
-								<th>Range (km)</th>
-							</tr>
-						</thead>
-						<tbody>
-							{data.map((d, i) => (
-								<tr key={i}>
-									<td><b>{d.airliner}</b></td>
-									<td>{d.paxCapacityMean}</td>
-									<td>{d.rangeKm}</td>
-								</tr>
-							))}
-						</tbody>
-					</table>
-				</div>*/}
 			</div>
 
 			{/* Chart component handles all the complex visualization logic */}

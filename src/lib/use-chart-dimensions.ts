@@ -1,87 +1,47 @@
-import { useState, useEffect, useRef } from "react";
 import { useResponsiveSize } from "./use-responsive-size";
+import { calculateBoxModel } from "./calculate-box-model";
 
-// Interface for chart dimensions
+// Interface for chart dimensions (pure DOM layout)
 export interface ChartDimensions {
 	chartWidth: number;
 	chartHeight: number;
 	padding: number;
-	gap: number;
 }
 
-// Interface for axis dimensions
-export interface AxisDimensions {
-	width: number;
-	height: number;
+// Interface for the complete chart layout (pure DOM layout)
+export interface ChartLayout {
+	chartDimensions: ChartDimensions;
+	isReady: boolean;
 }
 
 /**
- * Custom hook for managing chart dimensions and responsive sizing
- * 
- * This hook handles:
- * - Container dimension measurement
- * - CSS value reading (padding, gap)
- * - Axis dimension tracking
- * - Chart area calculations
- * 
- * Returns everything needed for responsive chart layout
+ * useChartDimensions
+ *
+ * Custom hook for measuring the chart container's pixel size and padding.
+ * - Returns the container's width, height, and horizontal padding (from CSS)
+ * - Returns a ref to attach to the container element
+ * - Returns isReady flag for when measurement is available
+ *
+ * This hook is intentionally focussed: it does NOT measure axes or chart area.
+ * Axis measurement is handled by child components, reported up to the parent.
+ *
+ * This separation ensures robust, race-condition-free layout logic.
  */
-export const useChartDimensions = () => {
-	// Measure the main chart container
-	const [chartContainerDimensions, chartContainerRef] = useResponsiveSize();
-	
-	// Track axis dimensions via callbacks
-	const [yAxisDimensions, setYAxisDimensions] = useState<AxisDimensions>({ width: 0, height: 0 });
-	const [xAxisDimensions, setXAxisDimensions] = useState<AxisDimensions>({ width: 0, height: 0 });
+export const useChartDimensions = (): [ChartLayout, React.RefObject<HTMLDivElement | null>] => {
+	// Measure the main chart container's width/height responsively
+	const [chartDimensions, chartContainerRef] = useResponsiveSize();
 
-	/**
-	 * Dynamically read CSS values from the chart container
-	 * Ensures JavaScript calculations match actual CSS layout
-	 */
-	const getCSSValues = () => {
-		if (!chartContainerRef.current) return { padding: 64, gap: 24 };
-		
-		const computedStyle = getComputedStyle(chartContainerRef.current);
-		const paddingLeft = parseFloat(computedStyle.paddingLeft) || 32;
-		const paddingRight = parseFloat(computedStyle.paddingRight) || 32;
-		const gapValue = parseFloat(computedStyle.columnGap) || 24;
-		
-		return {
-			padding: paddingLeft + paddingRight,
-			gap: gapValue
-		};
-	};
+	// Calculate box model (padding, border, margin) from computed CSS
+	const boxModel = calculateBoxModel(chartContainerRef.current);
 
-	// Calculate chart dimensions
-	const { padding, gap } = getCSSValues();
-	
-	const chartWidth = chartContainerDimensions.width > 0 && yAxisDimensions.width > 0 
-		? Math.max(0, chartContainerDimensions.width - yAxisDimensions.width - padding - gap)
-		: 0;
-	const chartHeight = chartContainerDimensions.height > 0 && xAxisDimensions.height > 0
-		? Math.max(0, chartContainerDimensions.height - xAxisDimensions.height - padding - gap)
-		: 0;
-
-	return {
-		// Container info
-		chartContainerDimensions,
-		chartContainerRef,
-		
-		// Axis dimensions and setters
-		yAxisDimensions,
-		setYAxisDimensions,
-		xAxisDimensions,
-		setXAxisDimensions,
-		
-		// Calculated chart area
+	const layout: ChartLayout = {
 		chartDimensions: {
-			chartWidth,
-			chartHeight,
-			padding,
-			gap
+			chartWidth: chartDimensions.width,
+			chartHeight: chartDimensions.height,
+			padding: boxModel.padding.total.horizontal
 		},
-		
-		// Helper to check if dimensions are ready
-		isReady: chartContainerDimensions.width > 0 && chartContainerDimensions.height > 0
+		isReady: chartDimensions.width > 0 && chartDimensions.height > 0
 	};
+
+	return [layout, chartContainerRef];
 }; 

@@ -7,17 +7,23 @@ export interface ResponsiveDimensions {
 }
 
 /**
- * Custom React hook for responsive SVG/visx sizing
- * 
- * This hook automatically tracks the dimensions of a container element and updates
- * when the window is resized. It's designed specifically for visx charts and other
- * SVG components that need to be responsive to their parent container.
- * 
- * Returns a tuple containing:
- * - dimensions: Object with width and height of the container
- * - containerRef: React ref that should be attached to the container div
- * 
- * See ResponsiveExample.tsx for a complete usage example.
+ * useResponsiveSize
+ *
+ * Custom React hook for responsive container measurement.
+ * - Tracks the dimensions of a container element (width, height)
+ * - Updates automatically on window resize
+ * - Returns a ref to attach to the container div
+ *
+ * This is the foundation for all responsive chart layouts: it ensures
+ * that the chart always knows its available pixel space, regardless of
+ * parent layout or window size.
+ *
+ * Returns a tuple:
+ *   [dimensions, containerRef]
+ *
+ * Usage:
+ *   const [dimensions, ref] = useResponsiveSize();
+ *   <div ref={ref}>...</div>
  */
 export const useResponsiveSize = (): [ResponsiveDimensions, React.RefObject<HTMLDivElement | null>] => {
 	// State to track container dimensions for responsive behavior

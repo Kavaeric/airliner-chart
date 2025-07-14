@@ -51,7 +51,7 @@ export const loadAirlinerData = async (csvPath: string): Promise<AirlinerData[]>
 							category: row.Category,
 							manufacturer: row.Manufacturer,
 							firstDelivery: row["First delivery"], // Note: bracket notation for spaces
-							rangeKm: row["Range (km)"],
+							rangeKM: row["Range (km)"],
 							paxCapacityMin: row["PAX capacity (min)"],
 							paxCapacityMean: row["PAX capacity (mean)"],
 							paxCapacityMax: row["PAX capacity (max)"],
