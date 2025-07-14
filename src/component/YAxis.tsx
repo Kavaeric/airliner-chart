@@ -1,48 +1,66 @@
 "use client";
 
+import { useEffect, useRef } from "react";
 import { AxisLeft } from "@visx/axis";
-import { useResponsiveSize } from "../lib/use-responsive-size";
-import { useEffect } from "react";
 
 interface YAxisProps {
 	yScale: any; // visx has broken types, any is the only way to get it to work
+	width: number;
 	height: number;
 	label?: string;
+	tickCount?: number;
 	className?: string;
-	onDimensionsChange?: (dimensions: { width: number; height: number }) => void;
+	onDimensionsChange?: (dims: { width: number; height: number }) => void;
 }
 
-export default function YAxis({ yScale, height, label, className, onDimensionsChange }: YAxisProps) {
-	const [dimensions, containerRef] = useResponsiveSize();
+/**
+ * YAxis Component
+ *
+ * Renders the left axis for the chart using visx.
+ * - Measures its own rendered size using a ref and ResizeObserver
+ * - Reports its dimensions up to the parent via onDimensionsChange
+ * - Receives all layout and scale info as props
+ *
+ * This enables robust, race-condition-free axis measurement and layout.
+ */
+export default function YAxis({ yScale, width, height, label, tickCount, className, onDimensionsChange }: YAxisProps) {
+	const ref = useRef<HTMLDivElement>(null);
 
-	// Use provided height if available, otherwise use measured height
-	const axisHeight = height || dimensions.height;
-
-	// Notify parent of dimension changes
+	// Measure the axis size after mount and on resize, report up
 	useEffect(() => {
-		if (onDimensionsChange && dimensions.width > 0 && axisHeight > 0) {
-			onDimensionsChange({ width: dimensions.width, height: axisHeight });
-		}
-	}, [dimensions, axisHeight, onDimensionsChange]);
+		if (!ref.current) return;
+		const measure = () => {
+			const rect = ref.current!.getBoundingClientRect();
+			if (onDimensionsChange) {
+				onDimensionsChange({ width: rect.width, height: rect.height });
+			}
+		};
+		measure();
+		// Optionally, observe resize
+		const ro = new window.ResizeObserver(measure);
+		ro.observe(ref.current);
+		return () => ro.disconnect();
+	}, [width, height, onDimensionsChange]);
 
-	// If the axis height is 0, return an empty div
-	if (axisHeight === 0) {
-		return <div ref={containerRef} className={className} />;
+	// If not ready, render an empty div (prevents layout shift)
+	if (width === 0 || height === 0) {
+		return <div className={className} ref={ref} />;
 	}
 
 	return (
-		<div ref={containerRef} className={className}>
-			<svg width={dimensions.width} height={axisHeight} style={{ overflow: 'visible' }}>
+		<div className={className} style={{ width: width, height: height }} ref={ref}>
+			<svg width={width} height={height} style={{ overflow: 'visible' }}>
 				<AxisLeft
 					scale={yScale}
 					label={label}
 					labelOffset={60}
-					left={dimensions.width}
+					left={width}
 					stroke="#fff"
+					numTicks={tickCount}
 					labelProps={{
 						fill: "#fff",
 						fontSize: 18,
-						textAnchor: "end",
+						textAnchor: "middle",
 					}}
 					tickLabelProps={{
 						fill: "#fff",

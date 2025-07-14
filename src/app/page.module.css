@@ -1,3 +1,12 @@
+.wrapper {
+	display: flex;
+	flex-direction: column;
+}
+
+.footer {
+	padding: 2rem;
+}
+
 .mainContainer {
 	display: flex;
 	flex-direction: column;
@@ -6,27 +15,6 @@
 	padding: 0;
 	margin: 0;
 	font-family: var(--font-geist-sans);
-}
-
-.dataTableContainer {
-	width: 100%;
-	padding: 2rem;
-	background: var(--background);
-	border-bottom: 1px solid var(--gray-alpha-200);
-}
-
-.dataTable {
-	border-collapse: collapse;
-}
-
-.dataTable thead tr {
-	border-bottom: 1px solid #fff;
-}
-
-.dataTable th,
-.dataTable td {
-	padding: 0.5rem 1rem;
-	text-align: left;
 }
 
 .headerContainer {
@@ -53,34 +41,26 @@
 .chartContainer {
 	display: grid;
 	flex: 1;
-	grid-template:
-		"yAxis chartArea" 1fr "bottomLeft xAxis" auto / auto 1fr;
+	grid-template-areas:
+		"yAxis chartArea"
+		"bottomLeft xAxis";
+	grid-template-rows: 1fr auto;
+	grid-template-columns: auto 1fr;
 	width: 100%;
 	height: 100%;
 	min-height: 0; /* Allows flex child to shrink */
-	padding: 2rem;
+	padding: 4rem;
 	overflow: visible; /* Allow axis labels to overflow */
-	background: var(--background);
 }
 
 .yAxis {
-	position: relative; /* For proper overflow handling */
-	display: flex;
 	grid-area: yAxis;
-	align-items: stretch;
-	justify-content: flex-end;
 	width: 6em;
-	overflow: visible; /* Allow axis labels to overflow */
 }
 
 .xAxis {
-	position: relative; /* For proper overflow handling */
-	display: flex;
 	grid-area: xAxis;
-	align-items: flex-start;
-	justify-content: flex-start;
 	height: 6em;
-	overflow: visible; /* Allow axis labels to overflow */
 }
 
 .bottomLeft {
@@ -97,22 +77,6 @@
 	overflow: hidden; /* Prevent content from expanding beyond bounds */
 }
 
-.chartContainer p {
-	margin-bottom: 1rem;
-	font-size: 1.2rem;
-	color: var(--foreground);
-}
-
-.chartContainer pre {
-	max-width: 100%;
-	padding: 1rem;
-	overflow-x: auto;
-	font-family: var(--font-geist-mono);
-	font-size: 0.9rem;
-	background: var(--gray-alpha-100);
-	border-radius: 4px;
-}
-
 @media (width <= 768px) {
 	.headerContainer {
 		padding: 1rem;
@@ -120,9 +84,5 @@
 
 	.headerContainer h1 {
 		font-size: 2rem;
-	}
-
-	.chartContainer {
-		padding: 1rem;
 	}
 }

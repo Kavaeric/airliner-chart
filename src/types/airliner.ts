@@ -5,7 +5,7 @@ export interface AirlinerData {
 	category: string; 			// Aircraft category (e.g., "Narrow-body", "Wide-body")
 	manufacturer: string; 		// Aircraft manufacturer (e.g., "Airbus", "Boeing")
 	firstDelivery: number; 		// Year of first delivery
-	rangeKm: number; 			// Flight range in kilometers
+	rangeKM: number; 			// Flight range in kilometers
 	paxCapacityMin: number; 	// Minimum passenger capacity
 	paxCapacityMean: number; 	// Average passenger capacity
 	paxCapacityMax: number; 	// Maximum passenger capacity
