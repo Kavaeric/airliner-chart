@@ -2,12 +2,10 @@
 
 import { AxisLeft } from "@visx/axis";
 import { useResponsiveSize } from "../lib/use-responsive-size";
-import { scaleLinear } from "@visx/scale";
-import type { ScaleLinear } from "d3-scale";
 import { useEffect } from "react";
 
 interface YAxisProps {
-	yScale: ScaleLinear<number, number>;
+	yScale: any; // visx has broken types, any is the only way to get it to work
 	height: number;
 	label?: string;
 	className?: string;
