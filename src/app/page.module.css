@@ -1,168 +1,128 @@
-.page {
-  --gray-rgb: 0, 0, 0;
-  --gray-alpha-200: rgba(var(--gray-rgb), 0.08);
-  --gray-alpha-100: rgba(var(--gray-rgb), 0.05);
-
-  --button-primary-hover: #383838;
-  --button-secondary-hover: #f2f2f2;
-
-  display: grid;
-  grid-template-rows: 20px 1fr 20px;
-  align-items: center;
-  justify-items: center;
-  min-height: 100svh;
-  padding: 80px;
-  gap: 64px;
-  font-family: var(--font-geist-sans);
+.mainContainer {
+	display: flex;
+	flex-direction: column;
+	width: 100vw;
+	height: 100vh;
+	padding: 0;
+	margin: 0;
+	font-family: var(--font-geist-sans);
 }
 
-@media (prefers-color-scheme: dark) {
-  .page {
-    --gray-rgb: 255, 255, 255;
-    --gray-alpha-200: rgba(var(--gray-rgb), 0.145);
-    --gray-alpha-100: rgba(var(--gray-rgb), 0.06);
-
-    --button-primary-hover: #ccc;
-    --button-secondary-hover: #1a1a1a;
-  }
+.dataTableContainer {
+	width: 100%;
+	padding: 2rem;
+	background: var(--background);
+	border-bottom: 1px solid var(--gray-alpha-200);
 }
 
-.main {
-  display: flex;
-  flex-direction: column;
-  gap: 32px;
-  grid-row-start: 2;
+.dataTable {
+	border-collapse: collapse;
 }
 
-.main ol {
-  font-family: var(--font-geist-mono);
-  padding-left: 0;
-  margin: 0;
-  font-size: 14px;
-  line-height: 24px;
-  letter-spacing: -0.01em;
-  list-style-position: inside;
+.dataTable thead tr {
+	border-bottom: 1px solid #fff;
 }
 
-.main li:not(:last-of-type) {
-  margin-bottom: 8px;
+.dataTable th,
+.dataTable td {
+	padding: 0.5rem 1rem;
+	text-align: left;
 }
 
-.main code {
-  font-family: inherit;
-  background: var(--gray-alpha-100);
-  padding: 2px 4px;
-  border-radius: 4px;
-  font-weight: 600;
+.headerContainer {
+	display: flex;
+	flex-direction: column;
+	padding: 2rem;
+	background: var(--background);
+	border-bottom: 1px solid var(--gray-alpha-200);
 }
 
-.ctas {
-  display: flex;
-  gap: 16px;
+.headerContainer h1 {
+	margin-bottom: 1rem;
+	font-size: 2.5rem;
+	font-weight: 700;
+	color: var(--foreground);
 }
 
-.ctas a {
-  appearance: none;
-  border-radius: 128px;
-  height: 48px;
-  padding: 0 20px;
-  border: none;
-  border: 1px solid transparent;
-  transition:
-    background 0.2s,
-    color 0.2s,
-    border-color 0.2s;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 16px;
-  line-height: 20px;
-  font-weight: 500;
+.headerContainer p {
+	margin-bottom: 0;
+	font-size: 1.1rem;
+	color: var(--foreground);
 }
 
-a.primary {
-  background: var(--foreground);
-  color: var(--background);
-  gap: 8px;
+.chartContainer {
+	display: grid;
+	flex: 1;
+	grid-template:
+		"yAxis chartArea" 1fr "bottomLeft xAxis" auto / auto 1fr;
+	width: 100%;
+	height: 100%;
+	min-height: 0; /* Allows flex child to shrink */
+	padding: 2rem;
+	overflow: visible; /* Allow axis labels to overflow */
+	background: var(--background);
 }
 
-a.secondary {
-  border-color: var(--gray-alpha-200);
-  min-width: 158px;
+.yAxis {
+	position: relative; /* For proper overflow handling */
+	display: flex;
+	grid-area: yAxis;
+	align-items: stretch;
+	justify-content: flex-end;
+	width: 6em;
+	overflow: visible; /* Allow axis labels to overflow */
 }
 
-.footer {
-  grid-row-start: 3;
-  display: flex;
-  gap: 24px;
+.xAxis {
+	position: relative; /* For proper overflow handling */
+	display: flex;
+	grid-area: xAxis;
+	align-items: flex-start;
+	justify-content: flex-start;
+	height: 6em;
+	overflow: visible; /* Allow axis labels to overflow */
 }
 
-.footer a {
-  display: flex;
-  align-items: center;
-  gap: 8px;
+.bottomLeft {
+	grid-area: bottomLeft;
 }
 
-.footer img {
-  flex-shrink: 0;
+.chartArea {
+	position: relative; /* For proper layering */
+	z-index: 1; /* Ensure chart appears above axis labels */
+	grid-area: chartArea;
+	width: 100%;
+	height: 100%;
+	min-height: 0; /* Critical: allows grid item to shrink */
+	overflow: hidden; /* Prevent content from expanding beyond bounds */
 }
 
-/* Enable hover only on non-touch devices */
-@media (hover: hover) and (pointer: fine) {
-  a.primary:hover {
-    background: var(--button-primary-hover);
-    border-color: transparent;
-  }
-
-  a.secondary:hover {
-    background: var(--button-secondary-hover);
-    border-color: transparent;
-  }
-
-  .footer a:hover {
-    text-decoration: underline;
-    text-underline-offset: 4px;
-  }
+.chartContainer p {
+	margin-bottom: 1rem;
+	font-size: 1.2rem;
+	color: var(--foreground);
 }
 
-@media (max-width: 600px) {
-  .page {
-    padding: 32px;
-    padding-bottom: 80px;
-  }
-
-  .main {
-    align-items: center;
-  }
-
-  .main ol {
-    text-align: center;
-  }
-
-  .ctas {
-    flex-direction: column;
-  }
-
-  .ctas a {
-    font-size: 14px;
-    height: 40px;
-    padding: 0 16px;
-  }
-
-  a.secondary {
-    min-width: auto;
-  }
-
-  .footer {
-    flex-wrap: wrap;
-    align-items: center;
-    justify-content: center;
-  }
+.chartContainer pre {
+	max-width: 100%;
+	padding: 1rem;
+	overflow-x: auto;
+	font-family: var(--font-geist-mono);
+	font-size: 0.9rem;
+	background: var(--gray-alpha-100);
+	border-radius: 4px;
 }
 
-@media (prefers-color-scheme: dark) {
-  .logo {
-    filter: invert();
-  }
+@media (width <= 768px) {
+	.headerContainer {
+		padding: 1rem;
+	}
+
+	.headerContainer h1 {
+		font-size: 2rem;
+	}
+
+	.chartContainer {
+		padding: 1rem;
+	}
 }

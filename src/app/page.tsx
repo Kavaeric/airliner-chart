@@ -1,95 +1,128 @@
-import Image from "next/image";
+"use client";
+
+// Import React hooks for state management and side effects
+import { useState, useEffect } from "react";
 import styles from "./page.module.css";
 
-export default function Home() {
-  return (
-    <div className={styles.page}>
-      <main className={styles.main}>
-        <Image
-          className={styles.logo}
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol>
-          <li>
-            Get started by editing <code>src/app/page.tsx</code>.
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+// Import our modular components and utilities
+import { AirlinerData } from "../types/airliner";
+import { loadAirlinerData } from "../lib/airline-data-parser";
+import AirlinerChart from "../component/AirlinerChart";
 
-        <div className={styles.ctas}>
-          <a
-            className={styles.primary}
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className={styles.logo}
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-            className={styles.secondary}
-          >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className={styles.footer}>
-        <a
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
-  );
+/**
+ * Main Home Component - Airliner Data Visualization
+ * 
+ * This component handles:
+ * - Data loading from CSV
+ * - Loading and error states
+ * - Basic page layout
+ * 
+ * The actual chart rendering is delegated to the AirlinerChart component.
+ */
+export default function Home() {
+	// ===== STATE MANAGEMENT =====
+	
+	// Store the parsed airliner data from CSV
+	const [data, setData] = useState<AirlinerData[]>([]);
+	
+	// Track loading status for better user experience
+	const [loading, setLoading] = useState(true);
+	
+	// Track any errors that occur during data loading
+	const [error, setError] = useState<string | null>(null);
+
+	// ===== DATA LOADING =====
+	
+	// Load CSV data when component mounts
+	useEffect(() => {
+		const loadData = async () => {
+			try {
+				// Fetch and parse the airliner CSV data
+				const airlinerData = await loadAirlinerData("/data/airliners.csv");
+				setData(airlinerData);
+				setLoading(false);
+			} catch (error) {
+				// Handle any errors from data loading
+				console.error("Error loading data:", error);
+				setError("Failed to load airliner data");
+				setLoading(false);
+			}
+		};
+
+		// Execute the data loading
+		loadData();
+	}, []); // Empty dependency array means this effect runs only once on mount
+
+	// ===== RENDER STATES =====
+	
+	// Show loading state while data is being fetched
+	if (loading) {
+		return (
+			<div className={styles.mainContainer}>
+				<div className={styles.headerContainer}>
+					<h1>Airliner Chart</h1>
+					<p>Loading data...</p>
+				</div>
+				<div className={styles.chartContainer}>
+					<p>Loading chart...</p>
+				</div>
+			</div>
+		);
+	}
+
+	// Show error state if data loading failed
+	if (error) {
+		return (
+			<div className={styles.mainContainer}>
+				<div className={styles.headerContainer}>
+					<h1>Airliner Chart</h1>
+					<p>Error: {error}</p>
+				</div>
+				<div className={styles.chartContainer}>
+					<p>Error loading chart</p>
+				</div>
+			</div>
+		);
+	}
+
+	// ===== MAIN RENDER =====
+	
+	/**
+	 * Render the complete page with header and chart
+	 * The AirlinerChart component handles all the complex chart logic
+	 */
+	return (
+		<div className={styles.mainContainer}>
+			{/* Header section with data info */}
+			<div className={styles.headerContainer}>
+				<h1>Airliner Chart</h1>
+				<p><b>Data loaded:</b> {data.length} airliners</p>
+				<p><a href="https://www.youtube.com/watch?v=WBpLrVCRS84">🎵 Cheers Elephant &mdash; Airliner 🎵</a></p>
+
+				{/*<div className={styles.dataTableContainer}>
+					<table className={styles.dataTable}>
+						<thead>
+							<tr>
+								<th>Airliner</th>
+								<th>Mean Pax</th>
+								<th>Range (km)</th>
+							</tr>
+						</thead>
+						<tbody>
+							{data.map((d, i) => (
+								<tr key={i}>
+									<td><b>{d.airliner}</b></td>
+									<td>{d.paxCapacityMean}</td>
+									<td>{d.rangeKm}</td>
+								</tr>
+							))}
+						</tbody>
+					</table>
+				</div>*/}
+			</div>
+
+			{/* Chart component handles all the complex visualization logic */}
+			<AirlinerChart data={data} />
+		</div>
+	);
 }

@@ -9,17 +9,24 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@types/papaparse": "^5.3.16",
+    "@visx/visx": "^3.12.0",
+    "next": "15.3.5",
+    "papaparse": "^5.5.3",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0",
-    "next": "15.3.5"
+    "react-dom": "^19.0.0"
   },
   "devDependencies": {
-    "typescript": "^5",
+    "@eslint/eslintrc": "^3",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "15.3.5",
-    "@eslint/eslintrc": "^3"
+    "stylelint": "^16.21.1",
+    "stylelint-config-recess-order": "^7.1.0",
+    "stylelint-config-standard": "^38.0.0",
+    "stylelint-order": "^7.0.0",
+    "typescript": "^5"
   }
 }
