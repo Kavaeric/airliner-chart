@@ -3,11 +3,10 @@
 import { AxisBottom } from "@visx/axis";
 import { useResponsiveSize } from "../lib/use-responsive-size";
 import { scaleLinear } from "@visx/scale";
-import type { ScaleLinear } from "d3-scale";
 import { useEffect } from "react";
 
 interface XAxisProps {
-	xScale: ScaleLinear<number, number>;
+	xScale: any; // visx has broken types, any is the only way to get it to work
 	width: number;
 	label?: string;
 	className?: string;

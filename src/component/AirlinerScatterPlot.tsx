@@ -1,27 +1,20 @@
 "use client";
 
-// Import React hooks for responsive behavior
-import { useState, useEffect, useRef } from "react";
-
 // Import visx components for data visualization
 import { Group } from "@visx/group";
 import { Circle } from "@visx/shape";
 import { Text } from "@visx/text";
 import { Grid } from "@visx/grid";
-import { scaleLinear } from "@visx/scale";
-import { AxisLeft, AxisBottom } from "@visx/axis";
-import type { ScaleLinear } from "d3-scale";
 
 // Import our types and utilities
 import { AirlinerData } from "../types/airliner";
-import { extent } from "../lib/airline-data-parser";
 import { useResponsiveSize } from "../lib/use-responsive-size";
 
 // Props interface for the scatter plot component
 interface AirlinerScatterPlotProps {
 	data: AirlinerData[];
-	xScale: ScaleLinear<number, number>;
-	yScale: ScaleLinear<number, number>;
+	xScale: any; // visx has broken types, any is the only way to get it to work
+	yScale: any; // it's dumb and I wonder why software engineers are paid more
 	className?: string;
 }
 
