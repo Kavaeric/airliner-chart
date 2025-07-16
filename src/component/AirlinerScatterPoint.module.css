@@ -1,0 +1,37 @@
+/* AirlinerScatterPoint.module.css */
+
+/* .pointGroup { } */
+
+.pointMarkerSolid {
+	fill: var(--background);
+	stroke-width: 2;
+	stroke: var(--brand-primary);
+	shape-rendering: geometricPrecision;
+}
+
+.pointMarkerOutline {
+	fill: none;
+	stroke-width: 1;
+	shape-rendering: geometricPrecision;
+}
+
+.pointLabel {
+	fill: var(--text-minor);
+	font-family: var(--font-display);
+	font-size: var(--font-size-md);
+	font-weight: var(--font-weight-normal);
+}
+
+.pointMarkerConnectingLine {
+	stroke: var(--brand-primary);
+	stroke-linecap: butt;
+	shape-rendering: geometricPrecision;
+}
+
+.pointMarkerLine, .pointMarkerConnectingLineMinor {
+	stroke: var(--text-minor);
+	stroke-linecap: butt;
+	shape-rendering: geometricPrecision;
+	opacity: 0.4;
+	stroke-width: 2;
+}

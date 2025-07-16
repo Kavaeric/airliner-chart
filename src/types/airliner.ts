@@ -1,12 +1,39 @@
-// Define the structure of our airliner data with proper TypeScript typing
-// This interface ensures type safety and provides IntelliSense in the editor
+/**
+ * Represents a single airliner and its key attributes.
+ * Used for type safety and IntelliSense when working with airliner datasets.
+ *
+ * @property manufacturer   The company that built the airliner
+ * @property family         The family or series of the airliner
+ * @property generation     The generation or subfamily (optional)
+ * @property variant        The specific variant or model
+ * @property nameCommon     Common or marketing name (optional)
+ * @property nameICAO       ICAO aircraft type designator
+ * @property firstDelivery  Year of first delivery (optional)
+ * @property manufactureEnd Year production ended (optional)
+ * @property status         Current status: `development` `active` `discontinued` `retired`
+ * @property bodyType       Fuselage type: `widebody` `narrowbody`
+ * @property rangeKM        Maximum range in kilometres
+ * @property pax3Class      Typical 3-class seating capacity (optional)
+ * @property pax2Class      Typical 2-class seating capacity (optional)
+ * @property pax1Class      Typical 1-class seating capacity (optional)
+ * @property paxLimit       Maximum passengers by seat limit (optional)
+ * @property paxExit        Maximum passengers by exit limit (optional)
+ */
 export interface AirlinerData {
-	airliner: string; 			// Aircraft model name (e.g., "A320neo")
-	category: string; 			// Aircraft category (e.g., "Narrow-body", "Wide-body")
-	manufacturer: string; 		// Aircraft manufacturer (e.g., "Airbus", "Boeing")
-	firstDelivery: number; 		// Year of first delivery
-	rangeKM: number; 			// Flight range in kilometers
-	paxCapacityMin: number; 	// Minimum passenger capacity
-	paxCapacityMean: number; 	// Average passenger capacity
-	paxCapacityMax: number; 	// Maximum passenger capacity
+	manufacturer: string;
+	family: string;
+	generation?: string;
+	variant: string;
+	nameCommon?: string;
+	nameICAO: string;
+	firstDelivery?: number;
+	manufactureEnd?: number;
+	status: string;
+	bodyType: string;
+	rangeKM: number;
+	pax3Class?: number;
+	pax2Class?: number;
+	pax1Class?: number;
+	paxLimit?: number;
+	paxExit?: number;
 } 

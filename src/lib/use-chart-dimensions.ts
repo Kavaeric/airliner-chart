@@ -1,4 +1,4 @@
-import { useResponsiveSize } from "./use-responsive-size";
+import { useContainerSize } from "./use-container-size";
 import { calculateBoxModel } from "./calculate-box-model";
 
 // Interface for chart dimensions (pure DOM layout)
@@ -11,7 +11,7 @@ export interface ChartDimensions {
 // Interface for the complete chart layout (pure DOM layout)
 export interface ChartLayout {
 	chartDimensions: ChartDimensions;
-	isReady: boolean;
+	isChartLoaded: boolean;
 }
 
 /**
@@ -20,7 +20,7 @@ export interface ChartLayout {
  * Custom hook for measuring the chart container's pixel size and padding.
  * - Returns the container's width, height, and horizontal padding (from CSS)
  * - Returns a ref to attach to the container element
- * - Returns isReady flag for when measurement is available
+ * - Returns isChartLoaded flag for when measurement is available
  *
  * This hook is intentionally focussed: it does NOT measure axes or chart area.
  * Axis measurement is handled by child components, reported up to the parent.
@@ -29,7 +29,7 @@ export interface ChartLayout {
  */
 export const useChartDimensions = (): [ChartLayout, React.RefObject<HTMLDivElement | null>] => {
 	// Measure the main chart container's width/height responsively
-	const [chartDimensions, chartContainerRef] = useResponsiveSize();
+	const [chartDimensions, chartContainerRef] = useContainerSize();
 
 	// Calculate box model (padding, border, margin) from computed CSS
 	const boxModel = calculateBoxModel(chartContainerRef.current);
@@ -40,7 +40,7 @@ export const useChartDimensions = (): [ChartLayout, React.RefObject<HTMLDivEleme
 			chartHeight: chartDimensions.height,
 			padding: boxModel.padding.total.horizontal
 		},
-		isReady: chartDimensions.width > 0 && chartDimensions.height > 0
+		isChartLoaded: chartDimensions.width > 0 && chartDimensions.height > 0
 	};
 
 	return [layout, chartContainerRef];

@@ -1,80 +1,53 @@
-.wrapper {
+.mainContainer {
 	display: flex;
 	flex-direction: column;
+	padding: 0;
+	margin: 0;
 }
 
-.footer {
-	padding: 2rem;
-}
-
-.mainContainer {
+.aboveCut {
 	display: flex;
 	flex-direction: column;
 	width: 100vw;
 	height: 100vh;
-	padding: 0;
-	margin: 0;
-	font-family: var(--font-geist-sans);
+}
+
+.belowCut {
+	padding: var(--space-2xl);
+	display: flex;
+	flex-direction: column;
+}
+
+.dataTable {
+	max-width: 1200px;
+}
+
+.dataTable th {
+	border-bottom: 1px solid var(--border-major);
+}
+
+.dataTable th,
+.dataTable td {
+	padding: var(--space-xs);
 }
 
 .headerContainer {
 	display: flex;
 	flex-direction: column;
-	padding: 2rem;
-	background: var(--background);
-	border-bottom: 1px solid var(--gray-alpha-200);
+	padding: var(--space-lg);
 }
 
 .headerContainer h1 {
-	margin-bottom: 1rem;
-	font-size: 2.5rem;
-	font-weight: 700;
-	color: var(--foreground);
+	margin-bottom: var(--space-lg);
+	font-size: var(--font-size-4xl);
+	font-weight: var(--font-weight-semibold);
+	color: var(--text-major);
 }
 
 .headerContainer p {
 	margin-bottom: 0;
 	font-size: 1.1rem;
-	color: var(--foreground);
-}
-
-.chartContainer {
-	display: grid;
-	flex: 1;
-	grid-template-areas:
-		"yAxis chartArea"
-		"bottomLeft xAxis";
-	grid-template-rows: 1fr auto;
-	grid-template-columns: auto 1fr;
-	width: 100%;
-	height: 100%;
-	min-height: 0; /* Allows flex child to shrink */
-	padding: 4rem;
-	overflow: visible; /* Allow axis labels to overflow */
-}
-
-.yAxis {
-	grid-area: yAxis;
-	width: 6em;
-}
-
-.xAxis {
-	grid-area: xAxis;
-	height: 6em;
-}
-
-.bottomLeft {
-	grid-area: bottomLeft;
-}
-
-.chartArea {
-	position: relative; /* For proper layering */
-	z-index: 1; /* Ensure chart appears above axis labels */
-	grid-area: chartArea;
-	width: 100%;
-	height: 100%;
-	min-height: 0; /* Critical: allows grid item to shrink */
-	overflow: hidden; /* Prevent content from expanding beyond bounds */
+	color: var(--text-major);
 }
 
 @media (width <= 768px) {

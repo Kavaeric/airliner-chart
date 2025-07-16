@@ -2,74 +2,75 @@
 import Papa, { ParseResult } from "papaparse";
 import { AirlinerData } from "../types/airliner";
 
-// Helper function to find min and max values in an array
-export const extent = (data: AirlinerData[], accessor: (d: AirlinerData) => number): [number, number] => {
-	const values = data.map(accessor);
-	return [Math.min(...values), Math.max(...values)];
-};
-
-// Function to load and parse airliner CSV data
+/**
+ * Loads and parses airliner CSV data into AirlinerData objects.
+ *
+ * This parser expects the CSV to have:
+ *   - The first row as headers (field names)
+ *   - The second row as type hints (e.g., 'string', 'number')
+ *   - Data rows after that
+ *   - Comment lines (starting with #) and empty lines are ignored
+ *
+ * The parser dynamically maps headers and types, so you don't need to hardcode field names.
+ * It uses PapaParse for robust CSV parsing.
+ *
+ * @param csvPath Path to the CSV file (relative to public/)
+ * @returns Promise<AirlinerData[]> Array of parsed airliner objects
+ */
 export const loadAirlinerData = async (csvPath: string): Promise<AirlinerData[]> => {
-	try {
-		// Fetch the CSV file from the public directory
-		// In Next.js, files in /public are served at the root URL
-		const response = await fetch(csvPath);
-		const csvText = await response.text();
+	// Fetch the CSV file as text
+	const response = await fetch(csvPath);
+	const csvText = await response.text();
 
-		return new Promise((resolve, reject) => {
-			// Use PapaParse to parse the CSV with configuration options
-			Papa.parse(csvText, {
-				header: true, // Treat first row as column headers
-				skipEmptyLines: true, // Ignore empty lines in the CSV
-				comments: "#", // Ignore lines starting with #
+	// Use PapaParse to parse the CSV into objects
+	return new Promise((resolve, reject) => {
+		Papa.parse(csvText, {
+			header: true, // Use the first row as object keys
+			skipEmptyLines: "greedy", // Ignore blank lines including those that reduce to whitespace
+			comments: "#", // Ignore lines starting with #
 
-				// Transform function runs for each field during parsing
-				// This converts string numbers to actual numbers
-				transform: (value, field) => {
-					// Check if the current field is one of our numeric fields
-					if (
-						field === "First delivery" ||
-						field === "Range (km)" ||
-						field === "PAX capacity (min)" ||
-						field === "PAX capacity (mean)" ||
-						field === "PAX capacity (max)"
-					) {
-						const num = parseFloat(value);
-						// Return 0 if parsing fails (NaN), otherwise return the number
-						return isNaN(num) ? 0 : num;
-					}
-					// Return the original value for non-numeric fields
-					return value;
-				},
+			transform: (value, field) => {
+				// Skip rows that are just commas (empty data rows)
+				if (value === "" && field === 0) {
+					// Check if this is a row of empty cells
+					return null; // This will cause PapaParse to skip the row
+				}
+				return value;
+			},
 
-				// This runs when parsing is complete
-				complete: (results: ParseResult<any>) => {
-					// Maps data from CSV header strings into interface properties
-					const transformedData: AirlinerData[] =
-						results.data.map((row: any) => ({
-							airliner: row.Airliner,
-							category: row.Category,
-							manufacturer: row.Manufacturer,
-							firstDelivery: row["First delivery"], // Note: bracket notation for spaces
-							rangeKM: row["Range (km)"],
-							paxCapacityMin: row["PAX capacity (min)"],
-							paxCapacityMean: row["PAX capacity (mean)"],
-							paxCapacityMax: row["PAX capacity (max)"],
-						}));
+			complete: (results: ParseResult<any>) => {
+				// Get the type row (second row) for type information
+				const typeRow = results.data[0]; // First data row after header
+				if (!typeRow) {
+					reject(new Error("CSV missing type row"));
+					return;
+				}
 
-					resolve(transformedData);
-				},
+				// For each row after the type row, build an AirlinerData object
+				const data: AirlinerData[] = results.data.slice(1).map((row: any) => {
+					const obj: any = {};
 
-				// Error handling callback
-				error: (error: any) => {
-					console.error("PapaParse error:", error);
-					reject(error);
-				},
-			});
+					// Use the header keys from PapaParse
+					Object.keys(row).forEach(key => {
+						const type = typeRow[key];
+						let value = row[key];
+						
+						// Convert value to the correct type based on the type row
+						if (type === "number") {
+							value = value === undefined || value === "" ? undefined : Number(value);
+						} else if (type === "string") {
+							value = value === "" ? undefined : value;
+						}
+						obj[key] = value;
+					});
+					
+					return obj as AirlinerData;
+				});
+				resolve(data);
+			},
+			error: (error: any) => {
+				reject(error);
+			},
 		});
-	} catch (error) {
-		// Handle any network or other errors
-		console.error("Error loading data:", error);
-		throw error;
-	}
+	});
 }; 

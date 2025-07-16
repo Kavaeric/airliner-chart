@@ -1,15 +1,20 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useResponsiveSize } from "../lib/use-responsive-size";
+
+// Third-party libraries
 import { AxisLeft } from "@visx/axis";
 
+// CSS
+import graphStyles from "./ChartAxes.module.css";
+
+// Context providers/hooks
+import { useChartScalesContext } from "../context/ChartScalesContext";
+import { useChartLayout } from "../context/ChartLayoutContext";
+
 interface YAxisProps {
-	yScale: any; // visx has broken types, any is the only way to get it to work
 	width: number;
 	height: number;
-	label?: string;
-	tickCount?: number;
-	className?: string;
 	onDimensionsChange?: (dims: { width: number; height: number }) => void;
 }
 
@@ -20,57 +25,31 @@ interface YAxisProps {
  * - Measures its own rendered size using a ref and ResizeObserver
  * - Reports its dimensions up to the parent via onDimensionsChange
  * - Receives all layout and scale info as props
+ * - Renders ticks and gridlines
  *
  * This enables robust, race-condition-free axis measurement and layout.
  */
-export default function YAxis({ yScale, width, height, label, tickCount, className, onDimensionsChange }: YAxisProps) {
-	const ref = useRef<HTMLDivElement>(null);
-
-	// Measure the axis size after mount and on resize, report up
-	useEffect(() => {
-		if (!ref.current) return;
-		const measure = () => {
-			const rect = ref.current!.getBoundingClientRect();
-			if (onDimensionsChange) {
-				onDimensionsChange({ width: rect.width, height: rect.height });
-			}
-		};
-		measure();
-		// Optionally, observe resize
-		const ro = new window.ResizeObserver(measure);
-		ro.observe(ref.current);
-		return () => ro.disconnect();
-	}, [width, height, onDimensionsChange]);
+export default function YAxis({ width, height, onDimensionsChange }: YAxisProps) {
+	const { yScaleView } = useChartScalesContext();
+	const { yTickCount } = useChartLayout();
+	const ref = useResponsiveSize(onDimensionsChange);
 
 	// If not ready, render an empty div (prevents layout shift)
 	if (width === 0 || height === 0) {
-		return <div className={className} ref={ref} />;
+		return <div className={graphStyles.yAxis} ref={ref} />;
 	}
 
 	return (
-		<div className={className} style={{ width: width, height: height }} ref={ref}>
-			<svg width={width} height={height} style={{ overflow: 'visible' }}>
+		<div className={graphStyles.yAxis} ref={ref}>
+			<svg style={{ width: "100%", height: "100%", overflow: "visible", transform: `translateX(${width}px)` }}>
 				<AxisLeft
-					scale={yScale}
-					label={label}
-					labelOffset={60}
-					left={width}
-					stroke="#fff"
-					numTicks={tickCount}
-					labelProps={{
-						fill: "#fff",
-						fontSize: 18,
-						textAnchor: "middle",
-					}}
-					tickLabelProps={{
-						fill: "#fff",
-						fontSize: 18,
-						textAnchor: "end",
-					}}
-					tickLineProps={{
-						stroke: "#fff",
-						strokeWidth: 1,
-					}}
+					scale={yScaleView}
+					numTicks={yTickCount}
+					tickFormat={d => String(Number(d).toFixed(0))} /* Whole numbers with no comma separator */
+					
+					axisClassName={graphStyles.axis}
+					axisLineClassName={graphStyles.axisLine}
+					tickClassName={graphStyles.tick}
 				/>
 			</svg>
 		</div>
