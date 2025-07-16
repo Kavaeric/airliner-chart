@@ -1,7 +1,7 @@
-// Types/interfaces
+// [IMPORT] Types/interfaces //
 import type { Metadata } from "next";
 
-// CSS
+// [IMPORT] CSS styling //
 import "./branding.css";
 import "./globals.css";
 import appStyles from "./App.module.css";

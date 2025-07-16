@@ -1,6 +1,11 @@
+// [IMPORT] React and core libraries //
 import { useState, useCallback } from "react";
-import type { ChartViewport } from "../types/zoom";
+
+// [IMPORT] Utilities/helpers //
 import { clampAndSlide } from "./clamp-and-slide";
+
+// [IMPORT] Types/interfaces //
+import type { ChartViewport } from "../types/zoom";
 
 /**
  * useChartViewport

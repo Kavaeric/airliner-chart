@@ -1,4 +1,4 @@
-// React/core
+// [IMPORT] React and core libraries //
 import { createContext, useContext } from "react";
 
 // Interface for static chart config

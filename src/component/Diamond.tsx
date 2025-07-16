@@ -1,3 +1,4 @@
+// [IMPORT] React and core libraries //
 import React from "react";
 
 /**

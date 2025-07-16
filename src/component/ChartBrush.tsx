@@ -1,10 +1,17 @@
+// [IMPORT] React and core libraries //
 import React from "react";
-import brushStyles from "./ChartBrush.module.css";
-import { useChartScalesContext } from "../context/ChartScalesContext";
-import { useResponsiveSize } from "../lib/use-responsive-size";
-import { useChartData } from "./AirlinerChart";
-import { Diamond } from "./Diamond";
 
+// [IMPORT] Internal components //
+import ChartBrushScatter from "./ChartBrushScatter";
+
+// [IMPORT] Context providers/hooks //
+import { useChartScalesContext } from "../context/ChartScalesContext";
+import { useChartData } from "./AirlinerChart";
+
+// [IMPORT] Utilities/helpers //
+import { useResponsiveSize } from "../lib/use-responsive-size";
+
+// [IMPORT] Types/interfaces //
 interface ChartBrushProps {
 	width: number;
 	height: number;
@@ -14,6 +21,10 @@ interface ChartBrushProps {
 	onBrushMove?: (bounds: { x?: [number, number]; y?: [number, number] }) => void;
 	// Future: onBrushStart, onBrushEnd, etc.
 }
+
+// [IMPORT] CSS styling //
+import brushStyles from "./ChartBrush.module.css";
+import responsiveStyles from "./ResponsiveSVG.module.css";
 
 /**
  * ChartBrush Component
@@ -120,7 +131,7 @@ export default function ChartBrush({ width, height, axisMode = "x", onDimensions
 	}
 
 	// Get brush bounds for the selected axis
-	const bounds = getBrushBounds(axisMode === "y" ? "y" : "x", width, height);
+	const bounds = getBrushBounds();
 
 	// Clamp brush bounds to prevent overflow outside the brushing area
 	const clampedBounds = {
@@ -167,37 +178,25 @@ export default function ChartBrush({ width, height, axisMode = "x", onDimensions
 	}
 	
 	return (
-		<div className={ parentDivClassNames[axisMode] } ref={ref}>
-			<svg style={{ width: "100%", height: "100%", overflow: "visible" }}>
+		<div className={`${parentDivClassNames[axisMode]} ${responsiveStyles.responsiveContainer}`} ref={ref}>
+			<svg className={responsiveStyles.responsiveSVG}>
 
-				{/* Mini scatter plot: render a diamond for each available pax measurement */}
-				{data.map((d: any, i: number) => {
-					if (typeof d.rangeKM !== 'number') return null;
-					const pointSize = 3;
-					const paxKeys = ['paxExit', 'paxLimit', 'pax3Class', 'pax2Class', 'pax1Class'];
-					return paxKeys.map((key) => {
-						const paxValue = d[key];
-						if (typeof paxValue !== 'number' || isNaN(paxValue)) return null;
-						const cx = axisMode === 'y' ? width / 2 : xScale(d.rangeKM);
-						const cy = axisMode === 'x' ? height / 2 : yScale(paxValue);
-						return (
-							<Diamond
-								key={`${i}-${key}`}
-								x={cx}
-								y={cy}
-								r={pointSize}
-								className={brushStyles.miniPointMarker}
-							/>
-						);
-					});
-				})}
-
-				{/* Custom brush rectangle */}
+				{/* Brush control rectangle */}
 				<rect
-					className={brushStyles.chartBrushControl}
+					className={`${brushStyles.chartBrushControl} ${brushStyles.chartBrushControl}`}
 					{...chartBrushControlProps}
 					onPointerDown={handlePointerDown} // Start drag on pointer down
 					style={{ cursor: "move" }} // Show move cursor for clarity
+				/>
+
+				{/* Brush scatter plot: render major/minor markers for each available pax measurement */}
+				<ChartBrushScatter
+					width={width}
+					height={height}
+					axisMode={axisMode}
+					xScale={xScale}
+					yScale={yScale}
+					data={data}
 				/>
 			</svg>
 		</div>

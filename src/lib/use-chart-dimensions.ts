@@ -1,3 +1,4 @@
+// [IMPORT] Utilities/helpers //
 import { useContainerSize } from "./use-container-size";
 import { calculateBoxModel } from "./calculate-box-model";
 
@@ -5,7 +6,8 @@ import { calculateBoxModel } from "./calculate-box-model";
 export interface ChartDimensions {
 	chartWidth: number;
 	chartHeight: number;
-	padding: number;
+	paddingHorizontal: number;
+	paddingVertical: number;
 }
 
 // Interface for the complete chart layout (pure DOM layout)
@@ -38,7 +40,8 @@ export const useChartDimensions = (): [ChartLayout, React.RefObject<HTMLDivEleme
 		chartDimensions: {
 			chartWidth: chartDimensions.width,
 			chartHeight: chartDimensions.height,
-			padding: boxModel.padding.total.horizontal
+			paddingHorizontal: boxModel.padding.horizontal,
+			paddingVertical: boxModel.padding.vertical
 		},
 		isChartLoaded: chartDimensions.width > 0 && chartDimensions.height > 0
 	};

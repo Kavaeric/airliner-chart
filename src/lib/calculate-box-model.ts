@@ -5,30 +5,24 @@ export interface BoxModel {
 		right: number;
 		bottom: number;
 		left: number;
-		total: {
-			horizontal: number;
-			vertical: number;
-		};
+		horizontal: number;
+		vertical: number;
 	};
 	border: {
 		top: number;
 		right: number;
 		bottom: number;
 		left: number;
-		total: {
-			horizontal: number;
-			vertical: number;
-		};
+		horizontal: number;
+		vertical: number;
 	};
 	margin: {
 		top: number;
 		right: number;
 		bottom: number;
 		left: number;
-		total: {
-			horizontal: number;
-			vertical: number;
-		};
+		horizontal: number;
+		vertical: number;
 	};
 }
 
@@ -45,12 +39,13 @@ export interface BoxModel {
  * @returns Object containing all box model properties
  */
 export const calculateBoxModel = (element: HTMLElement | null): BoxModel => {
+
 	if (!element) {
 		// If no element, return all zeros
 		return {
-			padding: { top: 0, right: 0, bottom: 0, left: 0, total: { horizontal: 0, vertical: 0 } },
-			border: { top: 0, right: 0, bottom: 0, left: 0, total: { horizontal: 0, vertical: 0 } },
-			margin: { top: 0, right: 0, bottom: 0, left: 0, total: { horizontal: 0, vertical: 0 } }
+			padding: { top: 0, right: 0, bottom: 0, left: 0, horizontal: 0, vertical: 0 },
+			border: { top: 0, right: 0, bottom: 0, left: 0, horizontal: 0, vertical: 0 },
+			margin: { top: 0, right: 0, bottom: 0, left: 0, horizontal: 0, vertical: 0 }
 		};
 	}
 	
@@ -80,30 +75,26 @@ export const calculateBoxModel = (element: HTMLElement | null): BoxModel => {
 			right: paddingRight,
 			bottom: paddingBottom,
 			left: paddingLeft,
-			total: {
-				horizontal: paddingLeft + paddingRight,
-				vertical: paddingTop + paddingBottom
-			}
+
+			horizontal: paddingLeft + paddingRight,
+			vertical: paddingTop + paddingBottom
 		},
 		border: {
 			top: borderTop,
 			right: borderRight,
 			bottom: borderBottom,
 			left: borderLeft,
-			total: {
-				horizontal: borderLeft + borderRight,
-				vertical: borderTop + borderBottom
-			}
+
+			horizontal: borderLeft + borderRight,
+			vertical: borderTop + borderBottom
 		},
 		margin: {
 			top: marginTop,
 			right: marginRight,
 			bottom: marginBottom,
 			left: marginLeft,
-			total: {
-				horizontal: marginLeft + marginRight,
-				vertical: marginTop + marginBottom
-			}
+			horizontal: marginLeft + marginRight,
+			vertical: marginTop + marginBottom
 		}
 	};
 }; 

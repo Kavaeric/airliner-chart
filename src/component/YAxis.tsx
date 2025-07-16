@@ -1,16 +1,17 @@
-"use client";
-
+// [IMPORT] React and core libraries //
 import { useResponsiveSize } from "../lib/use-responsive-size";
 
-// Third-party libraries
+// [IMPORT] Third-party libraries //
 import { AxisLeft } from "@visx/axis";
 
-// CSS
-import graphStyles from "./ChartAxes.module.css";
-
-// Context providers/hooks
+// [IMPORT] Context providers/hooks //
 import { useChartScalesContext } from "../context/ChartScalesContext";
 import { useChartLayout } from "../context/ChartLayoutContext";
+import { useChartFormat } from "../context/ChartFormatContext";
+
+// [IMPORT] CSS styling //
+import graphStyles from "./ChartAxes.module.css";
+import responsiveStyles from "./ResponsiveSVG.module.css";
 
 interface YAxisProps {
 	width: number;
@@ -32,6 +33,7 @@ interface YAxisProps {
 export default function YAxis({ width, height, onDimensionsChange }: YAxisProps) {
 	const { yScaleView } = useChartScalesContext();
 	const { yTickCount } = useChartLayout();
+	const { yLabel } = useChartFormat();
 	const ref = useResponsiveSize(onDimensionsChange);
 
 	// If not ready, render an empty div (prevents layout shift)
@@ -40,17 +42,35 @@ export default function YAxis({ width, height, onDimensionsChange }: YAxisProps)
 	}
 
 	return (
-		<div className={graphStyles.yAxis} ref={ref}>
-			<svg style={{ width: "100%", height: "100%", overflow: "visible", transform: `translateX(${width}px)` }}>
+		<div className={`${graphStyles.yAxis} ${responsiveStyles.responsiveContainer}`} ref={ref}>
+			<svg className={responsiveStyles.responsiveSVG} style={{transform: `translateX(${width}px)`}}>
 				<AxisLeft
 					scale={yScaleView}
 					numTicks={yTickCount}
-					tickFormat={d => String(Number(d).toFixed(0))} /* Whole numbers with no comma separator */
+					tickLength={4}
+					tickFormat={d => {
+						const n = Number(d);
+						if (isNaN(n)) return "";
+						if (Math.abs(n) >= 1000) {
+							return (n / 1000).toFixed(0);
+						}
+						return n.toString();
+					}} /* Format numbers in thousands, e.g. 2000 -> 2k */
 					
 					axisClassName={graphStyles.axis}
 					axisLineClassName={graphStyles.axisLine}
 					tickClassName={graphStyles.tick}
 				/>
+
+				{/* Render the axis label */}
+				<text
+					x={-width}
+					y={height / 2}
+					className={graphStyles.axisLabelY}
+					textAnchor="middle"
+				>
+					{yLabel}
+				</text>
 			</svg>
 		</div>
 	);

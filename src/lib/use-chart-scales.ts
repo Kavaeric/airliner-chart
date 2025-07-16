@@ -1,4 +1,8 @@
+// [IMPORT] Third-party libraries //
 import { scaleLinear } from "@visx/scale";
+import { useMemo } from "react";
+
+// [IMPORT] Types/interfaces //
 import type { ChartViewport } from "../types/zoom";
 
 /**
@@ -50,6 +54,16 @@ export const useChartScales = (
 		 */
 		yPadding?: number;
 		/**
+		 * Optional rounding for the x-axis.
+		 * If provided, the x-axis will be rounded to the nearest multiple of this value.
+		 */
+		xNiceRounding?: number;
+		/**
+		 * Optional rounding for the y-axis.
+		 * If provided, the y-axis will be rounded to the nearest multiple of this value.
+		 */
+		yNiceRounding?: number;
+		/**
 		 * Optional limits on the chart viewport for both axes.
 		 * If provided, zoom operations will be constrained to these bounds.
 		 */
@@ -61,7 +75,7 @@ export const useChartScales = (
 	chartViewport: ChartViewport
 ) => {
 	const { width: chartWidth, height: chartHeight } = chartDimensions;
-	const { xValues, yValues, xPadding = 0, yPadding = 0, chartViewportLimits } = config;
+	const { xValues, yValues, xPadding = 0, yPadding = 0, xNiceRounding = 1, yNiceRounding = 1, chartViewportLimits } = config;
 
 	// Filter out invalid values (undefined, null, NaN)
 	const cleanXValues = xValues.filter((v): v is number => typeof v === 'number' && !isNaN(v));
@@ -72,39 +86,52 @@ export const useChartScales = (
 	const xMax = cleanXValues.length > 0 ? Math.max(...cleanXValues) : 1;
 	// Add the optional margin to the domain and niceify it
 	const xDomain = [
-		Math.floor((xMin - xPadding) / 1000) * 1000,
-		Math.ceil((xMax + xPadding) / 1000) * 1000
+		Math.floor((xMin - xPadding) / xNiceRounding) * xNiceRounding,
+		Math.ceil((xMax + xPadding) / xNiceRounding) * xNiceRounding
 	];
 
 	// Ditto, for Y values
 	const yMin = cleanYValues.length > 0 ? Math.min(...cleanYValues) : 0;
 	const yMax = cleanYValues.length > 0 ? Math.max(...cleanYValues) : 1;
 	const yDomain = [
-		Math.floor((yMin - yPadding) / 20) * 20,
-		Math.ceil((yMax + yPadding) / 20) * 20
+		Math.floor((yMin - yPadding) / yNiceRounding) * yNiceRounding,
+		Math.ceil((yMax + yPadding) / yNiceRounding) * yNiceRounding
 	];
 
 	// Create full dataset scales (used by brushes)
-	const xScale = scaleLinear<number>({
-		domain: xDomain,
-		range: [0, Math.max(1, chartWidth)],
-	});
+	// Memoize the scales to prevent unnecessary re-renders
+	const xScale = useMemo(
+		() => scaleLinear<number>({
+			domain: xDomain,
+			range: [0, Math.max(1, chartWidth)],
+		}),
+		[xDomain[0], xDomain[1], chartWidth]
+	);
 
-	const yScale = scaleLinear<number>({
-		domain: yDomain,
-		range: [Math.max(1, chartHeight), 0],
-	});
+	const yScale = useMemo(
+		() => scaleLinear<number>({
+			domain: yDomain,
+			range: [Math.max(1, chartHeight), 0],
+		}),
+		[yDomain[0], yDomain[1], chartHeight]
+	);
 
 	// Create chart viewport scales (used by axes and plot)
-	const xScaleView = scaleLinear<number>({
-		domain: [chartViewport.x[0], chartViewport.x[1]],
-		range: [0, Math.max(1, chartWidth)],
-	});
+	const xScaleView = useMemo(
+		() => scaleLinear<number>({
+			domain: [chartViewport.x[0], chartViewport.x[1]],
+			range: [0, Math.max(1, chartWidth)],
+		}),
+		[chartViewport.x[0], chartViewport.x[1], chartWidth]
+	);
 
-	const yScaleView = scaleLinear<number>({
-		domain: [chartViewport.y[0], chartViewport.y[1]],
-		range: [Math.max(1, chartHeight), 0],
-	});
+	const yScaleView = useMemo(
+		() => scaleLinear<number>({
+			domain: [chartViewport.y[0], chartViewport.y[1]],
+			range: [Math.max(1, chartHeight), 0],
+		}),
+		[chartViewport.y[0], chartViewport.y[1], chartHeight]
+	);
 
 	// Compute brush bounds for both axes
 	// X brush: horizontal bounds showing current zoom viewport on full dataset scale
@@ -120,18 +147,11 @@ export const useChartScales = (
 	] as [number, number];
 
 	// Utility function for getting brush bounds with custom dimensions
-	const getBrushBounds = (axis: 'x' | 'y', width: number, height: number) => {
-		if (axis === 'x') {
-			return {
-				x: [xScale(xScaleView.domain()[0]), xScale(xScaleView.domain()[1])] as [number, number],
-				y: [0, height] as [number, number],
-			};
-		} else {
-			return {
-				x: [0, width] as [number, number],
-				y: [yScale(yScaleView.domain()[1]), yScale(yScaleView.domain()[0])] as [number, number],
-			};
-		}
+	const getBrushBounds = () => {
+		return {
+			x: [xScale(xScaleView.domain()[0]), xScale(xScaleView.domain()[1])] as [number, number],
+			y: [yScale(yScaleView.domain()[1]), yScale(yScaleView.domain()[0])] as [number, number],
+		};
 	};
 
 	return {

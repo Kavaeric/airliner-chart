@@ -1,28 +1,27 @@
-"use client";
+// [IMPORT] React and core libraries //
+import { useState, useEffect, useRef, useMemo } from "react";
 
-import { useState, useEffect, useRef } from "react";
-
-// Types
-import { AirlinerData } from "../types/airliner";
-import type { ChartViewport } from "../types/zoom";
-
-// Utilities
-import { useChartDimensions } from "../lib/use-chart-dimensions";
-import { useChartScales } from "../lib/use-chart-scales";
-import { useChartViewport } from "../lib/use-chart-viewport";
-
-// Internal components
+// [IMPORT] Internal components //
 import ChartContainer from "./ChartContainer";
 import AirlinerScatterPlot from "./AirlinerScatterPlot";
 import YAxis from "./YAxis";
 import XAxis from "./XAxis";
 import ChartBrush from "./ChartBrush";
 
-// Context providers and hooks
+// [IMPORT] Context providers/hooks //
 import { ChartLayoutContext } from "../context/ChartLayoutContext";
 import { ChartScalesContext } from "../context/ChartScalesContext";
 import { ChartFormatContext } from "../context/ChartFormatContext";
 import { createChartDataContext } from "../context/ChartDataContext";
+
+// [IMPORT] Utilities/helpers //
+import { useChartDimensions } from "../lib/use-chart-dimensions";
+import { useChartScales } from "../lib/use-chart-scales";
+import { useChartViewport } from "../lib/use-chart-viewport";
+
+// [IMPORT] Types/interfaces //
+import { AirlinerData } from "../types/airliner";
+import type { ChartViewport } from "../types/zoom";
 
 // Create a typed ChartDataContext for AirlinerData
 export const { ChartDataContext, useChartData } = createChartDataContext<AirlinerData>();
@@ -69,13 +68,14 @@ export default function AirlinerChart({}: AirlinerChartProps) {
 	// Calculate the available chart area (subtract axis sizes, brush sizes, and padding)
 	const chartWidth = layout.chartDimensions.chartWidth;
 	const chartHeight = layout.chartDimensions.chartHeight;
-	const padding = layout.chartDimensions.padding;
+	const paddingHorizontal = layout.chartDimensions.paddingHorizontal;
+	const paddingVertical = layout.chartDimensions.paddingVertical;
 	
 	// Chart area width: total width - y-axis width - y-brush width - padding
-	const chartAreaWidth = Math.max(0, chartWidth - yAxisDims.width - yBrushDims.width - padding);
+	const chartAreaWidth = Math.max(0, chartWidth - yAxisDims.width - yBrushDims.width - paddingHorizontal);
 	
 	// Chart area height: total height - x-axis height - x-brush height - padding
-	const chartAreaHeight = Math.max(0, chartHeight - xAxisDims.height - xBrushDims.height - padding);
+	const chartAreaHeight = Math.max(0, chartHeight - xAxisDims.height - xBrushDims.height - paddingVertical);
 
 	// Chart viewport limits: sets the limits for the chart viewport on both axes.
 	const [chartViewportLimits, setChartViewportLimits] = useState<ChartViewportLimits>({
@@ -85,20 +85,26 @@ export default function AirlinerChart({}: AirlinerChartProps) {
 
 	// Create scales for mapping data to pixel space
 	const scaleConfig = {
-		xValues: data.map(d => d.rangeKM).filter((v): v is number => typeof v === 'number' && !isNaN(v)),
-		
 		// Combine all relevant passenger capacity fields into a single array for yValues
-		yValues: [
+		xValues: [
 			...data.map(d => d.pax1Class),
 			...data.map(d => d.pax2Class),
 			...data.map(d => d.pax3Class),
 			...data.map(d => d.paxLimit),
 			...data.map(d => d.paxExit)
 		].filter((v): v is number => typeof v === 'number' && !isNaN(v)),
-		xLabel: "Range (km)",
-		yLabel: "Passenger Capacity",
-		xPadding: 200,
-		yPadding: 0,
+
+		yValues: data.map(d => d.rangeKM).filter((v): v is number => typeof v === 'number' && !isNaN(v)),
+		xLabel: "Passenger Capacity",
+		yLabel: "Range (km)",
+		xPadding: 25,
+		yPadding: 200,
+		xNiceRounding: 25,
+		yNiceRounding: 500,
+		chartViewportLimits: {
+			x: [null, null] as [number | null, number | null],
+			y: [null, null] as [number | null, number | null]
+		}
 	};
 
 	// Zoom state management with limits enforcement
@@ -127,12 +133,14 @@ export default function AirlinerChart({}: AirlinerChartProps) {
 		// No dependencies needed, this will only run once
 	}, []);
 
-	// Initialize zoom viewport to full dataset bounds on mount
+	// Set the initial chart viewport
+	// If this is smaller than viewportLimits, the chart will start and reset to this viewport
+	// but the user will still be able to zoom out past this initial view
 	const initialChartViewport = () => {
 		// TypeScript note: xScale.domain() returns number[], but ZoomViewport expects a tuple [number, number].
 		// We know D3 linear scales always return exactly two numbers, so this cast is safe and required for type compatibility.
 		return {
-			x: [xScale.domain()[0], xScale.domain()[1]] as [number, number],
+			x: [xScale.domain()[0], xScale.domain()[1] -350] as [number, number],
 			y: [yScale.domain()[0], yScale.domain()[1]] as [number, number]
 		};
 	};
@@ -149,13 +157,8 @@ export default function AirlinerChart({}: AirlinerChartProps) {
 	};
 
 	// Debugging function to zoom in on the X axis
-	const debugHandleZoomInX = () => {
-		zoomChartViewport(200, 0);
-	};
-
-	// Debugging function to zoom out on the X axis
-	const debugHandleZoomOutX = () => {
-		zoomChartViewport(-200, 0);
+	const debugHandleZoomX = (offset: number) => {
+		zoomChartViewport(offset, 0);
 	};
 
 	// Debugging function to move the Y axis
@@ -164,13 +167,8 @@ export default function AirlinerChart({}: AirlinerChartProps) {
 	};
 
 	// Debugging function to zoom in on the Y axis
-	const debugHandleZoomInY = () => {
-		zoomChartViewport(0, 50);
-	};
-
-	// Debugging function to zoom out on the Y axis
-	const debugHandleZoomOutY = () => {
-		zoomChartViewport(0, -50);
+	const debugHandleZoomY = (offset: number) => {
+		zoomChartViewport(0, offset);
 	};
 
 	// Initialize zoom viewport to full dataset bounds on mount
@@ -184,7 +182,9 @@ export default function AirlinerChart({}: AirlinerChartProps) {
 
 	// Adapt tick count to rendered chart size
 	const xTickCount = Math.max(2, Math.floor(chartAreaWidth / 100));
-	const yTickCount = Math.max(2, Math.floor(chartAreaHeight / 50));
+	const yTickCount = Math.max(2, Math.floor(chartAreaHeight / 100));
+	const yTickGridCount = Math.max(2, Math.floor(chartAreaHeight / 50));
+	const xTickGridCount = Math.max(2, Math.floor(chartAreaWidth / 100));
 
 	// Wait for container measurement before rendering chart
 	if (!layout.isChartLoaded) {
@@ -204,13 +204,16 @@ export default function AirlinerChart({}: AirlinerChartProps) {
 	const layoutValue = {
 		chartWidth,        			// Total chart container width
 		chartHeight,       			// Total chart container height  
-		padding,           			// Padding around the chart area
+		paddingHorizontal,          // Total horizontal padding
+		paddingVertical,           	// Total vertical padding
 		xAxisDims,         			// X-axis dimensions (width/height) for positioning
 		yAxisDims,         			// Y-axis dimensions (width/height) for positioning
 		xBrushDims,        			// X-brush dimensions (width/height) for positioning
 		yBrushDims,        			// Y-brush dimensions (width/height) for positioning
 		xTickCount,        			// Number of ticks to show on X-axis (responsive to width)
 		yTickCount,        			// Number of ticks to show on Y-axis (responsive to height)
+		yTickGridCount,				// Number of ticks to show on Y-axis (responsive to height)
+		xTickGridCount,				// Number of ticks to show on X-axis (responsive to width)
 		isChartLoaded: layout.isChartLoaded,  	// Whether container measurement is complete
 	};
 	
@@ -319,15 +322,15 @@ export default function AirlinerChart({}: AirlinerChartProps) {
 							<p>janky debuggy viewport controls</p>
 							<button onClick={handleResetChartViewport}>reset zoom</button>
 							<br />
-							<button onClick={() => debugHandleMoveY(-100)}>Y--</button>
-							<button onClick={debugHandleZoomOutY}>-zoom Y</button>
-							<button onClick={debugHandleZoomInY}>+zoom Y</button>
-							<button onClick={() => debugHandleMoveY(100)}>Y++</button>
+							<button onClick={() => debugHandleMoveY(-1000)}>Y--</button>
+							<button onClick={() => debugHandleZoomY(-1000)}>-zoom Y</button>
+							<button onClick={() => debugHandleZoomY(1000)}>+zoom Y</button>
+							<button onClick={() => debugHandleMoveY(1000)}>Y++</button>
 							<br />
-							<button onClick={() => debugHandleMoveX(-1000)}>X--</button>
-							<button onClick={debugHandleZoomOutX}>-zoom X</button>
-							<button onClick={debugHandleZoomInX}>+zoom X</button>
-							<button onClick={() => debugHandleMoveX(1000)}>X++</button>
+							<button onClick={() => debugHandleMoveX(-100)}>X--</button>
+							<button onClick={() => debugHandleZoomX(-100)}>-zoom X</button>
+							<button onClick={() => debugHandleZoomX(100)}>+zoom X</button>
+							<button onClick={() => debugHandleMoveX(100)}>X++</button>
 						</div>
 					</ChartContainer>
 				</ChartFormatContext.Provider>

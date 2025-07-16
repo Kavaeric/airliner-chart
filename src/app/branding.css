@@ -91,6 +91,8 @@
 	--border-minor: var(--grey-400);
 	--border-diminished: var(--grey-600);
 
+	--chart-gridline: var(--grey-800);
+
 	--link-hover-bg: rgba(var(--red-treble-500-rgb), var(--opacity-low));
 
 	/* === Semantic Spacing Tokens === */
@@ -102,6 +104,7 @@
 	--space-xl: var(--size-32);
 	--space-2xl: var(--size-48);
 	--space-3xl: var(--size-64);
+	--space-4xl: var(--size-80);
 
 	/* === Typography  === */
 	--font-hk-grotesk: "HK Grotesk Pro", Arial, Helvetica, sans-serif;

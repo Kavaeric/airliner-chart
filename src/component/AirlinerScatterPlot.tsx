@@ -1,20 +1,20 @@
 "use client";
 
-// Third-party libraries
+// [IMPORT] Third-party libraries //
 import { GridRows } from "@visx/grid";
 import { GridColumns } from "@visx/grid";
 
-// CSS
-import chartStyles from "./ChartContainer.module.css";
-import plotStyles from "./AirlinerScatterPlot.module.css";
-
-// Internal components
+// [IMPORT] Internal components //
 import AirlinerScatterPoint from "./AirlinerScatterPoint";
 
-// Context providers/hooks
+// [IMPORT] Context providers/hooks //
 import { useChartScalesContext } from "../context/ChartScalesContext";
 import { useChartData } from "./AirlinerChart";
 import { useChartLayout } from "../context/ChartLayoutContext";
+
+// [IMPORT] CSS styling //
+import plotStyles from "./AirlinerScatterPlot.module.css";
+import responsiveStyles from "./ResponsiveSVG.module.css";
 
 /**
  * AirlinerScatterPlot Component
@@ -22,38 +22,37 @@ import { useChartLayout } from "../context/ChartLayoutContext";
  * Renders the main chart area:
  * - Draws gridlines for reference
  * - Plots each airliner as a circle at (x, y) using the provided scales
- * - Renders a text label for each point (airliner name)
  *
  * Receives all layout and scale info from parent.
  */
 export default function AirlinerScatterPlot({ width, height }: { width: number; height: number }) {
 	const { xScaleView, yScaleView } = useChartScalesContext();
 	const data = useChartData();
-	const { xTickCount, yTickCount } = useChartLayout();
+	const { xTickGridCount, yTickGridCount } = useChartLayout();
 
 	// If the chart dimensions are 0, or no data, show loading/empty state
 	if (width === 0 || height === 0 || data.length === 0) {
 		return (
-			<div className={chartStyles.chartArea}>
+			<div className={plotStyles.chartArea}>
 				<p>Loading chart...</p>
 			</div>
 		);
 	}
 
 	return (
-		<div className={chartStyles.chartArea}>
-			<svg style={{ overflow: "visible" }}>
+		<div className={`${plotStyles.chartArea} ${responsiveStyles.responsiveContainer}`}>
+			<svg className={responsiveStyles.responsiveSVG}>
 				{/* Gridlines for visual reference */}
 				<GridRows
 					scale={yScaleView}
 					width={width}
-					numTicks={yTickCount}
+					numTicks={yTickGridCount}
 					className={plotStyles.gridLine}
 				/>
 				<GridColumns
 					scale={xScaleView}
 					height={height}
-					numTicks={xTickCount}
+					numTicks={xTickGridCount}
 					className={plotStyles.gridLine}
 				/>
 				

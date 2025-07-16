@@ -14,19 +14,9 @@
 }
 
 /* Brush control SVG rectangle */
-.xBrush .chartBrushControl {
-	fill: rgba(var(--brand-primary-rgb), var(--opacity-low));
-	stroke: var(--brand-primary);
-	stroke-width: 2;
-}
-
+.xBrush .chartBrushControl,
 .yBrush .chartBrushControl {
-	fill: rgba(var(--brand-primary-rgb), var(--opacity-low));
-	stroke: var(--brand-primary);
+	fill: rgba(var(--neutral-black-rgb), var(--opacity-low));
+	stroke: var(--border-minor);
 	stroke-width: 2;
-}
-
-.miniPointMarker {
-	fill: var(--brand-primary);
-	opacity: 0.8;
 }

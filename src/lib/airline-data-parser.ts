@@ -1,5 +1,7 @@
-// Import PapaParse for robust CSV parsing with TypeScript support
+// [IMPORT] Third-party libraries //
 import Papa, { ParseResult } from "papaparse";
+
+// [IMPORT] Types/interfaces //
 import { AirlinerData } from "../types/airliner";
 
 /**

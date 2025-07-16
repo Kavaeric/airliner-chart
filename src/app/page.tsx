@@ -1,22 +1,22 @@
 "use client";
 
-// React/core
+// [IMPORT] React and core libraries //
 import { useState, useEffect } from "react";
 
-// CSS
-import styles from "./page.module.css";
-
-// Types/interfaces
-import { AirlinerData } from "../types/airliner";
-
-// Utilities
-import { loadAirlinerData } from "../lib/airline-data-parser";
-
-// Internal components
+// [IMPORT] Internal components //
 import AirlinerChart from "../component/AirlinerChart";
 
-// Context providers/hooks
+// [IMPORT] Context providers/hooks //
 import { ChartDataContext } from "../component/AirlinerChart";
+
+// [IMPORT] Utilities/helpers //
+import { loadAirlinerData } from "../lib/airline-data-parser";
+
+// [IMPORT] Types/interfaces //
+import { AirlinerData } from "../types/airliner";
+
+// [IMPORT] CSS styling //
+import styles from "./page.module.css";
 
 /**
  * Main Home Component - Airliner Data Visualization

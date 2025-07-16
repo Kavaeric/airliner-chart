@@ -1,0 +1,11 @@
+/* ChartBrushScatterMarker.module.css */
+
+.markerMajor {
+	fill: var(--border-minor);
+	pointer-events: none;
+}
+
+.markerMinor {
+	fill: var(--border-minor);
+	pointer-events: none;
+} 

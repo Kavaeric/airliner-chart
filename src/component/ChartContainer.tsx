@@ -1,8 +1,7 @@
-"use client";
-
+// [IMPORT] React and core libraries //
 import { ReactNode, forwardRef } from "react";
 
-// CSS
+// [IMPORT] CSS styling //
 import chartStyles from "./ChartContainer.module.css";
 
 // Props for the chart container component

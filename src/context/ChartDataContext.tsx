@@ -1,4 +1,4 @@
-// React/core
+// [IMPORT] React and core libraries //
 import { createContext, useContext } from "react";
 
 // Factory function to create a typed chart data context and hook

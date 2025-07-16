@@ -1,3 +1,4 @@
+// [IMPORT] React and core libraries //
 import { useState, useEffect, useRef } from "react";
 
 /**

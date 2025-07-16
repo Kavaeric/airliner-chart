@@ -1,5 +1,9 @@
 /* ChartGrid.module.css */
 
+/* ChartContainer Component
+ * 
+ * A container for the chart, which handles the layout of the chart and its components.
+ */
 .chartContainer {
 	flex: 1;
 	display: grid;
@@ -8,13 +12,13 @@
 		"yBrush yAxis chartArea"
 		"empty1 empty2 xAxis"
 		"empty3 empty4 xBrush";
-	grid-template-rows: auto var(--space-2xl) var(--space-2xl);
-	grid-template-columns: var(--space-2xl) var(--space-2xl) auto;
+	grid-template-rows: auto var(--space-4xl) var(--space-lg);
+	grid-template-columns: var(--space-lg) var(--space-4xl) auto;
 	width: 100%;
 	height: 100%;
 	min-height: 0; /* Allows flex child to shrink */
 	padding: var(--space-xl);
-	padding-top: var(--space-md);
+	padding-top: var(--space-med);
 }
 
 .empty1 {
