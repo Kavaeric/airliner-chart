@@ -1,0 +1,8 @@
+.wrapper {
+	display: flex;
+	flex-direction: column;
+}
+
+.footer {
+	padding: 2rem;
+}

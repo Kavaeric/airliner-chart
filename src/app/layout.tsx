@@ -1,6 +1,10 @@
+// Types/interfaces
 import type { Metadata } from "next";
+
+// CSS
+import "./branding.css";
 import "./globals.css";
-import pageStyles from "./page.module.css";
+import appStyles from "./App.module.css";
 
 export const metadata: Metadata = {
 	title: "Airliner Chart",
@@ -15,10 +19,10 @@ export default function RootLayout({
 	return (
 		<html lang="en">
 			<body>
-				<div className={pageStyles.wrapper}>
+				<div className={appStyles.wrapper}>
 					{children}
 
-					<div className={pageStyles.footer}>
+					<div className={appStyles.footer}>
 						<p>Made by Kavaeric</p>
 					</div>
 				</div>

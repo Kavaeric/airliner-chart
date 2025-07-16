@@ -1,18 +1,42 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
+
+// Types
 import { AirlinerData } from "../types/airliner";
+import type { ChartViewport } from "../types/zoom";
+
+// Utilities
 import { useChartDimensions } from "../lib/use-chart-dimensions";
 import { useChartScales } from "../lib/use-chart-scales";
+import { useChartViewport } from "../lib/use-chart-viewport";
+
+// Internal components
+import ChartContainer from "./ChartContainer";
 import AirlinerScatterPlot from "./AirlinerScatterPlot";
 import YAxis from "./YAxis";
 import XAxis from "./XAxis";
-import ChartGrid, { gridAreas } from "./ChartGrid";
+import ChartBrush from "./ChartBrush";
+
+// Context providers and hooks
+import { ChartLayoutContext } from "../context/ChartLayoutContext";
+import { ChartScalesContext } from "../context/ChartScalesContext";
+import { ChartFormatContext } from "../context/ChartFormatContext";
+import { createChartDataContext } from "../context/ChartDataContext";
+
+// Create a typed ChartDataContext for AirlinerData
+export const { ChartDataContext, useChartData } = createChartDataContext<AirlinerData>();
 
 // Props for the airliner chart component
 interface AirlinerChartProps {
-	data: AirlinerData[];
+	// data: AirlinerData[]; // No longer needed, use context
 	className?: string;
+}
+
+// Type for chartViewportLimits supporting null for unbounded
+interface ChartViewportLimits {
+	x: [number | null, number | null];
+	y: [number | null, number | null];
 }
 
 /**
@@ -28,86 +52,286 @@ interface AirlinerChartProps {
  * This architecture ensures robust, race-condition-free measurement and
  * clear separation of layout, measurement, and rendering concerns.
  */
-export default function AirlinerChart({ data, className }: AirlinerChartProps) {
+export default function AirlinerChart({}: AirlinerChartProps) {
+	// Access airliner data from context
+	const data = useChartData();
 	// Measure container size and padding only (no axis logic here)
 	const [layout, chartContainerRef] = useChartDimensions();
 
 	// Axis dimensions are measured by the axis components and reported up
 	const [yAxisDims, setYAxisDims] = useState<{ width: number; height: number }>({ width: 0, height: 0 });
 	const [xAxisDims, setXAxisDims] = useState<{ width: number; height: number }>({ width: 0, height: 0 });
+	
+	// Brush dimensions (will be measured by brush components)
+	const [yBrushDims, setYBrushDims] = useState<{ width: number; height: number }>({ width: 0, height: 0 });
+	const [xBrushDims, setXBrushDims] = useState<{ width: number; height: number }>({ width: 0, height: 0 });
 
-	// Calculate the available chart area (subtract axis sizes and padding)
+	// Calculate the available chart area (subtract axis sizes, brush sizes, and padding)
 	const chartWidth = layout.chartDimensions.chartWidth;
 	const chartHeight = layout.chartDimensions.chartHeight;
 	const padding = layout.chartDimensions.padding;
-	const chartAreaWidth = Math.max(0, chartWidth - yAxisDims.width - padding);
-	const chartAreaHeight = Math.max(0, chartHeight - xAxisDims.height - padding);
+	
+	// Chart area width: total width - y-axis width - y-brush width - padding
+	const chartAreaWidth = Math.max(0, chartWidth - yAxisDims.width - yBrushDims.width - padding);
+	
+	// Chart area height: total height - x-axis height - x-brush height - padding
+	const chartAreaHeight = Math.max(0, chartHeight - xAxisDims.height - xBrushDims.height - padding);
+
+	// Chart viewport limits: sets the limits for the chart viewport on both axes.
+	const [chartViewportLimits, setChartViewportLimits] = useState<ChartViewportLimits>({
+		x: [null, null],
+		y: [null, null]
+	});
 
 	// Create scales for mapping data to pixel space
 	const scaleConfig = {
-		xAccessor: (d: AirlinerData) => d.rangeKM,
-		yAccessor: (d: AirlinerData) => d.paxCapacityMean,
+		xValues: data.map(d => d.rangeKM).filter((v): v is number => typeof v === 'number' && !isNaN(v)),
+		
+		// Combine all relevant passenger capacity fields into a single array for yValues
+		yValues: [
+			...data.map(d => d.pax1Class),
+			...data.map(d => d.pax2Class),
+			...data.map(d => d.pax3Class),
+			...data.map(d => d.paxLimit),
+			...data.map(d => d.paxExit)
+		].filter((v): v is number => typeof v === 'number' && !isNaN(v)),
 		xLabel: "Range (km)",
 		yLabel: "Passenger Capacity",
-		// Custom margin for axes (domain will be padded by ± value)
-		xMargin: 200,
-		yMargin: 0
+		xPadding: 200,
+		yPadding: 0,
 	};
 
-	// Generate D3 scales that map data values to pixel coordinates
-	// xScale: converts range values (km) to horizontal pixel positions
-	// yScale: converts passenger capacity values to vertical pixel positions
-	const { xScale, yScale } = useChartScales(data, { width: chartAreaWidth, height: chartAreaHeight }, scaleConfig);
+	// Zoom state management with limits enforcement
+	const initialViewport: ChartViewport = { x: [0, 0], y: [0, 0] };
+	const { 
+		chartViewport, 
+		setChartViewportWithLimits, 
+		resetChartViewport, 
+		moveChartViewport, 
+		zoomChartViewport 
+	} = useChartViewport(initialViewport, chartViewportLimits);
 
-	// Adapt tick count to chart size
+	// Generate D3 scales that map data values to pixel coordinates
+	const { xScale, yScale, xScaleView, yScaleView, brushBounds, getBrushBounds } = useChartScales({ width: chartAreaWidth, height: chartAreaHeight }, scaleConfig, chartViewport);
+
+	// After scales are created, set the viewport limits to the scale domains
+	const didSetViewportLimits = useRef(false);
+	useEffect(() => {
+		if (!didSetViewportLimits.current) {
+			setChartViewportLimits({
+				x: [xScale.domain()[0], xScale.domain()[1]],
+				y: [yScale.domain()[0], yScale.domain()[1]],
+			});
+			didSetViewportLimits.current = true;
+		}
+		// No dependencies needed, this will only run once
+	}, []);
+
+	// Initialize zoom viewport to full dataset bounds on mount
+	const initialChartViewport = () => {
+		// TypeScript note: xScale.domain() returns number[], but ZoomViewport expects a tuple [number, number].
+		// We know D3 linear scales always return exactly two numbers, so this cast is safe and required for type compatibility.
+		return {
+			x: [xScale.domain()[0], xScale.domain()[1]] as [number, number],
+			y: [yScale.domain()[0], yScale.domain()[1]] as [number, number]
+		};
+	};
+
+	// Reset zoom viewport to full dataset bounds
+	const handleResetChartViewport = () => {
+		resetChartViewport(initialChartViewport());
+	};
+
+	// ==== DEBUG NONSENSE ==== //
+	// Debugging function to move the X axis
+	const debugHandleMoveX = (offset: number) => {
+		moveChartViewport(offset, 0);
+	};
+
+	// Debugging function to zoom in on the X axis
+	const debugHandleZoomInX = () => {
+		zoomChartViewport(200, 0);
+	};
+
+	// Debugging function to zoom out on the X axis
+	const debugHandleZoomOutX = () => {
+		zoomChartViewport(-200, 0);
+	};
+
+	// Debugging function to move the Y axis
+	const debugHandleMoveY = (offset: number) => {
+		moveChartViewport(0, offset);
+	};
+
+	// Debugging function to zoom in on the Y axis
+	const debugHandleZoomInY = () => {
+		zoomChartViewport(0, 50);
+	};
+
+	// Debugging function to zoom out on the Y axis
+	const debugHandleZoomOutY = () => {
+		zoomChartViewport(0, -50);
+	};
+
+	// Initialize zoom viewport to full dataset bounds on mount
+	const didSetInitialViewport = useRef(false);
+	useEffect(() => {
+		if (!didSetInitialViewport.current) {
+			setChartViewportWithLimits(initialChartViewport());
+			didSetInitialViewport.current = true;
+		}
+	}, []); // No dependencies needed, runs only once
+
+	// Adapt tick count to rendered chart size
 	const xTickCount = Math.max(2, Math.floor(chartAreaWidth / 100));
 	const yTickCount = Math.max(2, Math.floor(chartAreaHeight / 50));
 
 	// Wait for container measurement before rendering chart
-	if (!layout.isReady) {
+	if (!layout.isChartLoaded) {
 		return (
-			<ChartGrid className={className} ref={chartContainerRef}>
+			<ChartContainer ref={chartContainerRef}>
 				<p>Loading chart...</p>
-			</ChartGrid>
+			</ChartContainer>
 		);
 	}
 
+	// Prepare context values for chart components
+	// These objects contain all the layout, scale, and formatting information
+	// that child components need to render properly
+	
+	// ChartLayoutContext: Provides layout dimensions and tick configuration
+	// Used by axes and other components that need to know chart size and positioning
+	const layoutValue = {
+		chartWidth,        			// Total chart container width
+		chartHeight,       			// Total chart container height  
+		padding,           			// Padding around the chart area
+		xAxisDims,         			// X-axis dimensions (width/height) for positioning
+		yAxisDims,         			// Y-axis dimensions (width/height) for positioning
+		xBrushDims,        			// X-brush dimensions (width/height) for positioning
+		yBrushDims,        			// Y-brush dimensions (width/height) for positioning
+		xTickCount,        			// Number of ticks to show on X-axis (responsive to width)
+		yTickCount,        			// Number of ticks to show on Y-axis (responsive to height)
+		isChartLoaded: layout.isChartLoaded,  	// Whether container measurement is complete
+	};
+	
+	// ChartScalesContext: Provides D3 scales for data-to-pixel mapping
+	// Used by scatter plot and axes to convert data values to screen coordinates
+	const scalesValue = { 
+		xScale,      // Full dataset scale (for brushes)
+		yScale,      // Full dataset scale (for brushes)
+		xScaleView,  // Zoomed viewport scale (for axes and plot)
+		yScaleView,  // Zoomed viewport scale (for axes and plot)
+		brushBounds, // Computed brush bounds for both axes
+		getBrushBounds, // Utility function for custom brush bounds
+	};
+	
+	// ChartFormatContext: Provides axis labels and margin configuration
+	// Used by axes for labeling and by scales for domain padding
+	const formatValue = {
+		xLabel: scaleConfig.xLabel,    // Label displayed on X-axis
+		yLabel: scaleConfig.yLabel,    // Label displayed on Y-axis
+		xPadding: scaleConfig.xPadding,  // Padding added to X-axis domain
+		yPadding: scaleConfig.yPadding,  // Padding added to Y-axis domain
+	};
+
+	/**
+	 * Handles brush movement from ChartBrush components.
+	 *
+	 * This function receives the new brush bounds in pixel space (SVG coordinates) from the child ChartBrush.
+	 * It calculates the pixel delta for each axis, then converts these to data-space deltas using the current chart scales.
+	 * The resulting data deltas are passed to moveChartViewport, which updates the chart's visible data region.
+	 *
+	 * This ensures that brush movement is always 1:1 with the user's mouse, regardless of zoom or scale.
+	 *
+	 * @param bounds - An object containing the new brush bounds for x and/or y axes as tuples: { x?: [number, number], y?: [number, number] }
+	 */
+	function handleBrushMove(bounds: { x?: [number, number]; y?: [number, number] }) {
+		const deltaX = bounds.x ? bounds.x[0] - brushBounds.x[0] : 0;
+		const deltaY = bounds.y ? bounds.y[0] - brushBounds.y[0] : 0;
+
+		let dataDeltaX = 0;
+		let dataDeltaY = 0;		
+		// Convert pixel deltas to data-space deltas using the current scales
+		if (deltaX !== 0) {
+			dataDeltaX = xScale.invert(brushBounds.x[0] + deltaX) - xScale.invert(brushBounds.x[0]);
+		}
+		if (deltaY !== 0) {
+			dataDeltaY = yScale.invert(brushBounds.y[0] + deltaY) - yScale.invert(brushBounds.y[0]);
+		}
+
+		// Returns deltas as whole numbers, ensuring the viewport moves by at least 1 unit
+		// This prevents jittering when the user is dragging the brush slowly or past the end
+		dataDeltaX = Math.round(dataDeltaX);
+		dataDeltaY = Math.round(dataDeltaY);
+
+		moveChartViewport(dataDeltaX, dataDeltaY);
+	}
+
+	// ChartLayoutContext provides layout and tick info to all chart children
+	// ChartScalesContext provides D3 scales for axes and plotting
+	// ChartFormatContext provides axis labels and margins
+	// ChartDataContext provides the airliner data array
 	return (
-		<ChartGrid className={className} ref={chartContainerRef}>
-			{/* Y Axis: measures its own size and reports up, receives scale and layout info */}
-			<YAxis
-				className={gridAreas.yAxis}
-				yScale={yScale}
-				width={yAxisDims.width}
-				height={chartAreaHeight}
-				label={scaleConfig.yLabel}
-				tickCount={yTickCount}
-				onDimensionsChange={setYAxisDims}
-			/>
+		<ChartLayoutContext.Provider value={layoutValue}>
+			<ChartScalesContext.Provider value={scalesValue}>
+				<ChartFormatContext.Provider value={formatValue}>
+					<ChartContainer ref={chartContainerRef}>
+						{/* Chart area (top-right) - uses zoomed scales */}
+						<AirlinerScatterPlot
+							width={chartAreaWidth}
+							height={chartAreaHeight}
+						/>
 
-			{/* X Axis: measures its own size and reports up, receives scale and layout info */}
-			<XAxis
-				className={gridAreas.xAxis}
-				xScale={xScale}
-				width={chartAreaWidth}
-				height={xAxisDims.height}
-				label={scaleConfig.xLabel}
-				tickCount={xTickCount}
-				onDimensionsChange={setXAxisDims}
-			/>
-			
-			{/* Main Scatter Plot: receives all layout and scale info */}
-			<AirlinerScatterPlot
-				className={gridAreas.chartArea}
-				data={data}
-				xScale={xScale}
-				yScale={yScale}
-				width={chartAreaWidth}
-				height={chartAreaHeight}
-			/>
+						{/* Y-axis brush (top-left) - uses full scales */}
+						<ChartBrush
+							width={yBrushDims.width}
+							height={chartAreaHeight}
+							onDimensionsChange={setYBrushDims}
+							axisMode="y"
+							onBrushMove={handleBrushMove}
+						/>
 
-			{/* Bottom-left cell (empty for now) */}
-			<div className={gridAreas.bottomLeft}></div>
-		</ChartGrid>
+						{/* Y-axis (top-middle) - uses zoomed scales */}
+						<YAxis
+							width={yAxisDims.width}
+							height={chartAreaHeight}
+							onDimensionsChange={setYAxisDims}
+						/>
+						
+						{/* X-axis (middle-right) - uses zoomed scales */}
+						<XAxis
+							width={chartAreaWidth}
+							height={xAxisDims.height}
+							onDimensionsChange={setXAxisDims}
+						/>
+						
+						{/* X-axis brush (bottom-right) - uses full scales */}
+						<ChartBrush
+							width={chartAreaWidth}
+							height={xBrushDims.height}
+							onDimensionsChange={setXBrushDims}
+							axisMode="x"
+							onBrushMove={handleBrushMove}
+						/>
+
+						{/* janky debuggy zoom controls */}
+						<div style={{position: 'absolute', textAlign: 'right', top: 40, right: 40, zIndex: 1000}}>
+							<p>janky debuggy viewport controls</p>
+							<button onClick={handleResetChartViewport}>reset zoom</button>
+							<br />
+							<button onClick={() => debugHandleMoveY(-100)}>Y--</button>
+							<button onClick={debugHandleZoomOutY}>-zoom Y</button>
+							<button onClick={debugHandleZoomInY}>+zoom Y</button>
+							<button onClick={() => debugHandleMoveY(100)}>Y++</button>
+							<br />
+							<button onClick={() => debugHandleMoveX(-1000)}>X--</button>
+							<button onClick={debugHandleZoomOutX}>-zoom X</button>
+							<button onClick={debugHandleZoomInX}>+zoom X</button>
+							<button onClick={() => debugHandleMoveX(1000)}>X++</button>
+						</div>
+					</ChartContainer>
+				</ChartFormatContext.Provider>
+			</ChartScalesContext.Provider>
+		</ChartLayoutContext.Provider>
 	);
-} 
+}

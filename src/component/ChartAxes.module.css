@@ -1,0 +1,47 @@
+/* ChartAxes.module.css */
+
+.axis {
+	fill: none;
+}
+
+.xAxis {
+	grid-area: xAxis;
+	/* background-color: lightpink; /* Debugging */
+}
+
+.yAxis {
+	grid-area: yAxis;
+	/* background-color: lightblue; /* Debugging */
+}
+
+.axisLine {
+	stroke: var(--border-minor);
+	stroke-width: 1;
+}
+
+.label {
+	fill: var(--text-minor);
+	font-family: var(--font-display);
+	font-size: var(--font-size-lg);
+	font-weight: var(--font-weight-semibold);
+	letter-spacing: var(--letter-spacing-wide);
+	text-transform: uppercase;
+}
+
+.tick text {
+	fill: var(--text-minor);
+	font-family: var(--font-body);
+	font-size: var(--font-size-md);
+}
+
+.tick line {
+	shape-rendering: geometricPrecision;
+}
+
+.xAxis .tick text {
+	transform: translateY(var(--space-sm));
+}
+
+.yAxis .tick text {
+	transform: translateX(calc(var(--space-xsm) * -1));
+}

@@ -1,9 +1,0 @@
-Airliner,Category,Manufacturer,First delivery,Range (km),PAX capacity (min),PAX capacity (mean),PAX capacity (max)
-A320neo,Narrow-body,Airbus,2016,6500,165,180,195
-A321neo,Narrow-body,Airbus,2017,7400,190,217,244
-A350-900,Wide-body,Airbus,2014,15372,315,378,440
-A380,Wide-body,Airbus,2007,14800,575,714,853
-737 MAX 8,Narrow-body,Boeing,2017,6500,178,190,202
-787-9,Wide-body,Boeing,2014,14140,290,348,406
-777-300ER,Wide-body,Boeing,2004,13650,365,458,550
-747-8,Wide-body,Boeing,2005,14320,467,536,605

@@ -1,13 +1,22 @@
 "use client";
 
-// Import React hooks for state management and side effects
+// React/core
 import { useState, useEffect } from "react";
+
+// CSS
 import styles from "./page.module.css";
 
-// Import our modular components and utilities
+// Types/interfaces
 import { AirlinerData } from "../types/airliner";
+
+// Utilities
 import { loadAirlinerData } from "../lib/airline-data-parser";
+
+// Internal components
 import AirlinerChart from "../component/AirlinerChart";
+
+// Context providers/hooks
+import { ChartDataContext } from "../component/AirlinerChart";
 
 /**
  * Main Home Component - Airliner Data Visualization
@@ -59,12 +68,14 @@ export default function Home() {
 	if (loading) {
 		return (
 			<div className={styles.mainContainer}>
-				<div className={styles.headerContainer}>
-					<h1>Airliner Chart</h1>
-					<p>Loading data...</p>
-				</div>
-				<div className={styles.chartContainer}>
-					<p>Loading chart...</p>
+				<div className={styles.aboveCut}>
+					<div className={styles.headerContainer}>
+						<h1>Airliner Chart</h1>
+						<p>Loading data...</p>
+					</div>
+					<div className={styles.chartContainer}>
+						<p>Loading chart...</p>
+					</div>
 				</div>
 			</div>
 		);
@@ -74,33 +85,70 @@ export default function Home() {
 	if (error) {
 		return (
 			<div className={styles.mainContainer}>
-				<div className={styles.headerContainer}>
-					<h1>Airliner Chart</h1>
-					<p>Error: {error}</p>
-				</div>
-				<div className={styles.chartContainer}>
-					<p>Error loading chart</p>
+				<div className={styles.aboveCut}>
+					<div className={styles.headerContainer}>
+						<h1>Airliner Chart</h1>
+						<p>Error: {error}</p>
+					</div>
+					<div className={styles.chartContainer}>
+						<p>Error loading chart</p>
+					</div>
 				</div>
 			</div>
 		);
 	}
 
 	// ===== MAIN RENDER =====
-	
-	/**
-	 * Render the complete page with header and chart
-	 * The AirlinerChart component handles all the complex chart logic
-	 */
+	// ChartDataContext.Provider makes airliner data available to all child components via context.
 	return (
-		<div className={styles.mainContainer}>
-			{/* Header section with data info */}
-			<div className={styles.headerContainer}>
-				<h1>Airliner Chart</h1>
-				<p><a href="https://www.youtube.com/watch?v=WBpLrVCRS84">🎵 Cheers Elephant &mdash; Airliner 🎵</a></p>
-			</div>
+		<ChartDataContext.Provider value={data}>
+			<div className={styles.mainContainer}>
+				<div className={styles.aboveCut}>
+					{/* Header section with data info */}
+					<div className={styles.headerContainer}>
+						<h1>Airliner Chart</h1>
+						<p><b>Work-in-progress.</b> Visualise the passenger capacity and range of passenger jet airliners.</p>
+						<p>Use the janky debuggy viewport controls to zoom in and out, or grab the brushes to move the viewport.</p>
+						<p><a href="https://www.youtube.com/watch?v=WBpLrVCRS84">🎵 Cheers Elephant &mdash; Airliner 🎵</a></p>
+					</div>
 
-			{/* Chart component handles all the complex visualization logic */}
-			<AirlinerChart data={data} />
-		</div>
+					{/* Chart component handles all the complex visualization logic */}
+					<AirlinerChart />
+				</div>
+
+				<div className={styles.belowCut}>
+					<table className={styles.dataTable}>
+						<thead>
+							<tr>
+								<th>Manufacturer</th>
+								<th>Name</th>
+								<th>3-Class capacity</th>
+								<th>2-Class capacity</th>
+								<th>1-Class capacity</th>
+								<th>Max capacity</th>
+								<th>Exit capacity</th>
+								<th>Range (km)</th>
+								<th>Status</th>
+							</tr>
+						</thead>
+						<tbody>
+							{data.map((airliner, i) => (
+								<tr key={i}>
+									<td>{airliner.manufacturer}</td>
+									<td>{airliner.nameCommon}</td>
+									<td>{airliner.pax3Class || '-'}</td>
+									<td>{airliner.pax2Class || '-'}</td>
+									<td>{airliner.pax1Class || '-'}</td>
+									<td>{airliner.paxLimit || '-'}</td>
+									<td>{airliner.paxExit || '-'}</td>
+									<td>{airliner.rangeKM?.toLocaleString() || 'N/A'}</td>
+									<td>{airliner.status}</td>
+								</tr>
+							))}
+						</tbody>
+					</table>
+				</div>
+			</div>
+		</ChartDataContext.Provider>
 	);
 }
