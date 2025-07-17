@@ -2,7 +2,7 @@
 import Papa, { ParseResult } from "papaparse";
 
 // [IMPORT] Types/interfaces //
-import { AirlinerData } from "../types/airliner";
+import { AirlinerDataRaw } from "../types/airliner";
 
 /**
  * Loads and parses airliner CSV data into AirlinerData objects.
@@ -19,7 +19,7 @@ import { AirlinerData } from "../types/airliner";
  * @param csvPath Path to the CSV file (relative to public/)
  * @returns Promise<AirlinerData[]> Array of parsed airliner objects
  */
-export const loadAirlinerData = async (csvPath: string): Promise<AirlinerData[]> => {
+export const loadAirlinerData = async (csvPath: string): Promise<AirlinerDataRaw[]> => {
 	// Fetch the CSV file as text
 	const response = await fetch(csvPath);
 	const csvText = await response.text();
@@ -49,7 +49,7 @@ export const loadAirlinerData = async (csvPath: string): Promise<AirlinerData[]>
 				}
 
 				// For each row after the type row, build an AirlinerData object
-				const data: AirlinerData[] = results.data.slice(1).map((row: any) => {
+				const data: AirlinerDataRaw[] = results.data.slice(1).map((row: any) => {
 					const obj: any = {};
 
 					// Use the header keys from PapaParse
@@ -66,7 +66,7 @@ export const loadAirlinerData = async (csvPath: string): Promise<AirlinerData[]>
 						obj[key] = value;
 					});
 					
-					return obj as AirlinerData;
+					return obj as AirlinerDataRaw;
 				});
 				resolve(data);
 			},

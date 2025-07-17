@@ -13,7 +13,7 @@ import { ChartDataContext } from "../component/AirlinerChart";
 import { loadAirlinerData } from "../lib/airline-data-parser";
 
 // [IMPORT] Types/interfaces //
-import { AirlinerData } from "../types/airliner";
+import { AirlinerDataRaw } from "../types/airliner";
 
 // [IMPORT] CSS styling //
 import styles from "./page.module.css";
@@ -32,7 +32,7 @@ export default function Home() {
 	// ===== STATE MANAGEMENT =====
 	
 	// Store the parsed airliner data from CSV
-	const [data, setData] = useState<AirlinerData[]>([]);
+	const [data, setData] = useState<AirlinerDataRaw[]>([]);
 	
 	// Track loading status for better user experience
 	const [loading, setLoading] = useState(true);

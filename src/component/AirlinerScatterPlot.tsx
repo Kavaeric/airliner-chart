@@ -1,12 +1,16 @@
 "use client";
 
+// [IMPORT] React //
+import { useMemo } from "react";
+
 // [IMPORT] Third-party libraries //
 import { GridRows } from "@visx/grid";
 import { GridColumns } from "@visx/grid";
 import { Text } from "@visx/text";
 
 // [IMPORT] Internal components //
-import { Diamond } from "./Diamond";
+import AirlinerScatterMarker from './AirlinerScatterMarker';
+import AirlinerScatterLine from './AirlinerScatterLine';
 
 // [IMPORT] Context providers/hooks //
 import { useChartScalesContext } from "../context/ChartScalesContext";
@@ -14,7 +18,8 @@ import { useChartData } from "./AirlinerChart";
 import { useChartLayout } from "../context/ChartLayoutContext";
 
 // [IMPORT] Utilities //
-import { processAirlinerData, getLabelXCoordinate, getValidMarkers } from "../lib/airliner-data-processor";
+import { processAirlinerData, AirlinerData } from "../lib/airliner-data-processor";
+import { processAirlinerMarkerCoordinates, AirlinerMarkerCoordinates } from "../lib/process-airliner-marker-coordinates";
 
 // [IMPORT] CSS styling //
 import plotStyles from "./AirlinerScatterPlot.module.css";
@@ -32,8 +37,8 @@ import responsiveStyles from "./ResponsiveSVG.module.css";
  */
 export default function AirlinerScatterPlot({ width, height }: { width: number; height: number }) {
 	const { xScaleView, yScaleView } = useChartScalesContext();
-	const data = useChartData();
 	const { xTickGridCount, yTickGridCount } = useChartLayout();
+	const data = useChartData();
 
 	// Constants for rendering
 	const markerSize = 12;
@@ -50,39 +55,24 @@ export default function AirlinerScatterPlot({ width, height }: { width: number; 
 		);
 	}
 
-	// Process all airliner data
-	const processedData = data.map(d => processAirlinerData(d, xScaleView, yScaleView));
+	// Process all airliner data - memoised to prevent unnecessary recalculations
+	const airlinerData = useMemo(() => data.map(d => processAirlinerData(d)), [data]);
 
-	// Helper function to render a single marker
-	const renderMarker = (x: number, y: number, radius: number, markerStyle: "diamond" | "line", index: number) => {
-		// Skip rendering if x coordinate is invalid
-		if (x === undefined || x === null || isNaN(x)) {
-			return null;
-		}
-		if (markerStyle === "diamond") {
-			return (
-				<Diamond
-					key={`marker-${index}-${x}-${y}`}
-					x={x}
-					y={y}
-					r={radius}
-					className={plotStyles.markerDiamond}
-				/>
-			);
-		}
-		if (markerStyle === "line") {
-			return (
-				<line
-					key={`marker-${index}-${x}-${y}`}
-					x1={x}
-					x2={x}
-					y1={y - radius / 2}
-					y2={y + radius / 2}
-					className={plotStyles.markerLine}
-				/>
-			);
-		}
-		return null;
+	// Calculate all marker coordinates - memoised to prevent unnecessary recalculations
+	const markerCoordinates = useMemo(() => 
+		airlinerData.map(d => processAirlinerMarkerCoordinates(d, xScaleView, yScaleView)), 
+		[airlinerData, xScaleView, yScaleView]
+	);
+
+	// Helper function to get valid markers with coordinates
+	const getValidMarkersWithCoords = (airlinerData: AirlinerData, coords: AirlinerMarkerCoordinates) => {
+		return [
+			{ value: airlinerData.paxExit, x: coords.xPaxExit, style: airlinerData.markerStylePaxExit },
+			{ value: airlinerData.paxLimit, x: coords.xPaxLimit, style: airlinerData.markerStylePaxLimit },
+			{ value: airlinerData.pax1Class, x: coords.xPax1Class, style: airlinerData.markerStylePax1Class },
+			{ value: airlinerData.pax2Class, x: coords.xPax2Class, style: airlinerData.markerStylePax2Class },
+			{ value: airlinerData.pax3Class, x: coords.xPax3Class, style: airlinerData.markerStylePax3Class }
+		].filter(marker => marker.value !== undefined && marker.x !== undefined);
 	};
 
 	return (
@@ -102,69 +92,58 @@ export default function AirlinerScatterPlot({ width, height }: { width: number; 
 					className={plotStyles.gridLine}
 				/>
 				
-				{/* Layer 1: Connecting lines (bottom layer) */}
-				{processedData.map((processedD, i) => (
-					<g key={`lines-${i}`}>
-						{/* Draw a line connecting the largest class value to the largest limit value */}
-						{processedD.markerLimitLineXCoordinates.validLine && (
-							<line
-								x1={processedD.markerLimitLineXCoordinates.x1}
-								x2={processedD.markerLimitLineXCoordinates.x2}
-								y1={processedD.markerYRangeKM}
-								y2={processedD.markerYRangeKM}
-								className={plotStyles.pointMarkerConnectingLineMinor}
-								strokeWidth={markerLineMinorWidth}
-							/>
-						)}
+				{/* Connecting lines */}
+				{markerCoordinates.map((coords, i) => coords ? (
+					<AirlinerScatterLine
+						key={`lines-${i}`}
+						airlinerData={airlinerData[i]}
+						coords={coords}
+						index={i}
+						markerSize={markerSize}
+						markerLineMajorWidth={markerLineMajorWidth}
+						markerLineMinorWidth={markerLineMinorWidth}
+					/>
+				) : null)}
 
-						{/* Draw a line connecting the class values */}
-						{processedD.markerClassLineXCoordinates.validLine && (
-							<line
-								x1={processedD.markerClassLineXCoordinates.x1}
-								x2={processedD.markerClassLineXCoordinates.x2}
-								y1={processedD.markerYRangeKM}
-								y2={processedD.markerYRangeKM}
-								className={plotStyles.pointMarkerConnectingLineMajor}
-								strokeWidth={markerLineMajorWidth}
-							/>
-						)}
+				{/* Markers */}
+				{airlinerData.map((processedD, i) => {
+					const coords = markerCoordinates[i];
+					if (!coords) return null;
+					return (
+						<g key={`markers-${i}`}>
+							{getValidMarkersWithCoords(processedD, coords).map((marker, idx) => 
+								<AirlinerScatterMarker
+									key={`marker-${idx}-${marker.x}-${coords.y}`}
+									x={marker.x ?? 0}
+									y={coords.y}
+									radius={12}
+									markerStyle={marker.style}
+									index={idx}
+								/>
+							)}
+						</g>
+					);
+				})}
 
-						{/* Extra class value line for pizzaz */}
-						{processedD.markerClassLineXCoordinates.validLine && (
-							<line
-								x1={processedD.markerClassLineXCoordinates.x1}
-								x2={processedD.markerClassLineXCoordinates.x2}
-								y1={processedD.markerYRangeKM}
-								y2={processedD.markerYRangeKM}
-								className={plotStyles.pointMarkerConnectingLineMajorHighlight}
-								strokeWidth={markerSize + 2}
-							/>
-						)}
-					</g>
-				))}
-
-				{/* Layer 2: Markers (middle layer) */}
-				{processedData.map((processedD, i) => (
-					<g key={`markers-${i}`}>
-						{getValidMarkers(processedD).map((marker, idx) => 
-							renderMarker(marker.x, processedD.markerYRangeKM, markerSize, marker.style, idx)
-						)}
-					</g>
-				))}
-
-				{/* Layer 3: Labels (top layer) */}
-				{processedData.map((processedD, i) => (
-					<Text
-						key={`label-${i}`}
-						x={getLabelXCoordinate(processedD, labelOffset)}
-						y={processedD.markerYRangeKM}
-						className={plotStyles.pointLabel}
-						verticalAnchor="middle"
-						textAnchor="end"
-					>
-						{data[i].nameCommon}
-					</Text>
-				))}
+				{/* Labels */}
+				{airlinerData.map((processedD, i) => {
+					const coords = markerCoordinates[i];
+					if (!coords) return null;
+					const labelX = ((coords.xPax3Class ?? coords.xPax2Class ?? coords.xPax1Class) ?? 0) - labelOffset;
+					const labelY = coords.y ?? 0;
+					return (
+						<Text
+							key={`label-${i}`}
+							x={labelX}
+							y={labelY}
+							className={plotStyles.pointLabel}
+							verticalAnchor="middle"
+							textAnchor="end"
+						>
+							{data[i].nameCommon}
+						</Text>
+					);
+				})}
 			</svg>
 		</div>
 	);

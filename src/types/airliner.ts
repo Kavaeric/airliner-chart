@@ -1,3 +1,4 @@
+
 /**
  * Represents a single airliner and its key attributes.
  * Used for type safety and IntelliSense when working with airliner datasets.
@@ -19,7 +20,7 @@
  * @property paxLimit       Maximum passengers by seat limit (optional)
  * @property paxExit        Maximum passengers by exit limit (optional)
  */
-export interface AirlinerData {
+export interface AirlinerDataRaw {
 	manufacturer: string;
 	family: string;
 	generation?: string;
