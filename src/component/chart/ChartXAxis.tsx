@@ -1,19 +1,19 @@
 "use client";
 
 // [IMPORT] React and core libraries //
-import { useResponsiveSize } from "../lib/use-responsive-size";
+import { useResponsiveSize } from "@/lib/hooks/use-responsive-size";
 
 // [IMPORT] Third-party libraries //
 import { AxisBottom } from "@visx/axis";
 
 // [IMPORT] Context providers/hooks //
-import { useChartScalesContext } from "../context/ChartScalesContext";
-import { useChartLayout } from "../context/ChartLayoutContext";
-import { useChartFormat } from "../context/ChartFormatContext";
+import { useChartScales } from "@/context/ChartScalesContext";
+import { useChartLayout } from "@/context/ChartLayoutContext";
+import { useChartFormat } from "@/context/ChartFormatContext";
 
 // [IMPORT] CSS styling //
-import graphStyles from "./ChartAxes.module.css";
-import responsiveStyles from "./ResponsiveSVG.module.css";
+import graphStyles from "@/component/chart/ChartAxes.module.css";
+import responsiveStyles from "@/component/ResponsiveSVG.module.css";
 
 interface XAxisProps {
 	width: number;
@@ -33,7 +33,7 @@ interface XAxisProps {
  * This enables robust, race-condition-free axis measurement and layout.
  */
 export default function XAxis({ width, height, onDimensionsChange }: XAxisProps) {
-	const { xScaleView } = useChartScalesContext();
+	const { xScaleView } = useChartScales();
 	const { xTickCount } = useChartLayout();
 	const { xLabel } = useChartFormat();
 	const ref = useResponsiveSize(onDimensionsChange);

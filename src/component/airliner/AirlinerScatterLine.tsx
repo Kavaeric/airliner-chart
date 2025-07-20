@@ -4,11 +4,11 @@
 import { useContext } from "react";
 
 // [IMPORT] Internal types //
-import { AirlinerData } from "../lib/airliner-data-processor";
-import { AirlinerMarkerCoordinates } from "../lib/process-airliner-marker-coordinates";
+import { AirlinerData } from "@/lib/data/airliner-data-processor";
+import { AirlinerMarkerCoordinates } from "@/lib/data/process-airliner-marker-coordinates";
 
 // [IMPORT] Context //
-import { useChartScalesContext } from "../context/ChartScalesContext";
+import { useChartScales } from "@/context/ChartScalesContext";
 
 // [IMPORT] CSS styling //
 import plotStyles from "./AirlinerScatterPlot.module.css";
@@ -40,7 +40,7 @@ export default function AirlinerScatterLine({
 	markerLineMinorWidth
 }: AirlinerScatterLineProps) {
 
-	const { xScaleView } = useChartScalesContext();
+	const { xScaleView } = useChartScales();
 
 	// The limit line is drawn between the larger of paxLimit and paxExit, and the largest of pax1Class, pax2Class, pax3Class
 	// The class line is drawn between the largest and smallest of pax1Class, pax2Class, pax3Class

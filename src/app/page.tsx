@@ -1,19 +1,20 @@
 "use client";
 
-// [IMPORT] React and core libraries //
+// [IMPORT] React //
 import { useState, useEffect } from "react";
 
 // [IMPORT] Internal components //
-import AirlinerChart from "../component/AirlinerChart";
+import AirlinerChart from "@/component/airliner/AirlinerChart";
+import { ChartDataContext } from "@/component/airliner/AirlinerChart";
 
 // [IMPORT] Context providers/hooks //
-import { ChartDataContext } from "../component/AirlinerChart";
+import { DebugProvider } from "@/context/DebugContext";
 
-// [IMPORT] Utilities/helpers //
-import { loadAirlinerData } from "../lib/airline-data-parser";
+// [IMPORT] Utilities //
+import { loadAirlinerData } from "@/lib/data/airline-data-parser";
 
 // [IMPORT] Types/interfaces //
-import { AirlinerDataRaw } from "../types/airliner";
+import { AirlinerDataRaw } from "@/types/airliner";
 
 // [IMPORT] CSS styling //
 import styles from "./page.module.css";
@@ -113,7 +114,9 @@ export default function Home() {
 					</div>
 
 					{/* Chart component handles all the complex visualization logic */}
-					<AirlinerChart />
+					<DebugProvider>
+						<AirlinerChart />
+					</DebugProvider>
 				</div>
 
 				<div className={styles.belowCut}>

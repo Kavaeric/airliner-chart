@@ -1,5 +1,5 @@
 // [IMPORT] Types/interfaces //
-import { AirlinerData } from "./airliner-data-processor";
+import { AirlinerData } from "@/lib/data/airliner-data-processor";
 
 // [IMPORT] Context providers/hooks //
 import { ScaleLinear } from "d3-scale";

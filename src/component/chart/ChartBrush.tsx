@@ -2,14 +2,14 @@
 import React from "react";
 
 // [IMPORT] Internal components //
-import ChartBrushScatter from "./ChartBrushScatter";
+import ChartBrushScatter from "@/component/chart/ChartBrushScatter";
 
 // [IMPORT] Context providers/hooks //
-import { useChartScalesContext } from "../context/ChartScalesContext";
-import { useChartData } from "./AirlinerChart";
+import { useChartScales } from "@/context/ChartScalesContext";
+import { useChartData } from "@/component/airliner/AirlinerChart";
 
 // [IMPORT] Utilities/helpers //
-import { useResponsiveSize } from "../lib/use-responsive-size";
+import { useResponsiveSize } from "@/lib/hooks/use-responsive-size";
 
 // [IMPORT] Types/interfaces //
 interface ChartBrushProps {
@@ -23,8 +23,8 @@ interface ChartBrushProps {
 }
 
 // [IMPORT] CSS styling //
-import brushStyles from "./ChartBrush.module.css";
-import responsiveStyles from "./ResponsiveSVG.module.css";
+import brushStyles from "@/component/chart/ChartBrush.module.css";
+import responsiveStyles from "@/component/ResponsiveSVG.module.css";
 
 /**
  * ChartBrush Component
@@ -42,7 +42,7 @@ import responsiveStyles from "./ResponsiveSVG.module.css";
  * @param onBrushMove - Callback for when the brush is moved (reports new bounds as tuples)
  */
 export default function ChartBrush({ width, height, axisMode = "x", onDimensionsChange, onBrushMove }: ChartBrushProps) {
-	const { xScale, yScale, getBrushBounds } = useChartScalesContext();
+	const { xScale, yScale, getBrushBounds } = useChartScales();
 	const ref = useResponsiveSize(onDimensionsChange);
 	const data = useChartData();
 

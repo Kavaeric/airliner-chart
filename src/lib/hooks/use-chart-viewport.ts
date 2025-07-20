@@ -2,10 +2,10 @@
 import { useState, useCallback } from "react";
 
 // [IMPORT] Utilities/helpers //
-import { clampAndSlide } from "./clamp-and-slide";
+import { clampAndSlide } from "@/lib/utils/clamp-and-slide";
 
 // [IMPORT] Types/interfaces //
-import type { ChartViewport } from "../types/zoom";
+import type { ChartViewport } from "@/types/zoom";
 
 /**
  * useChartViewport

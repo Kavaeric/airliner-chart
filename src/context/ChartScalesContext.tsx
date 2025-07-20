@@ -1,18 +1,6 @@
 // [IMPORT] React and core libraries //
 import { createContext, useContext } from "react";
 
-// [IMPORT] Third-party libraries //
-
-// [IMPORT] Internal components //
-
-// [IMPORT] Context providers/hooks //
-
-// [IMPORT] Utilities/helpers //
-
-// [IMPORT] Types/interfaces //
-
-// [IMPORT] CSS styling //
-
 // Interface for chart scales
 export interface ChartScales {
 	xScale: any;      // Full dataset scale (for brushes)
@@ -39,8 +27,8 @@ export interface ChartScales {
 export const ChartScalesContext = createContext<ChartScales | undefined>(undefined);
 
 // Hook to access scales context
-export function useChartScalesContext() {
+export function useChartScales() {
 	const ctx = useContext(ChartScalesContext);
-	if (!ctx) throw new Error("useChartScalesContext must be used within a ChartScalesContext.Provider");
+	if (!ctx) throw new Error("useChartScales must be used within a ChartScalesContext.Provider");
 	return ctx;
 } 

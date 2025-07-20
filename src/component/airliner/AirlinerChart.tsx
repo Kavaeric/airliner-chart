@@ -2,26 +2,27 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 
 // [IMPORT] Internal components //
-import ChartContainer from "./ChartContainer";
+import ChartContainer from "@/component/chart/ChartContainer";
 import AirlinerScatterPlot from "./AirlinerScatterPlot";
-import YAxis from "./YAxis";
-import XAxis from "./XAxis";
-import ChartBrush from "./ChartBrush";
+import YAxis from "@/component/chart/ChartYAxis";
+import XAxis from "@/component/chart/ChartXAxis";
+import ChartBrush from "@/component/chart/ChartBrush";
 
 // [IMPORT] Context providers/hooks //
-import { ChartLayoutContext } from "../context/ChartLayoutContext";
-import { ChartScalesContext } from "../context/ChartScalesContext";
-import { ChartFormatContext } from "../context/ChartFormatContext";
-import { createChartDataContext } from "../context/ChartDataContext";
+import { ChartLayoutContext } from "@/context/ChartLayoutContext";
+import { ChartScalesContext } from "@/context/ChartScalesContext";
+import { ChartFormatContext } from "@/context/ChartFormatContext";
+import { createChartDataContext } from "@/context/ChartDataContext";
+import { DebugProvider, useDebugMode } from "@/context/DebugContext";
 
 // [IMPORT] Utilities/helpers //
-import { useChartDimensions } from "../lib/use-chart-dimensions";
-import { useChartScales } from "../lib/use-chart-scales";
-import { useChartViewport } from "../lib/use-chart-viewport";
+import { useChartDimensions } from "@/lib/hooks/use-chart-dimensions";
+import { useChartScales } from "@/lib/hooks/use-chart-scales";
+import { useChartViewport } from "@/lib/hooks/use-chart-viewport";
 
 // [IMPORT] Types/interfaces //
-import { AirlinerDataRaw } from "../types/airliner";
-import type { ChartViewport } from "../types/zoom";
+import { AirlinerDataRaw } from "@/types/airliner";
+import type { ChartViewport } from "@/types/zoom";
 
 // Create a typed ChartDataContext for AirlinerData
 export const { ChartDataContext, useChartData } = createChartDataContext<AirlinerDataRaw>();
@@ -52,6 +53,9 @@ interface ChartViewportLimits {
  * clear separation of layout, measurement, and rendering concerns.
  */
 export default function AirlinerChart({}: AirlinerChartProps) {
+	// Debug mode state management
+	const { debugMode, setDebugMode } = useDebugMode();
+	
 	// Access airliner data from context
 	const data = useChartData();
 	// Measure container size and padding only (no axis logic here)
@@ -327,10 +331,18 @@ export default function AirlinerChart({}: AirlinerChartProps) {
 							<button onClick={() => debugHandleZoomY(1000)}>+zoom Y</button>
 							<button onClick={() => debugHandleMoveY(1000)}>Y++</button>
 							<br />
-							<button onClick={() => debugHandleMoveX(-100)}>X--</button>
-							<button onClick={() => debugHandleZoomX(-100)}>-zoom X</button>
-							<button onClick={() => debugHandleZoomX(100)}>+zoom X</button>
-							<button onClick={() => debugHandleMoveX(100)}>X++</button>
+							<button onClick={() => debugHandleMoveX(-20)}>X--</button>
+							<button onClick={() => debugHandleZoomX(-20)}>-zoom X</button>
+							<button onClick={() => debugHandleZoomX(20)}>+zoom X</button>
+							<button onClick={() => debugHandleMoveX(20)}>X++</button>
+							<br />
+							<input
+								type="checkbox"
+								id="debugMode"
+								checked={debugMode}
+								onChange={() => setDebugMode(!debugMode)}
+							/>
+							<label htmlFor="debugMode">Debug Mode</label>
 						</div>
 					</ChartContainer>
 				</ChartFormatContext.Provider>

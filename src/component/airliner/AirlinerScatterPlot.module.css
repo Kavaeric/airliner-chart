@@ -17,14 +17,6 @@
 	opacity: 0.5;
 }
 
-/* Airliner scatter point styles */
-.pointLabel {
-	fill: var(--text-minor);
-	font-family: var(--font-display);
-	font-size: var(--font-size-md);
-	font-weight: var(--font-weight-normal);
-}
-
 .pointMarkerConnectingLineMinor {
 	stroke: var(--border-minor);
 	stroke-linecap: butt;

@@ -2,7 +2,7 @@
 import Papa, { ParseResult } from "papaparse";
 
 // [IMPORT] Types/interfaces //
-import { AirlinerDataRaw } from "../types/airliner";
+import { AirlinerDataRaw } from "@/types/airliner";
 
 /**
  * Loads and parses airliner CSV data into AirlinerData objects.

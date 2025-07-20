@@ -1,5 +1,5 @@
 // [IMPORT] Types/interfaces //
-import { AirlinerDataRaw } from "../types/airliner";
+import { AirlinerDataRaw } from "@/types/airliner";
 
 export interface AirlinerData extends AirlinerDataRaw {
 	// Marker styles

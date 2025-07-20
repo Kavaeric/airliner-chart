@@ -2,10 +2,10 @@
 import React, { useRef, useEffect } from "react";
 
 // [IMPORT] Internal components //
-import ChartBrushScatterMarker from "./ChartBrushScatterMarker";
+import ChartBrushScatterMarker from "@/component/chart/ChartBrushScatterMarker";
 
 // [IMPORT] CSS styling //
-import brushStyles from "./ChartBrush.module.css";
+import brushStyles from "@/component/chart/ChartBrush.module.css";
 
 interface BrushScatterProps {
 	width: number;
@@ -18,7 +18,7 @@ interface BrushScatterProps {
 
 const ChartBrushScatter = React.memo(function ChartBrushScatter({ width, height, axisMode, xScale, yScale, data }: BrushScatterProps) {
 	// For debugging: log the number of times the component is rendered
-	console.log("ChartBrushScatter render");
+	// console.log("ChartBrushScatter render");
 
 	const paxClassKeys = ["pax3Class", "pax2Class", "pax1Class"];
 	const paxLimitKeys = ["paxLimit", "paxExit"];

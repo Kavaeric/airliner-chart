@@ -1,4 +1,3 @@
-
 /**
  * Represents a single airliner and its key attributes.
  * Used for type safety and IntelliSense when working with airliner datasets.

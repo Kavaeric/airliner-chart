@@ -1,6 +1,6 @@
 // [IMPORT] Utilities/helpers //
-import { useContainerSize } from "./use-container-size";
-import { calculateBoxModel } from "./calculate-box-model";
+import { useContainerSize } from "@/lib/hooks/use-container-size";
+import { calculateBoxModel } from "@/lib/utils/calculate-box-model";
 
 // Interface for chart dimensions (pure DOM layout)
 export interface ChartDimensions {

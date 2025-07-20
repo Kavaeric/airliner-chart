@@ -3,7 +3,7 @@ import { scaleLinear } from "@visx/scale";
 import { useMemo } from "react";
 
 // [IMPORT] Types/interfaces //
-import type { ChartViewport } from "../types/zoom";
+import type { ChartViewport } from "@/types/zoom";
 
 /**
  * useChartScales

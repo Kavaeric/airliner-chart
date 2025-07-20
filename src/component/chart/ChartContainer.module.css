@@ -12,13 +12,13 @@
 		"yBrush yAxis chartArea"
 		"empty1 empty2 xAxis"
 		"empty3 empty4 xBrush";
-	grid-template-rows: auto var(--space-4xl) var(--space-lg);
-	grid-template-columns: var(--space-lg) var(--space-4xl) auto;
+	grid-template-rows: auto var(--space-4xl) var(--space-xl);
+	grid-template-columns: var(--space-xl) var(--space-4xl) auto;
 	width: 100%;
 	height: 100%;
 	min-height: 0; /* Allows flex child to shrink */
-	padding: var(--space-xl);
 	padding-top: var(--space-med);
+	padding-right: var(--space-xl);
 }
 
 .empty1 {

@@ -6,6 +6,6 @@
 }
 
 .markerMinor {
-	fill: var(--border-minor);
+	stroke: var(--border-minor);
 	pointer-events: none;
 }

@@ -2,7 +2,7 @@
 import { ReactNode, forwardRef } from "react";
 
 // [IMPORT] CSS styling //
-import chartStyles from "./ChartContainer.module.css";
+import chartStyles from "@/component/chart/ChartContainer.module.css";
 
 // Props for the chart container component
 interface ChartContainerProps {
