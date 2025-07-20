@@ -1,16 +1,19 @@
 "use client";
 
-import { useResponsiveSize } from "../lib/use-responsive-size";
+// [IMPORT] React and core libraries //
+import { useResponsiveSize } from "@/lib/hooks/use-responsive-size";
 
-// Third-party libraries
+// [IMPORT] Third-party libraries //
 import { AxisBottom } from "@visx/axis";
 
-// CSS
-import graphStyles from "./ChartAxes.module.css";
+// [IMPORT] Context providers/hooks //
+import { useChartScales } from "@/context/ChartScalesContext";
+import { useChartLayout } from "@/context/ChartLayoutContext";
+import { useChartFormat } from "@/context/ChartFormatContext";
 
-// Context providers/hooks
-import { useChartScalesContext } from "../context/ChartScalesContext";
-import { useChartLayout } from "../context/ChartLayoutContext";
+// [IMPORT] CSS styling //
+import graphStyles from "@/component/chart/ChartAxes.module.css";
+import responsiveStyles from "@/component/ResponsiveSVG.module.css";
 
 interface XAxisProps {
 	width: number;
@@ -30,8 +33,9 @@ interface XAxisProps {
  * This enables robust, race-condition-free axis measurement and layout.
  */
 export default function XAxis({ width, height, onDimensionsChange }: XAxisProps) {
-	const { xScaleView } = useChartScalesContext();
+	const { xScaleView } = useChartScales();
 	const { xTickCount } = useChartLayout();
+	const { xLabel } = useChartFormat();
 	const ref = useResponsiveSize(onDimensionsChange);
 
 	// If not ready, render an empty div (prevents layout shift)
@@ -40,17 +44,28 @@ export default function XAxis({ width, height, onDimensionsChange }: XAxisProps)
 	}
 	
 	return (
-		<div className={graphStyles.xAxis} ref={ref}>
-			<svg style={{ width: "100%", height: "100%", overflow: "visible" }}>
+		<div className={`${graphStyles.xAxis} ${responsiveStyles.responsiveContainer}`} ref={ref}>
+			<svg className={responsiveStyles.responsiveSVG}>
+				{/* Render the axis */}
 				<AxisBottom
 					scale={xScaleView}
 					numTicks={xTickCount}
-					tickFormat={d => String(Number(d).toFixed(0))} /* Whole numbers with no comma separator */
+					tickLength={4}
 					
 					axisClassName={graphStyles.axis}
 					axisLineClassName={graphStyles.axisLine}
 					tickClassName={graphStyles.tick}
 				/>
+
+				{/* Render the axis label */}
+				<text
+					x={width / 2}
+					y={height}
+					className={graphStyles.axisLabelX}
+					textAnchor="middle"
+				>
+					{xLabel}
+				</text>
 			</svg>
 		</div>
 	);

@@ -1,0 +1,18 @@
+/* AirlinerScatterMarker.module.css */
+
+/* Diamond marker style */
+.markerDiamond {
+	fill: var(--background);
+	stroke-width: 2;
+	stroke: var(--brand-primary);
+	shape-rendering: geometricPrecision;
+}
+
+/* Short line used as a marker */
+.markerLine {
+	stroke: var(--text-minor);
+	stroke-linecap: butt;
+	shape-rendering: geometricPrecision;
+	opacity: 0.4;
+	stroke-width: 2;
+} 

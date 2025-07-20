@@ -1,11 +1,12 @@
+// [IMPORT] React and core libraries //
 import React from "react";
 
 /**
  * Props for the DiamondPoint component.
  */
-export interface DiamondProps extends React.SVGProps<SVGPolygonElement> {
-	x: number;
-	y: number;
+export interface MarkerDiamondProps extends React.SVGProps<SVGPolygonElement> {
+	cx: number;
+	cy: number;
 	r?: number;
 }
 
@@ -13,17 +14,17 @@ export interface DiamondProps extends React.SVGProps<SVGPolygonElement> {
  * Renders a diamond-shaped SVG polygon at (x, y) with the given radius.
  * Forwards all other SVG polygon props for maximum versatility.
  *
- * @param x - The x coordinate of the diamond centre
- * @param y - The y coordinate of the diamond centre
+ * @param cx - The x coordinate of the diamond centre
+ * @param cy - The y coordinate of the diamond centre
  * @param r - The distance from centre to each point (default: 8)
  * @param ...rest - Any other SVG polygon props (e.g., fill, stroke, event handlers)
  */
-export function Diamond({ x, y, r = 8, ...rest }: DiamondProps) {
+export function MarkerDiamond({ cx, cy, r = 8, ...rest }: MarkerDiamondProps) {
 	const points = `
-		${x},${y - r / 2}
-		${x + r / 2},${y}
-		${x},${y + r / 2}
-		${x - r / 2},${y}
+		${cx},${cy - r / 2}
+		${cx + r / 2},${cy}
+		${cx},${cy + r / 2}
+		${cx - r / 2},${cy}
 	`;
 	return <polygon points={points} {...rest} />;
 } 

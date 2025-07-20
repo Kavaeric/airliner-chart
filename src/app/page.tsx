@@ -1,22 +1,23 @@
 "use client";
 
-// React/core
+// [IMPORT] React //
 import { useState, useEffect } from "react";
 
-// CSS
+// [IMPORT] Internal components //
+import AirlinerChart from "@/component/airliner/AirlinerChart";
+import { ChartDataContext } from "@/component/airliner/AirlinerChart";
+
+// [IMPORT] Context providers/hooks //
+import { DebugProvider } from "@/context/DebugContext";
+
+// [IMPORT] Utilities //
+import { loadAirlinerData } from "@/lib/data/airline-data-parser";
+
+// [IMPORT] Types/interfaces //
+import { AirlinerDataRaw } from "@/types/airliner";
+
+// [IMPORT] CSS styling //
 import styles from "./page.module.css";
-
-// Types/interfaces
-import { AirlinerData } from "../types/airliner";
-
-// Utilities
-import { loadAirlinerData } from "../lib/airline-data-parser";
-
-// Internal components
-import AirlinerChart from "../component/AirlinerChart";
-
-// Context providers/hooks
-import { ChartDataContext } from "../component/AirlinerChart";
 
 /**
  * Main Home Component - Airliner Data Visualization
@@ -32,7 +33,7 @@ export default function Home() {
 	// ===== STATE MANAGEMENT =====
 	
 	// Store the parsed airliner data from CSV
-	const [data, setData] = useState<AirlinerData[]>([]);
+	const [data, setData] = useState<AirlinerDataRaw[]>([]);
 	
 	// Track loading status for better user experience
 	const [loading, setLoading] = useState(true);
@@ -113,7 +114,9 @@ export default function Home() {
 					</div>
 
 					{/* Chart component handles all the complex visualization logic */}
-					<AirlinerChart />
+					<DebugProvider>
+						<AirlinerChart />
+					</DebugProvider>
 				</div>
 
 				<div className={styles.belowCut}>

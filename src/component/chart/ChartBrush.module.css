@@ -1,0 +1,22 @@
+/* ChartBrush.module.css */
+
+/* Brush control container */
+.chartBrush {
+	outline: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.xBrush {
+	grid-area: xBrush;
+}
+
+.yBrush {
+	grid-area: yBrush;
+}
+
+/* Brush control SVG rectangle */
+.xBrush .chartBrushControl,
+.yBrush .chartBrushControl {
+	fill: rgba(var(--neutral-black-rgb), var(--opacity-low));
+	stroke: var(--border-minor);
+	stroke-width: 2;
+}

@@ -1,0 +1,13 @@
+/* ResponsiveSVG.css *
+
+/* Apply this to the parent div of the responsive SVG */
+/* .responsiveContainer {
+
+} */
+
+/* Apply this to the responsive SVG */
+.responsiveSVG {
+	width: 100%;
+	height: 100%;
+	overflow: visible;
+}

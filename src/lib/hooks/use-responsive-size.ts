@@ -1,3 +1,4 @@
+// [IMPORT] React and core libraries //
 import { useEffect, useRef } from "react";
 
 /**
@@ -8,8 +9,7 @@ import { useEffect, useRef } from "react";
  * - When the element's size changes (due to window resize, content change, flexbox, etc.),
  *   the hook calls the provided callback with the new dimensions.
  * - Uses ResizeObserver for accurate, content-driven updates (not just window resize).
- *
- * Typical use case: Attach the ref to a component that needs to report its size up to a parent.
+ * - Returns the element's bounding client rect. Does not account for box model.
  *
  * @param onDimensionsChange Optional callback to report { width, height } when the element resizes.
  * @returns ref to attach to the element you want to measure.

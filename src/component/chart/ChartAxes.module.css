@@ -19,29 +19,43 @@
 	stroke-width: 1;
 }
 
-.label {
+.axisLabelX,
+.axisLabelY {
 	fill: var(--text-minor);
 	font-family: var(--font-display);
-	font-size: var(--font-size-lg);
+	font-size: var(--font-size-md);
 	font-weight: var(--font-weight-semibold);
 	letter-spacing: var(--letter-spacing-wide);
 	text-transform: uppercase;
 }
 
-.tick text {
-	fill: var(--text-minor);
-	font-family: var(--font-body);
-	font-size: var(--font-size-md);
+.axisLabelX {
+	transform: translateY(calc(var(--space-sm) * -1));
+}
+
+.axisLabelY {
+	transform: translateX(calc(var(--font-size-md) + var(--space-sm)));
+	writing-mode: sideways-lr;
 }
 
 .tick line {
 	shape-rendering: geometricPrecision;
 }
 
+/* Axes tick labels */
+.tick text {
+	fill: var(--text-minor);
+	font-family: var(--font-display);
+	font-weight: var(--font-weight-medium);
+	font-size: var(--font-size-sm);
+}
+
 .xAxis .tick text {
-	transform: translateY(var(--space-sm));
+	transform: translateY(var(--space-xs));
+	text-anchor: middle;
 }
 
 .yAxis .tick text {
 	transform: translateX(calc(var(--space-xsm) * -1));
+	text-anchor: end;
 }
