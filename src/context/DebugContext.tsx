@@ -13,8 +13,8 @@ export const DebugContext = createContext<{ debugMode: boolean; setDebugMode: (v
 /**
  * Provider for DebugContext. Wrap your app with this to enable debug mode toggling.
  */
-export function DebugProvider({ children }: { children: ReactNode }) {
-	const [debugMode, setDebugMode] = useState(false);
+export function DebugProvider({ children, initialDebugMode }: { children: ReactNode, initialDebugMode: boolean }) {
+	const [debugMode, setDebugMode] = useState(initialDebugMode);
 	return (
 		<DebugContext.Provider value={{ debugMode, setDebugMode }}>
 			{children}

@@ -14,6 +14,7 @@
     "@visx/visx": "^3.12.0",
     "d3-force": "^3.0.0",
     "detect-collisions": "^9.27.6",
+    "flatbush": "^4.4.1",
     "next": "15.3.5",
     "papaparse": "^5.5.3",
     "react": "^19.0.0",

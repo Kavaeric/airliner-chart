@@ -114,7 +114,7 @@ export default function Home() {
 					</div>
 
 					{/* Chart component handles all the complex visualization logic */}
-					<DebugProvider>
+					<DebugProvider initialDebugMode={true}>
 						<AirlinerChart />
 					</DebugProvider>
 				</div>
