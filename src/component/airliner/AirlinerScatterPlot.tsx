@@ -10,8 +10,13 @@ import { GridRows, GridColumns } from "@visx/grid";
 import AirlinerScatterMarker from './AirlinerScatterMarker';
 import AirlinerScatterLine from './AirlinerScatterLine';
 import AirlinerScatterLabel from './AirlinerScatterLabel';
+import * as Voronoi from '@/lib/utils/voronoi'
 import DrawVoronoi from '@/component/DrawVoronoi';
 import DrawDelaunay from '@/component/DrawDelaunay';
+import { MarkerDiamond } from "../shape/MarkerDiamond";
+import { MarkerPlus } from "../shape/MarkerPlus";
+import RectCross from "../shape/RectCross";
+import { Connector } from "@visx/annotation";
 
 // [IMPORT] Context providers/hooks //
 import { useChartScales } from "@/context/ChartScalesContext";
@@ -21,13 +26,16 @@ import { useDebugMode } from "@/context/DebugContext";
 
 // [IMPORT] Utilities //
 import { processAirlinerData } from "@/lib/data/airliner-data-processor";
-import { processAirlinerMarkerCoordinates } from "@/lib/data/process-airliner-marker-coordinates";
-import { measureSVGElementsBySelector } from "@/lib/utils/measure-svg-elements";
+import { getAirlinerMarkers, getAirlinerMarkerExtents, getAirlinerMarkerY } from "@/lib/data/process-airliner-markers";
+import { measureSVGElement } from "@/lib/utils/measure-svg-elements";
+import { calculateChartPlacementBands } from "@/lib/band-placement/chart-bands";
+import { calculateBandOccupancy } from "@/lib/band-placement/band-occupancy";
+import { calculateBandPlacement } from "@/lib/band-placement/calculate-band-placement";
 
 // [IMPORT] CSS styling //
 import plotStyles from "./AirlinerScatterPlot.module.css";
 import responsiveStyles from "@/component/ResponsiveSVG.module.css";
-import { MarkerPlus } from "../shape/MarkerPlus";
+import { MarkerCross } from "../shape/MarkerCross";
 
 /**
  * AirlinerScatterPlot Component
@@ -51,13 +59,9 @@ export default function AirlinerScatterPlot({
 	const data = useChartData();
 	const { debugMode } = useDebugMode();
 	// Constants for rendering
-	const markerSize = 12;
+	const markerSize = 12; // Diameter of the markers
 	const markerLineMajorWidth = 4;
 	const markerLineMinorWidth = 2;
-	const labelOffset = {
-		x: -32,
-		y: -16
-	}
 
 	// If the chart dimensions are 0, or no data, show loading/empty state
 	if (width === 0 || height === 0 || data.length === 0) {
@@ -71,111 +75,224 @@ export default function AirlinerScatterPlot({
 	// Process all airliner data - memoised to prevent unnecessary recalculations
 	const airlinerData = useMemo(() => data.map(d => processAirlinerData(d)), [data]);
 
-	// Calculate all marker coordinates - memoised to prevent unnecessary recalculations
-	const markerCoordinates = useMemo(() => 
-		airlinerData.map(d => processAirlinerMarkerCoordinates(d, xScaleView, yScaleView)), 
+	// Get the airliner markers for each airliner
+	const airlinerMarkers = useMemo(() => 
+		airlinerData.map((d, index) => getAirlinerMarkers(index, d, xScaleView, yScaleView)), 
 		[airlinerData, xScaleView, yScaleView]
 	);
 
-	// Calculate bounding boxes for each airliner (encapsulate all markers and the line)
+	// Calculate bounding boxes for each airliner
 	const markerBoundingBoxes = useMemo(() => {
-		return markerCoordinates.map((coords, i) => {
-			if (!coords) return null;
-			const markerSize = 12; // Use the same marker size as in rendering
-			const xPositions = [
-				//coords.xPaxExit,
-				//coords.xPaxLimit,
-				coords.xPax1Class,
-				coords.xPax2Class,
-				coords.xPax3Class
-			].filter(x => x !== undefined && x !== null) as number[];
-			if (xPositions.length === 0) return null;
-			const minX = Math.min(...xPositions);
-			const maxX = Math.max(...xPositions);
-			const y = coords.y;
+		return airlinerMarkers.map((markers, index) => {
+			if (!markers) return null;
+			
+			// Get class marker extents using existing utility function
+			// This gives us the leftmost and rightmost class markers
+			const classExtents = getAirlinerMarkerExtents(markers, 'class');
+			
+			// If no valid class markers, skip this airliner
+			if (!classExtents.min || !classExtents.max) {
+				return null;
+			}
+			
+			// Calculate Y bounds using marker size
+			const markerY = getAirlinerMarkerY(markers);
+			const halfSize = markerSize / 2;
+			
+			// Calculate extents based on requirements:
+			// - left extent: smallest available passenger capacity value (minX)
+			// - right extent: largest available passenger capacity value (maxX)
+			// - vertical extents: calculated through markerSize
 			return {
-				x: minX - markerSize / 2,
-				y: y - markerSize / 2,
-				width: (maxX - minX) + markerSize,
-				height: markerSize
+				minX: classExtents.min.x - halfSize, // Left extent with marker size padding
+				maxX: classExtents.max.x + halfSize, // Right extent with marker size padding
+				minY: markerY - halfSize,            // Top extent
+				maxY: markerY + halfSize             // Bottom extent
 			};
-		});
-	}, [markerCoordinates]);
+		}).filter(box => box !== null);
+	}, [airlinerMarkers, markerSize]);
 
-	// Get airliner IDs for measurement tracking (index + ICAO name)
-	const airlinerIds = useMemo(() => airlinerData.map((d, index) => `${index}-${d.nameICAO}`), [airlinerData]);
+	// Consolidated airliner labels entity - contains all label-related data for each airliner
+	const airlinerLabels = useMemo(() => {
+		const labels = new Map<string, {
+			id: string;
+			anchor: { x: number; y: number };
+			markerRange: { left: number; right: number };
+			position: { x: number; y: number };
+		}>();
 
-	// Calculate label anchor coordinates - memoised to prevent unnecessary recalculations
-	// Updates when airlinerData or markerCoordinates changes (usually on viewport change, resize, scroll)
-	const labelAnchorCoordinates = useMemo(() => {
-		const coordinates = new Map<string, { x: number; y: number }>();
-		
+		// Generate airliner IDs (index + ICAO name)
+		const airlinerIds = airlinerData.map((d, index) => `${index}-${d.nameICAO}`);
+
+		// Calculate anchor coordinates and initialize label data
 		airlinerData.forEach((d, i) => {
-			// Get the marker coordinates for the airliner
-			const coords = markerCoordinates[i];
-			if (!coords) return;
+			const markers = airlinerMarkers[i];
+			if (!markers) return;
 
-			const extents: { min: number | null, max: number | null } = {
-				min: null,
-				max: null
-			};
+			// Get class marker extents
+			const classExtents = getAirlinerMarkerExtents(markers, 'class');
 
-			// Gather all defined marker x positions (same as AirlinerScatterLabel)
-			const validMarkers = [
-				{ value: d.paxExit, x: coords.xPaxExit },
-				{ value: d.paxLimit, x: coords.xPaxLimit },
-				{ value: d.pax1Class, x: coords.xPax1Class },
-				{ value: d.pax2Class, x: coords.xPax2Class },
-				{ value: d.pax3Class, x: coords.xPax3Class }
-			].filter(marker => marker.value !== undefined && marker.x !== undefined);
-
-			// Find leftmost marker (same logic as AirlinerScatterLabel)
-			const leftmostMarker = Math.min(...validMarkers.map(marker => marker.x).filter((x): x is number => x !== undefined));
-
-			// If no valid markers, skip this airliner
-			if (leftmostMarker === undefined || leftmostMarker === null || isNaN(leftmostMarker)) {
+			// If no valid class markers, skip this airliner
+			if (!classExtents.min || !classExtents.max) {
 				return;
 			}
 
-			// Store coordinate with airliner ID
+			// Calculate the leftmost and rightmost x anchor positions (leftmost and rightmost class markers)
+			const xAnchorLeft = classExtents.min.x;
+			const xAnchorRight = classExtents.max.x;
+
+			// Calculate the x anchor position:
+			// - Default to xAnchorLeft
+			// - If xAnchorLeft < 0, clamp to 0
+			// - If xAnchorRight < 0, clamp to xAnchorRight
+			let xAnchor = xAnchorLeft;
+			if (xAnchorRight < 0) {
+				xAnchor = xAnchorRight;
+			} else if (xAnchorLeft < 0) {
+				xAnchor = 0;
+			}
+
+			// Calculate the y anchor position (use y from the first class marker)
+			const yAnchor = getAirlinerMarkerY(markers);
+
 			const airlinerId = airlinerIds[i];
-			coordinates.set(airlinerId, {
-				x: leftmostMarker,
-				y: coords.y
+			labels.set(airlinerId, {
+				id: airlinerId,
+				anchor: { 
+					x: xAnchor, 
+					y: yAnchor 
+				},
+				markerRange: {
+					left: classExtents.min.x,
+					right: classExtents.max.x
+				},
+				position: { x: classExtents.min.x, y: yAnchor } // Initial position, will be updated by placement algorithm
 			});
 		});
-		
-		return coordinates;
-	}, [airlinerData, markerCoordinates, airlinerIds]);
+		// console.log('airlinerLabels', labels.get('1-A319'));
+		return labels;
+	}, [airlinerData, airlinerMarkers]);
 
-	// Measure label dimensions for force simulation
-	const [labelMeasurements, setLabelMeasurements] = useState<Map<string, { width: number; height: number }>>(new Map());
+	// Update label measurements when DOM is ready
+	function calculateLabelMeasurements() {
+		const measurements = new Map<string, { width: number; height: number }>();
 
-	// Labels will measure on mount
-	useEffect(() => {
-		// Use CSS selector to measure all airliner labels after DOM is ready
-		const measurements = measureSVGElementsBySelector(['.airliner-label']);
-		
-		// console.log('Elements found:', document.querySelectorAll('.airliner-label').length);
-		
-		// Map measurements to airliner IDs by index
-		const mappedMeasurements = new Map<string, {width: number, height: number}>();
-		
-		airlinerIds.forEach((airlinerId, index) => {
-			// Find the measurement that matches this label's index
-			const measurementKey = `.airliner-label-${index}`;
-			const measuredDimensions = measurements.get(measurementKey);
-			
-			if (measuredDimensions) {
-				mappedMeasurements.set(airlinerId, measuredDimensions);
-			} else {
-				// Fallback to default dimensions
-				mappedMeasurements.set(airlinerId, { width: 100, height: 20 });
+		airlinerLabels.forEach((label, airlinerId) => {
+			const index = airlinerData.findIndex((d, i) => `${i}-${d.nameICAO}` === airlinerId);
+			if (index !== -1) {
+				const measurementKey = `.measured-label-${index}`;
+				const measuredDimensions = measureSVGElement(document.querySelector(measurementKey) as SVGElement);
+
+				if (measuredDimensions) {
+					measurements.set(airlinerId, measuredDimensions);
+				}
 			}
 		});
-		console.log('Label measurements:', mappedMeasurements);
-		setLabelMeasurements(mappedMeasurements);
-	}, [airlinerIds]); // Only update when airlinerIds change (which depends on airlinerData)
+
+		console.log(`calculateLabelMeasurements: Measurements: ${measurements}`);
+
+		// Debug: Measure the first airliner label
+		const firstAirlinerLabel = document.querySelector('.measured-label-0') as SVGElement;
+		if (firstAirlinerLabel) {
+			const measuredDimensions = measureSVGElement(firstAirlinerLabel);
+			console.log(`calculateLabelMeasurements: First airliner label measurement: ${measuredDimensions}`);
+		}
+
+		return measurements;
+	}
+
+	// Separate state for label measurements
+	const [labelMeasurements, setLabelMeasurements] = useState<Map<string, { width: number; height: number }>>(new Map());
+
+	// Update label measurements when DOM is ready
+	useEffect(() => {
+		console.log(`labelMeasurements: Updating label measurements for ${airlinerLabels.size} airliners.`);
+		// Log the measurement for the first airliner
+		console.log(`labelMeasurements: First airliner measurement: ${labelMeasurements.get('0-A319')}`);
+		setLabelMeasurements(calculateLabelMeasurements());
+	}, [airlinerData]);
+
+	// Memoise chart placement bands
+	const chartPlacementBands = useMemo(() => {
+		if (airlinerLabels.size === 0 || labelMeasurements.size === 0) return [];
+		const maxLabelHeight = Math.max(...Array.from(labelMeasurements.values()).map(m => m.height));
+		const obstacles = airlinerMarkers
+			.map((markers) => {
+				const classExtents = getAirlinerMarkerExtents(markers, 'class');
+				if (!classExtents.min) return null;
+				return { position: { x: classExtents.min.x, y: classExtents.min.y }, height: markerSize};
+			})
+			.filter((o): o is { position: { x: number; y: number }; height: number } => o !== null);
+		return calculateChartPlacementBands(
+			{ width, height },
+			maxLabelHeight,
+			maxLabelHeight * 1,
+			obstacles,
+			2,
+			maxLabelHeight
+		);
+	}, [airlinerLabels, labelMeasurements, airlinerMarkers, markerSize, width, height]);
+
+	// Memoise chart placement bands occupancy
+	const chartPlacementBandsOccupancy = useMemo(() => {
+		if (chartPlacementBands.length === 0 || markerBoundingBoxes.length === 0) return [];
+		return calculateBandOccupancy(
+			chartPlacementBands,
+			markerBoundingBoxes,
+			width,
+			height
+		);
+	}, [chartPlacementBands, markerBoundingBoxes]);
+
+	// Memoise label placement calculation (positions, debug, occupancy)
+	const placementResult = useMemo(() => {
+		if (airlinerLabels.size === 0 || labelMeasurements.size === 0) return { placements: new Map(), debug: null, occupancy: [], failed: [] };
+
+		// Convert airlinerLabels Map to placement objects array
+		const placementObjects = Array.from(airlinerLabels.entries()).map(([airlinerId, label]) => {
+			const measurements = labelMeasurements.get(airlinerId) || { width: 200, height: 20 };
+			return {
+				id: airlinerId,
+				anchor: label.anchor,
+				position: label.anchor, // Just use anchor for now
+				dimensions: measurements
+			};
+		});
+
+		// Use the average label width and height as the cluster detection radii
+		const clusterDetectionRadius = {
+			x: Math.max(...Array.from(labelMeasurements.values()).map(m => m.width)) / 3,
+			y: Math.max(...Array.from(labelMeasurements.values()).map(m => m.height)) / 3
+		};
+
+		return calculateBandPlacement({
+			dimensions: { width, height },
+			bands: chartPlacementBands,
+			occupancy: chartPlacementBandsOccupancy,
+			objects: placementObjects,
+			clusterDetection: { distance: clusterDetectionRadius },
+			strategy: {
+				firstPass: {
+					modes: ['top-left', 'top', 'left', 'bottom-left', 'bottom'],
+					maxDistance: { x: 50, y: 35 },
+					offset: { x: 0, y: 0 }
+				},
+				sweep: {
+					horizontal: 'sweep-to-right',
+					maxDistance: { x: 50, y: 25 },
+					stepFactor: .5,
+					verticalSearch: [-1, 1, 0, -2, 2],
+					maxIterations: 2,
+					xAlign: 'right-anchor'
+				}
+			}
+		});
+	}, [airlinerLabels, labelMeasurements, chartPlacementBands, chartPlacementBandsOccupancy]);
+
+	const labelPositions = placementResult.placements;
+	const labelPlacementDebug = placementResult.debug;
+	const labelPlacementOccupancy = placementResult.occupancy;
+	const labelPlacementFailed = placementResult.failed;
 
 	/*
 	
@@ -254,12 +371,10 @@ export default function AirlinerScatterPlot({
 				/>
 
 				{/* Connecting lines */}
-				{markerCoordinates.map((coords, i) => coords ? (
+				{airlinerMarkers.map((coords, i) => coords ? (
 					<AirlinerScatterLine
 						key={`lines-${i}`}
-						airlinerData={airlinerData[i]}
-						coords={coords}
-						index={i}
+						airlinerMarkers={coords}
 						markerSize={markerSize}
 						markerLineMajorWidth={markerLineMajorWidth}
 						markerLineMinorWidth={markerLineMinorWidth}
@@ -267,39 +382,230 @@ export default function AirlinerScatterPlot({
 				) : null)}
 
 				{/* Markers */}
-				{markerCoordinates.map((coords, i) => coords ? (
+				{airlinerMarkers.map((coords, i) => coords ? (
 					<AirlinerScatterMarker
 						key={`markers-${i}`}
-						airlinerData={airlinerData[i]}
-						coords={coords}
+						airlinerMarkers={coords}
 						markerSize={markerSize}
 					/>
 				) : null)}
 
-				{/* Calculated label coordinates, for debugging */}
-				{debugMode && Array.from(labelAnchorCoordinates.entries()).map(([airlinerId, coord], i) => (
-					<MarkerPlus
+				{/* Visualise vertical space bands */}
+				{debugMode && chartPlacementBands.map((band, i) => (
+					<g key={`debug-band-${i}`}>
+						<rect
+							x={0}
+							y={band.top}
+							width={width}
+							height={band.height}
+							fill="none"
+							stroke="rgba(0, 150, 90, 0.3)"
+							strokeWidth={1}
+						/>
+						<text
+							x={10}
+							y={band.top + band.height / 2}
+							fill="rgba(0, 150, 90, 0.8)"
+							fontSize="12"
+							fontWeight="bold"
+							dominantBaseline="middle"
+						>
+							{i}
+						</text>
+					</g>
+				))}
+
+				{/* Visualise label bounding boxes */}
+				{debugMode && Array.from(airlinerLabels.entries()).map(([airlinerId, label], i) => {
+					const measurements = labelMeasurements.get(airlinerId) || { width: 100, height: 20 };
+					const placed = labelPositions.get(airlinerId);
+					if (!placed) return null;
+					return (
+						<RectCross
+							key={`debug-box-${i}`}
+							x={placed.x - measurements.width / 2}
+							y={placed.y - measurements.height / 2}
+							width={measurements.width}
+							height={measurements.height}
+							fill="none"
+							stroke="blue"
+							strokeWidth={2}
+							crossStroke="blue"
+							crossStrokeWidth={1}
+							crossLines="both"
+						/>
+					);
+				})}
+
+				{/* Label anchor coordinates, for debugging */}
+				{debugMode && Array.from(airlinerLabels.values()).map((label, i) => (
+					<MarkerCross
 						key={`debug-dot-${i}`}
-						cx={coord.x}
-						cy={coord.y}
-						weight={2}
+						cx={label.anchor.x}
+						cy={label.anchor.y}
+						weight={4}
 						r={12}
 						fill="blue"
 						stroke="none"
 					/>
 				))}
 
-				{/* Labels */}
-				{Array.from(labelAnchorCoordinates.entries()).map(([airlinerId, coord], i) => {
+				{/* Visualise marker bounding boxes */}
+				{debugMode && markerBoundingBoxes.map((boundingBox, i) => (
+					<g key={`debug-marker-box-${i}`}>
+						<rect
+							x={boundingBox.minX}
+							y={boundingBox.minY}
+							width={boundingBox.maxX - boundingBox.minX}
+							height={boundingBox.maxY - boundingBox.minY}
+							fill="rgba(200, 80, 0, 0.5)"
+							stroke="rgba(80, 40, 0, 0.8)"
+							strokeWidth={2}
+						/>
+					</g>
+				))}
+
+				{/* Visualise clusters (bounding rectangles and centroids) */}
+				{debugMode && labelPlacementDebug?.clusters && labelPlacementDebug.clusters.map((cluster: number[], i: number) => {
+					if (!Array.isArray(cluster) || cluster.length === 0) return null;
+					// Get anchor positions and bounding boxes for this cluster
+					const entries = cluster.map(idx => Array.from(airlinerLabels.values())[idx]);
+					const anchors = entries.map(entry => entry?.anchor || { x: 0, y: 0 });
+					const measurements = entries.map((entry, idx) => labelMeasurements.get(Array.from(airlinerLabels.keys())[cluster[idx]]) || { width: 100, height: 20 });
+					// Compute bounding rectangle
+					const rects = anchors.map((a, j) => ({
+						minX: a.x - measurements[j].width / 2,
+						maxX: a.x + measurements[j].width / 2,
+						minY: a.y - measurements[j].height / 2,
+						maxY: a.y + measurements[j].height / 2
+					}));
+					const minX = Math.min(...rects.map(r => r.minX));
+					const maxX = Math.max(...rects.map(r => r.maxX));
+					const minY = Math.min(...rects.map(r => r.minY));
+					const maxY = Math.max(...rects.map(r => r.maxY));
+					// Compute centroid
+					const centroid = anchors.reduce((acc, a) => ({ x: acc.x + a.x, y: acc.y + a.y }), { x: 0, y: 0 });
+					centroid.x /= anchors.length;
+					centroid.y /= anchors.length;
+					const isTrueCluster = cluster.length > 1;
+					if (!isTrueCluster) return null; // Only render for true clusters
+
 					return (
-						<g key={`label-${i}-${airlinerData[i].nameICAO}`}>
+						<g key={`debug-cluster-${i}`}>
+							<rect
+								x={minX}
+								y={minY}
+								width={maxX - minX}
+								height={maxY - minY}
+								fill="rgba(0, 255, 191, 0.2)"
+								stroke="teal"
+								strokeWidth={2}
+							/>
+							<MarkerPlus
+								cx={centroid.x}
+								cy={centroid.y}
+								weight={1}
+								r={10}
+								fill={"teal"}
+							/>
+							<text
+								x={minX}
+								y={minY - 8}
+								fontSize={14}
+								fontWeight="bold"
+								fill="teal"
+								textAnchor="start"
+							>
+								{`C${i + 1}: ${anchors.length} labels`}
+							</text>
+						</g>
+					);
+				})}
+
+				{/* Visualise band occupancy (occupied and available ranges) */}
+				{debugMode && labelPlacementOccupancy.map((bandData, bandIndex) => (
+					<g key={`debug-band-occupancy-${bandIndex}`}>
+						{/* Visualise occupied ranges */}
+						{bandData.occupiedRanges.map((range, rangeIndex) => (
+							<rect
+								key={`debug-occupied-${bandIndex}-${rangeIndex}`}
+								x={range.start}
+								y={bandData.band.top}
+								width={range.width}
+								height={bandData.band.height}
+								fill="rgba(255, 0, 0, 0.2)"
+								stroke="rgba(255, 0, 0, 0.4)"
+								strokeWidth={1}
+							/>
+						))}
+					</g>
+				))}
+
+				
+				{/* Visualise sweep xSteps as a continuous blue line with tick markers (debug only) */}
+				{debugMode && labelPlacementDebug?.sweep && Array.from(airlinerLabels.entries()).map(([airlinerId, label], i) => {
+					const xSteps: number[] = labelPlacementDebug.sweep[airlinerId]?.xSteps;
+					if (!xSteps || xSteps.length === 0) return null;
+					const y = label.anchor.y;
+					// Build points string for polyline
+					const points = xSteps.map((x: number) => `${x},${y}`).join(' ');
+					return (
+						<g key={`debug-sweep-line-${i}`}>
+							{/* Continuous line */}
+							<polyline
+								points={points}
+								fill="none"
+								stroke="blue"
+								strokeWidth={1.5}
+								opacity={0.7}
+							/>
+							{/* Tick markers */}
+							{xSteps.map((x: number, j: number) => (
+								<line
+									key={`debug-sweep-tick-${i}-${j}`}
+									x1={x}
+									y1={y - 4}
+									x2={x}
+									y2={y + 4}
+									stroke="blue"
+									strokeWidth={1}
+									opacity={0.8}
+								/>
+							))}
+						</g>
+					);
+				})}
+
+				{/* Labels */}
+				{Array.from(airlinerLabels.entries()).map(([airlinerId, label], i) => {
+					const airlinerIndex = airlinerData.findIndex((d, idx) => `${idx}-${d.nameICAO}` === airlinerId);
+					const anchor = airlinerLabels.get(airlinerId)?.anchor || { x: 0, y: 0 };
+					const placed = labelPositions.get(airlinerId) || { x: anchor.x, y: anchor.y };
+					
+					if (!placed) return null;
+					
+					return (
+						<g key={`label-${i}-${airlinerData[airlinerIndex]?.nameICAO || airlinerId}`}>
 							<AirlinerScatterLabel
-								airlinerData={airlinerData[i]}
+								airlinerData={airlinerData[airlinerIndex]}
 								coords={{
-									x: coord.x + labelOffset.x,
-									y: coord.y + labelOffset.y
+									x: placed.x,
+									y: placed.y
 								}}
-								classNames="airliner-label"
+								classNames={`measured-label-${airlinerIndex}`}
+							/>
+
+							{/* Debug line from anchor to position */}
+							<Connector
+								x={anchor.x}
+								y={anchor.y}
+								dx={placed.x - anchor.x}
+								dy={placed.y - anchor.y}
+								stroke="blue"
+								type="elbow"
+								pathProps={{
+									opacity: 0.5
+								}}
 							/>
 						</g>
 					);

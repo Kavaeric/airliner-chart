@@ -7,7 +7,7 @@ import React from "react";
 export interface MarkerDiamondProps extends React.SVGProps<SVGPolygonElement> {
 	cx: number;
 	cy: number;
-	r?: number;
+	size?: number;
 }
 
 /**
@@ -19,12 +19,12 @@ export interface MarkerDiamondProps extends React.SVGProps<SVGPolygonElement> {
  * @param r - The distance from centre to each point (default: 8)
  * @param ...rest - Any other SVG polygon props (e.g., fill, stroke, event handlers)
  */
-export function MarkerDiamond({ cx, cy, r = 8, ...rest }: MarkerDiamondProps) {
+export function MarkerDiamond({ cx, cy, size = 8, ...rest }: MarkerDiamondProps) {
 	const points = `
-		${cx},${cy - r / 2}
-		${cx + r / 2},${cy}
-		${cx},${cy + r / 2}
-		${cx - r / 2},${cy}
+		${cx},${cy - size / 2}
+		${cx + size / 2},${cy}
+		${cx},${cy + size / 2}
+		${cx - size / 2},${cy}
 	`;
 	return <polygon points={points} {...rest} />;
 } 

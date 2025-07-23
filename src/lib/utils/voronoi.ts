@@ -76,7 +76,7 @@ export function getCentroid(polygon: [number, number][]): { x: number; y: number
  * @param {DataPoint[]} points - Array of data points
  * @param {number} width - Width of the canvas
  * @param {number} height - Height of the canvas
- * @returns {ShapeWithCentroid[]} Array of polygons with centroids
+ * @returns {ShapeWithCentroid[]} Array of polygons with centroids and the Voronoi diagram
  * 
  * @example
  * const voronoiPolygons = calculateVoronoi(points, width, height);
@@ -109,6 +109,7 @@ export function calculateVoronoi(
 	return Array.from(voronoiDiagram.polygons(points)).map((polygon) => ({
 		polygon: polygon as [number, number][],
 		centroid: getCentroid(polygon as [number, number][]),
+		voronoiDiagram: voronoiDiagram,
 	}));
 }
 
@@ -120,7 +121,7 @@ export function calculateVoronoi(
  * @param {DataPoint[]} points - Array of data points
  * @param {number} width - Width of the canvas
  * @param {number} height - Height of the canvas
- * @returns {ShapeWithCentroid[]} Array of triangles with centroids
+ * @returns {ShapeWithCentroid[]} Array of triangles with centroids and the Delaunay diagram
  * 
  * @example
  * const delaunayTriangles = calculateDelaunay(points, width, height);
@@ -152,6 +153,7 @@ export function calculateDelaunay(
 	return Array.from(delaunayDiagram.trianglePolygons()).map((triangle) => ({
 		polygon: triangle as [number, number][],
 		centroid: getCentroid(triangle as [number, number][]),
+		delaunayDiagram: delaunayDiagram,
 	}));
 }
 

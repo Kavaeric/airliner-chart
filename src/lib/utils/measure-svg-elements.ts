@@ -29,33 +29,3 @@ export function measureSVGElement(element: SVGElement | null): ElementDimensions
 		height: bbox.height
 	};
 }
-
-/**
- * Measure SVG elements by CSS selectors
- * 
- * @param selectors - Array of CSS selectors to find elements
- * @returns Map of selector-index to measured dimensions
- * 
- * @example
- * ```typescript
- * const dimensions = measureSVGElementsBySelector(['.airliner-label']);
- * // Returns: Map { '.airliner-label-0' => { width: 120, height: 25 }, ... }
- * ```
- */
-export function measureSVGElementsBySelector(selectors: string[]): Map<string, ElementDimensions> {
-	const dimensions = new Map<string, ElementDimensions>();
-
-	selectors.forEach(selector => {
-		const elements = document.querySelectorAll(selector);
-		elements.forEach((element, index) => {
-			if (element instanceof SVGElement) {
-				const measuredDimensions = measureSVGElement(element);
-				if (measuredDimensions) {
-					dimensions.set(`${selector}-${index}`, measuredDimensions);
-				}
-			}
-		});
-	});
-
-	return dimensions;
-} 

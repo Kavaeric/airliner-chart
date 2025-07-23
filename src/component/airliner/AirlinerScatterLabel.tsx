@@ -6,6 +6,7 @@ import labelStyles from "./AirlinerScatterLabel.module.css";
 
 // [IMPORT] Types //
 import { AirlinerData } from "@/lib/data/airliner-data-processor";
+import { useDebugMode } from "@/context/DebugContext";
 
 interface AirlinerScatterLabelProps {
 	airlinerData: AirlinerData;
@@ -27,8 +28,10 @@ export default function AirlinerScatterLabel({
 	labelOffset = { x: 0, y: 0 },
 	classNames = ""
 }: AirlinerScatterLabelProps) {
+	const debugMode = useDebugMode();
 
 	return (
+		<>
 		<Text
 			x={coords.x}
 			y={coords.y}
@@ -38,6 +41,7 @@ export default function AirlinerScatterLabel({
 		>
 			{airlinerData.nameCommon}
 		</Text>
+		</>
 	);
 }
 
