@@ -20,6 +20,7 @@
  * @property paxExit        Maximum passengers by exit limit (optional)
  */
 export interface AirlinerDataRaw {
+	idNumber: number;
 	manufacturer: string;
 	family: string;
 	generation?: string;
@@ -28,12 +29,21 @@ export interface AirlinerDataRaw {
 	nameICAO: string;
 	firstDelivery?: number;
 	manufactureEnd?: number;
-	status: string;
-	bodyType: string;
+	status?: string;
+	bodyType?: string;
 	rangeKM: number;
 	pax3Class?: number;
 	pax2Class?: number;
 	pax1Class?: number;
 	paxLimit?: number;
 	paxExit?: number;
+}
+
+export interface Airliner extends AirlinerDataRaw {
+	airlinerID: string;
+	markerStylePax3Class: "diamond" | "line";
+	markerStylePax2Class: "diamond" | "line";
+	markerStylePax1Class: "diamond" | "line";
+	markerStylePaxLimit: "diamond" | "line";
+	markerStylePaxExit: "diamond" | "line";
 } 

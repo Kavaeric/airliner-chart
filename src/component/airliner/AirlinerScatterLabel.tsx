@@ -1,5 +1,6 @@
 // [IMPORT] Third-party libraries //
 import { Text } from "@visx/text";
+import React from "react";
 
 // [IMPORT] CSS styling //
 import labelStyles from "./AirlinerScatterLabel.module.css";
@@ -18,31 +19,46 @@ interface AirlinerScatterLabelProps {
 
 /**
  * AirlinerScatterLabel Component
- *
- * Renders the label for a single airliner at the leftmost marker position.
- * Calculates the optimal label position and renders the airliner name.
+ * 
+ * Renders the label for a single airliner at 
  */
-export default function AirlinerScatterLabel({ 
-	airlinerData, 
-	coords, 
-	labelOffset = { x: 0, y: 0 },
-	classNames = ""
-}: AirlinerScatterLabelProps) {
-	const debugMode = useDebugMode();
+const AirlinerScatterLabel = React.forwardRef<SVGGElement, AirlinerScatterLabelProps>(
+	({ airlinerData, coords, labelOffset = { x: 0, y: 0 }, classNames = "" }, ref) => {
+		const debugMode = useDebugMode();
+		return (
+			<g ref={ref}>
 
-	return (
-		<>
-		<Text
-			x={coords.x}
-			y={coords.y}
-			className={`${labelStyles.airlinerLabel} ${classNames}`}
-			verticalAnchor="middle"
-			textAnchor="middle"
-		>
-			{airlinerData.nameCommon}
-		</Text>
-		</>
-	);
-}
+				{/* This is the only way I can think of to have an outline that's on the outside */}
+				<Text
+					x={coords.x}
+					y={coords.y}
+					className={`${labelStyles.airlinerLabel} ${classNames}`}
+					verticalAnchor="middle"
+					textAnchor="middle"
+					fill="none"
+					stroke="#dddedf"
+					strokeWidth={8}
+					strokeMiterlimit={5}
+					opacity={0.5}
+				>
+					{airlinerData.nameCommon}
+				</Text>
+
+				{/* Label */}
+				<Text
+					x={coords.x}
+					y={coords.y}
+					className={`${labelStyles.airlinerLabel} ${classNames}`}
+					verticalAnchor="middle"
+					textAnchor="middle"
+				>
+					{airlinerData.nameCommon}
+				</Text>
+			</g>
+		);
+	}
+);
+
+export default AirlinerScatterLabel;
 
 		

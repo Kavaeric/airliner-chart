@@ -21,11 +21,11 @@ import { useChartScales } from "@/lib/hooks/use-chart-scales";
 import { useChartViewport } from "@/lib/hooks/use-chart-viewport";
 
 // [IMPORT] Types/interfaces //
-import { AirlinerDataRaw } from "@/types/airliner";
+import { Airliner } from "@/lib/data/airliner-types";
 import type { ChartViewport } from "@/types/zoom";
 
-// Create a typed ChartDataContext for AirlinerData
-export const { ChartDataContext, useChartData } = createChartDataContext<AirlinerDataRaw>();
+// Create a typed ChartDataContext for Airliner
+export const { ChartDataContext, useChartData } = createChartDataContext<Airliner>();
 
 // Props for the airliner chart component
 interface AirlinerChartProps {

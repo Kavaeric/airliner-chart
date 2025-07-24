@@ -21,7 +21,7 @@ interface ElementDimensions {
  */
 export function measureSVGElement(element: SVGElement | null): ElementDimensions | null {
 	if (!element) return null;
-
+	
 	const bbox = element.getBoundingClientRect();
 	
 	return {

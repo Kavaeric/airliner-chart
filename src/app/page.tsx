@@ -11,10 +11,10 @@ import { ChartDataContext } from "@/component/airliner/AirlinerChart";
 import { DebugProvider } from "@/context/DebugContext";
 
 // [IMPORT] Utilities //
-import { loadAirlinerData } from "@/lib/data/airline-data-parser";
+import loadAirlinerData from "@/lib/data/airliner-data-processor";
 
 // [IMPORT] Types/interfaces //
-import { AirlinerDataRaw } from "@/types/airliner";
+import { Airliner } from "@/lib/data/airliner-types";
 
 // [IMPORT] CSS styling //
 import styles from "./page.module.css";
@@ -32,8 +32,9 @@ import styles from "./page.module.css";
 export default function Home() {
 	// ===== STATE MANAGEMENT =====
 	
-	// Store the parsed airliner data from CSV
-	const [data, setData] = useState<AirlinerDataRaw[]>([]);
+	// Store the processed airliner data from CSV
+	// We can't use useMemo here since it's async
+	const [data, setData] = useState<Airliner[]>([]);
 	
 	// Track loading status for better user experience
 	const [loading, setLoading] = useState(true);
@@ -58,7 +59,7 @@ export default function Home() {
 				setLoading(false);
 			}
 		};
-
+		
 		// Execute the data loading
 		loadData();
 	}, []); // Empty dependency array means this effect runs only once on mount
@@ -136,7 +137,7 @@ export default function Home() {
 						</thead>
 						<tbody>
 							{data.map((airliner, i) => (
-								<tr key={i}>
+								<tr key={airliner.airlinerID}>
 									<td>{airliner.manufacturer}</td>
 									<td>{airliner.nameCommon}</td>
 									<td>{airliner.pax3Class || '-'}</td>

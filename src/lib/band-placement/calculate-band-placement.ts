@@ -1,6 +1,29 @@
 import { PlacementBand } from "./chart-bands";
 import { BandOccupancy, consolidateOverlappingRanges, Range, invertOccupiedRangesToAvailable } from './band-occupancy';
 import { detectClustersWithFlatbush } from './detect-clusters-with-flatbush';
+import { solve, Model, Constraint } from 'yalps';
+
+// --- Type for unplaced objects (enforced throughout placement flow) ---
+/**
+ * Represents an object to be placed by the algorithm.
+ * This type is used for all placement object arrays and function parameters.
+ */
+type PlacementObject = {
+	id: string;
+	anchor: { x: number; y: number };
+	position: { x?: number; y?: number };
+	dimensions: { width: number; height: number };
+};
+
+/**
+ * Represents an object that could not be placed by the algorithm.
+ * This type is used for all unplaced/failure arrays and return values.
+ */
+type UnplacedPlacementObject = {
+	id: string;
+	anchor: { x: number; y: number };
+	dimensions: { width: number; height: number };
+};
 
 /**
  * @type {Object} PlacementStrategy
@@ -56,7 +79,7 @@ export type PlacementStrategy = {
 		stepFactor: number | 1;
 		maxIterations?: number;
 		offset?: { x?: number; y?: number };
-		xAlign: 'centre' | 'left-anchor' | 'right-anchor';
+		xAlign: 'centre' | 'left-to-anchor' | 'right-to-anchor';
 	};
 };
 
@@ -104,12 +127,7 @@ export interface BandPlacementConfig {
 	dimensions: { width: number; height: number };
 	bands: PlacementBand[];
 	occupancy: BandOccupancy[];
-	objects: {
-		id: string;
-		anchor: { x: number; y: number };
-		position: { x?: number; y?: number };
-		dimensions: { width: number; height: number };
-	}[];
+	objects: PlacementObject[];
 	clusterDetection?: { distance: number | { x: number; y: number } };
 	strategy: PlacementStrategy;
 }
@@ -157,7 +175,7 @@ function selectRangeInBand(
  * 
  * For more sophisticated range selection, use `selectRangeInBand` instead.
  * 
- * @param ranges - BandOccupancy.availableRanges for the band.
+ * @param ranges - BandOccupancy.availableRanges for the Band
  * @param x - The x position to check
  * @returns The containing range, or null if none found
  * 
@@ -171,6 +189,7 @@ function selectRangeInBand(
  * // Returns { start: 150, end: 200 }
  */
 function selectRangeAtX(ranges: Range[], x: number): Range | null {
+
 	for (let i = 0; i < ranges.length; i++) {
 		if (ranges[i].start <= x && ranges[i].end >= x) return ranges[i];
 	}
@@ -198,8 +217,8 @@ function getObjectExtents(x: number, width: number): { left: number; right: numb
  * @param anchorWithOffset - Anchor position with offset applied
  * @param xAlign - Horizontal alignment mode:
  *   - `'centre'`: Centre the object on the anchor. If the object's extents are outside the band, clamp.
- *   - `'left-anchor'`: Align the object's left edge with the anchor.
- *   - `'right-anchor'`: Align the object's right edge with the anchor.
+ *   - `'left-to-anchor'`: Align the object's left edge with the anchor.
+ *   - `'right-to-anchor'`: Align the object's right edge with the anchor.
  * @param yAlign - Vertical alignment mode:
  *   - `'none'`: Clamp to the band
  *   - `'top'`: Align to the top of the band
@@ -211,133 +230,129 @@ function getObjectExtents(x: number, width: number): { left: number; right: numb
  * @param dimensions - Object dimensions
  * @param maxDistance - Maximum allowed distance from anchor for placement
  * @param id - The id to assign to the placed object
- * @param ignoreBandExtents - Controls narrow range check at band edges: 'none', 'left', 'right', or 'both' (default 'both')
+ * @param ignoreBandExtents - If the object is at the left or right edge of the band, control if the object is allowed to be placed anyway.
+ *   - `'none'`: The object's extents must be within the band. If the object's extents are outside the band, return null.
+ *   - `'left'`: If the object's extents are outside the band, place the object anyway, but align the object's right side to the right side of the range.
+ *   - `'right'`: If the object's extents are outside the band, place the object anyway, but align the object's left side to the left side of the range.
+ *   - `'both'`: Both `left` and `right`.
  * @returns BandPlacedObject if placement is successful, or null if not
  */
 function trySinglePlacement(
+	id: string,
 	occupancy: BandOccupancy,
 	band: PlacementBand,
 	anchorWithOffset: { x: number; y: number },
-	xAlign: 'centre' | 'left-anchor' | 'right-anchor',
+	xAlign: 'centre' | 'left-to-anchor' | 'right-to-anchor',
 	yAlign: 'none' | 'middle' | 'top' | 'bottom',
 	strict: boolean = false,
 	dimensions: { width: number; height: number },
 	maxDistance: { x: number; y: number },
-	id: string,
 	ignoreBandExtents: 'none' | 'left' | 'right' | 'both' = 'both'
 ): BandPlacedObject | null {
+	// 1. Treat anchor as immutable reference point
+	const anchor = { ...anchorWithOffset };
 
-	// --- Calculate anchor X based on alignment flag ---
-	let anchorX = anchorWithOffset.x;
-	if (xAlign === 'left-anchor') {
-		anchorX = anchorWithOffset.x - dimensions.width / 2;
-	} else if (xAlign === 'right-anchor') {
-		anchorX = anchorWithOffset.x + dimensions.width / 2;
+	// 2. Compute candidateX based on alignment mode (never mutate anchor)
+	let candidateX: number;
+	if (xAlign === 'left-to-anchor') {
+		candidateX = anchor.x - dimensions.width / 2;
+	} else if (xAlign === 'right-to-anchor') {
+		candidateX = anchor.x + dimensions.width / 2;
+	} else {
+		candidateX = anchor.x;
 	}
 
-	// --- Compute left and right extents of the object ---
-	const extents = getObjectExtents(anchorX, dimensions.width);
+	let selectedRange: Range | null = null;
 
-	// --- Select the available range that contains the anchor X ---
-	const range = selectRangeAtX(occupancy.availableRanges || [], anchorX);
+	// If we're not being strict, we can clamp the candidateX to the band's extents
+	if (!strict) {
+		selectedRange = selectRangeAtX(occupancy.availableRanges || [], clampValue(candidateX, band.left, band.right));
+	} else {
+		selectedRange = selectRangeAtX(occupancy.availableRanges || [], candidateX);
+	}
 
-	// --- If no valid range is found, abort placement ---
-	if (!range) return null;
+	if (!selectedRange) {
+		return null;
+	}
+	// 4. Calculate if the object is at the start or end of the band
+	const atBandStart = selectedRange ? selectedRange.start === band.left : false;
 
-	// --- Handle edge cases for ranges narrower than the object ---
-	if (range.width < dimensions.width) {
-		const atBandStart = range.start === band.left;
-		const atBandEnd = range.end === band.right;
-		const allowLeft = ignoreBandExtents === 'left' || ignoreBandExtents === 'both';
-		const allowRight = ignoreBandExtents === 'right' || ignoreBandExtents === 'both';
-		if (atBandStart && allowLeft) {
-			// Place anyway, align object's right side to the right side of the range
-			const candidateX = range.end - dimensions.width / 2;
-			// --- Calculate candidate Y position ---
-			let candidateY;
-			if (yAlign !== 'none') {
-				candidateY = alignYPositionInBand(band, dimensions, yAlign);
-			} else {
-				candidateY = clampYPositionInBand(band, dimensions, anchorWithOffset.y);
-			}
-			// --- Check max distance constraints ---
-			if (Math.abs(candidateX - anchorX) > maxDistance.x) return null;
-			if (Math.abs(candidateY - anchorWithOffset.y) > maxDistance.y) return null;
-			// --- Return placement object ---
-			return {
-				id,
-				x: candidateX,
-				y: candidateY,
-				anchor: anchorWithOffset,
-				bandIndex: band.index
-			};
-		} else if (atBandEnd && allowRight) {
-			// Place anyway, align object's left side to the left side of the range
-			const candidateX = range.start + dimensions.width / 2;
-			// --- Calculate candidate Y position ---
-			let candidateY;
-			if (yAlign !== 'none') {
-				candidateY = alignYPositionInBand(band, dimensions, yAlign);
-			} else {
-				candidateY = clampYPositionInBand(band, dimensions, anchorWithOffset.y);
-			}
-			// --- Check max distance constraints ---
-			if (Math.abs(candidateX - anchorX) > maxDistance.x) return null;
-			if (Math.abs(candidateY - anchorWithOffset.y) > maxDistance.y) return null;
-			// --- Return placement object ---
-			return {
-				id,
-				x: candidateX,
-				y: candidateY,
-				anchor: anchorWithOffset,
-				bandIndex: band.index
-			};
-		} else {
-			// --- Range is too narrow and not at band edge: abort placement ---
-			//console.log(`trySinglePlacement: Range too narrow for ${id} at ${anchorWithOffset.x}, ${anchorWithOffset.y}.`);
+	// 5. Calculate if the object is at the start or end of the band
+	const atBandEnd = selectedRange ? selectedRange.end === band.right : false;
+
+	// 6. Check if the object is allowed to be placed at the start or end of the band
+	const allowLeftOverflow = ignoreBandExtents === 'left' || ignoreBandExtents === 'both';
+	const allowRightOverflow = ignoreBandExtents === 'right' || ignoreBandExtents === 'both';
+
+	// 7. Early returns for invalid or impossible placements
+	if (selectedRange.width < dimensions.width && !(atBandStart && allowLeftOverflow) && !(atBandEnd && allowRightOverflow)) return null;
+
+	// If we are being strict about placement
+	if (strict) {
+		// Check if the left extent of the object is outside the range
+		if (selectedRange.start > candidateX - dimensions.width / 2) {
+			return null;
+		}
+	
+		// Check if the right extent of the object is outside the range
+		if (selectedRange.end < candidateX + dimensions.width / 2) {
 			return null;
 		}
 	}
 
-	// --- Check if the object can be centred in the range ---
-	const canCentre = range.start <= extents.left && range.end >= extents.right;
+	let finalX: number;
+	finalX = candidateX;
 
-	let candidateX;
-	if (strict) {
-		// --- Strict mode: only allow if object can be centred ---
-		if (!canCentre) return null;
-		candidateX = anchorX;
+	// 8. Handle edge cases for narrow ranges
+	if (atBandStart && allowLeftOverflow && selectedRange.width < dimensions.width) {
+		// If the object is at the start of the band, and allowed to overflow left, place the object at the right edge of the range
+		finalX = selectedRange.end - dimensions.width / 2;
+
+	} else if (atBandEnd && allowRightOverflow && selectedRange.width < dimensions.width) {
+		// If the object is at the end of the band, and allowed to overflow right, place the object at the left edge of the range
+		finalX = selectedRange.start + dimensions.width / 2;
+
+	} else if (selectedRange.width >= dimensions.width) {
+		// Otherwise, the object is wide enough to be placed in the range
+		finalX = clampValue(candidateX, selectedRange.start + dimensions.width / 2, selectedRange.end - dimensions.width / 2);
+
 	} else {
-		// --- Flexible mode: clamp to range if needed ---
-		if (range.start > extents.left) {
-			candidateX = range.start + dimensions.width / 2;
-		} else if (range.end < extents.right) {
-			candidateX = range.end - dimensions.width / 2;
-		} else {
-			candidateX = anchorX;
-		}
+		return null;
 	}
+	
+	// 9. Calculate the final y position
+	let finalY = clampYPositionInBand(band, dimensions, anchor.y);
 
-	// --- Calculate candidate Y position ---
-	let candidateY;
-	if (yAlign !== 'none') {
-		candidateY = alignYPositionInBand(band, dimensions, yAlign);
-	} else {
-		candidateY = clampYPositionInBand(band, dimensions, anchorWithOffset.y);
-	}
+	// 10. Clamp ranges
+	// Ensure the placement stays within the permitted range from the anchor
+	finalX = clampValue(finalX, anchor.x - maxDistance.x, anchor.x + maxDistance.x);
 
-	// --- Check max distance constraints ---
-	if (Math.abs(candidateX - anchorX) > maxDistance.x) return null;
-	if (Math.abs(candidateY - anchorWithOffset.y) > maxDistance.y) return null;
+	// If the left or right extents of the object are off the band, return null
+	if (finalX + dimensions.width / 2 < band.left) {return null;}
+	if (finalX - dimensions.width / 2 > band.right) {return null;}
 
-	// --- Return placement object if all checks pass ---
+	// Clamp the finalY to the maximum allowed distance from the anchor
+	// finalY = clampValue(finalY, anchor.y - maxDistance.y, anchor.y + maxDistance.y);
+
+	// 11. Return placement object
 	return {
 		id,
-		x: candidateX,
-		y: candidateY,
-		anchor: anchorWithOffset,
+		x: finalX,
+		y: finalY,
+		anchor,
 		bandIndex: band.index
 	};
+}
+
+/**
+ * Clamps a value between a minimum and maximum
+ * @param value - The value to clamp
+ * @param min - The minimum value, or lower bound
+ * @param max - The maximum value, or upper bound
+ * @returns The clamped value
+ */
+function clampValue(value: number, min: number, max: number) {
+	return Math.max(min, Math.min(value, max));
 }
 
 // Returns the y position of an object in a band, aligned to the top, bottom, or middle
@@ -428,11 +443,7 @@ function getMaxDistance(maxDistance?: { x?: number; y?: number }): { x: number; 
  * @returns BandPlacedObject if placement is successful, or null if no valid position is found
  */
 function resolvePlacementSimple(
-	placementObject: {
-		id: string;
-		anchor: { x: number; y: number };
-		dimensions: { width: number; height: number };
-	},
+	placementObject: PlacementObject,
 	strategy: PlacementStrategy,
 	bandArr: PlacementBand[],
 	occupancyArr: BandOccupancy[],
@@ -453,15 +464,15 @@ function resolvePlacementSimple(
 	for (const mode of strategy.firstPass.modes) {
 		switch (mode) {
 			case 'left': {
-				if (band && occupancy) {
-					const placement = trySinglePlacement(occupancy, band, anchorWithOffset, 'left-anchor', 'none', false, dimensions, maxDistance, placementObject.id);
+				if (band && occupancy && anchorWithOffset.x) {
+					const placement = trySinglePlacement(placementObject.id, occupancy, band, anchorWithOffset, 'left-to-anchor', 'none', false, dimensions, maxDistance);
 					if (placement) return placement;
 				}
 				break;
 			}
 			case 'right': {
-				if (band && occupancy) {
-					const placement = trySinglePlacement(occupancy, band, anchorWithOffset, 'right-anchor', 'none', false, dimensions, maxDistance, placementObject.id);
+				if (band && occupancy && anchorWithOffset.x) {
+					const placement = trySinglePlacement(placementObject.id, occupancy, band, anchorWithOffset, 'right-to-anchor', 'none', false, dimensions, maxDistance);
 					if (placement) return placement;
 				}
 				break;
@@ -470,7 +481,7 @@ function resolvePlacementSimple(
 				const bandAbove = bandArr[homeBandIndex - 1];
 				const occupancyAbove = occupancyArr[homeBandIndex - 1];
 				if (bandAbove && occupancyAbove) {
-					const placement = trySinglePlacement(occupancyAbove, bandAbove, anchorWithOffset, 'centre', 'bottom', false, dimensions, maxDistance, placementObject.id);
+					const placement = trySinglePlacement(placementObject.id, occupancyAbove, bandAbove, anchorWithOffset, 'centre', 'bottom', false, dimensions, maxDistance);
 					if (placement) return placement;
 				}
 				break;
@@ -479,7 +490,7 @@ function resolvePlacementSimple(
 				const bandBelow = bandArr[homeBandIndex + 1];
 				const occupancyBelow = occupancyArr[homeBandIndex + 1];
 				if (bandBelow && occupancyBelow) {
-					const placement = trySinglePlacement(occupancyBelow, bandBelow, anchorWithOffset, 'centre', 'top', false, dimensions, maxDistance, placementObject.id);
+					const placement = trySinglePlacement(placementObject.id, occupancyBelow, bandBelow, anchorWithOffset, 'centre', 'top', false, dimensions, maxDistance);
 					if (placement) return placement;
 				}
 				break;
@@ -488,7 +499,7 @@ function resolvePlacementSimple(
 				const bandAbove = bandArr[homeBandIndex - 1];
 				const occupancyAbove = occupancyArr[homeBandIndex - 1];
 				if (bandAbove && occupancyAbove) {
-					const placement = trySinglePlacement(occupancyAbove, bandAbove, anchorWithOffset, 'left-anchor', 'bottom', false, dimensions, maxDistance, placementObject.id);
+					const placement = trySinglePlacement(placementObject.id, occupancyAbove, bandAbove, anchorWithOffset, 'left-to-anchor', 'bottom', false, dimensions, maxDistance);
 					if (placement) return placement;
 				}
 				break;
@@ -497,7 +508,7 @@ function resolvePlacementSimple(
 				const bandAbove = bandArr[homeBandIndex - 1];
 				const occupancyAbove = occupancyArr[homeBandIndex - 1];
 				if (bandAbove && occupancyAbove) {
-					const placement = trySinglePlacement(occupancyAbove, bandAbove, anchorWithOffset, 'right-anchor', 'bottom', false, dimensions, maxDistance, placementObject.id);
+					const placement = trySinglePlacement(placementObject.id, occupancyAbove, bandAbove, anchorWithOffset, 'right-to-anchor', 'bottom', false, dimensions, maxDistance);
 					if (placement) return placement;
 				}
 				break;
@@ -506,7 +517,7 @@ function resolvePlacementSimple(
 				const bandBelow = bandArr[homeBandIndex + 1];
 				const occupancyBelow = occupancyArr[homeBandIndex + 1];
 				if (bandBelow && occupancyBelow) {
-					const placement = trySinglePlacement(occupancyBelow, bandBelow, anchorWithOffset, 'left-anchor', 'top', false, dimensions, maxDistance, placementObject.id);
+					const placement = trySinglePlacement(placementObject.id, occupancyBelow, bandBelow, anchorWithOffset, 'left-to-anchor', 'top', false, dimensions, maxDistance);
 					if (placement) return placement;
 				}
 				break;
@@ -515,7 +526,7 @@ function resolvePlacementSimple(
 				const bandBelow = bandArr[homeBandIndex + 1];
 				const occupancyBelow = occupancyArr[homeBandIndex + 1];
 				if (bandBelow && occupancyBelow) {
-					const placement = trySinglePlacement(occupancyBelow, bandBelow, anchorWithOffset, 'right-anchor', 'top', false, dimensions, maxDistance, placementObject.id);
+					const placement = trySinglePlacement(placementObject.id, occupancyBelow, bandBelow, anchorWithOffset, 'right-to-anchor', 'top', false, dimensions, maxDistance);
 					if (placement) return placement;
 				}
 				break;
@@ -530,6 +541,9 @@ function resolvePlacementSimple(
 
 /**
  * Internal helper to precompute band/occupancy/y/yAlign for all bands to check
+ *
+ * This is a performance optimisation to avoid recalculating these values for each object.
+ *
  * @param bandIndicesToCheck - Array of band indices to check
  * @param bandArr - Array of PlacementBand objects
  * @param occupancyArr - Array of BandOccupancy objects
@@ -572,11 +586,7 @@ function precomputeBandCandidates(
  * @returns BandPlacedObject if placement is successful, or null if no valid position is found
  */
 function resolvePlacementSweep(
-	placementObject: {
-		id: string;
-		anchor: { x: number; y: number };
-		dimensions: { width: number; height: number };
-	},
+	placementObject: PlacementObject,
 	strategy: PlacementStrategy,
 	bands: PlacementBand[],
 	occupancyArr: BandOccupancy[],
@@ -627,18 +637,14 @@ function resolvePlacementSweep(
 
 	// Sweep loop: iterate over precomputed x-coordinates
 	for (const x of xSteps) {
-		
 		for (const { band, occupancy, y, yAlign } of bandCandidates) {
 			const candidate = { x, y };
-
-			// console.log(`resolvePlacementSweep: Checking ${placementObject.id} at ${x}, ${y}.`);
 
 			// If the y position is beyond the maximum distance from the anchor, skip
 			if (Math.abs(y - placementObject.anchor.y) > maxDistance.y) continue;
 
-			const placed = trySinglePlacement(occupancy, band, candidate, xAlign, yAlign, false, dimensions, maxDistance, placementObject.id);
+			const placed = trySinglePlacement(placementObject.id, occupancy, band, candidate, xAlign, yAlign, false, dimensions, maxDistance);
 			if (placed) {
-				// console.log(`resolvePlacementSweep: Placed ${placementObject.id} at ${x}, ${y}.`);
 				return placed;
 			}
 		}
@@ -683,7 +689,7 @@ function getBandSearchOrder(homeBandIndex: number, bands: PlacementBand[], verti
  */
 export function calculateBandPlacement(config: BandPlacementConfig): {
 	placements: Map<string, BandPlacedObject>;
-	failed: Array<{ id: string, anchor: { x: number, y: number }, dimensions: { width: number, height: number } }>;
+	failed: UnplacedPlacementObject[];
 	debug: any;
 	occupancy: BandOccupancy[];
 } {
@@ -711,108 +717,69 @@ export function calculateBandPlacement(config: BandPlacementConfig): {
 	const bandArr = chartPlacementBands;
 	let occupancyArr = currentOccupancy;
 
-	// --- 1. Cluster/complex placement (scaffolded) ---
-	// Process clusters through complex placement algorithm (stub)
+	// --- 1. Cluster detection (for future complex placement) ---
 	const clusteredIndices: number[] = [];
-	const complexUnplaced: number[] = [];
+	let debug: any = {};
+	const complexPlacedIds = new Set<string>();
 	for (const cluster of objectClusters) {
-		if (cluster.length > 1) {
-			const { placed, unplaced } = resolvePlacementComplex(cluster, placementObjects);
-			// TODO: Add placed objects to placements (when implemented)
-			complexUnplaced.push(...unplaced.map(obj => placementObjects.findIndex(o => o.id === obj.id)));
-			clusteredIndices.push(...cluster);
-		}
+		// All clusters (regardless of size) are processed in simple/sweep passes
+		clusteredIndices.push(...cluster);
+	}
+
+	// --- Unplaced and placed maps ---
+	const unplacedCandidates = new Map<string, PlacementObject>();
+	for (const idx of objectClusters.flatMap(c => c)) {
+		const obj = placementObjects[idx];
+		unplacedCandidates.set(obj.id, obj);
 	}
 
 	// --- 2. Simple placement pass ---
-	const unplacedIndices: number[] = [];
-	const failedToPlace: Array<{ id: string, anchor: { x: number, y: number }, dimensions: { width: number, height: number } }> = [];
-
-	// If no modes are provided, skip simple placement and send all objects to sweep
-	if (!Array.isArray(strategy.firstPass.modes) || strategy.firstPass.modes.length === 0) {
-		// Add all non-clustered and complex-unplaced objects to unplacedIndices
-		objectClusters.flatMap(c => c).forEach(idx => {
-			if (!clusteredIndices.includes(idx) || complexUnplaced.includes(idx)) {
-				unplacedIndices.push(idx);
-			}
-		});
-	} else {
-		// Sort by axis/direction needed for firstPass
-		const firstMode = strategy.firstPass.modes[0];
-		if (firstMode === 'left' || firstMode === 'right') {
-			objectClusters.flatMap(c => c).sort((a, b) => placementObjects[a].anchor.x - placementObjects[b].anchor.x);
-		} else if (firstMode === 'top' || firstMode === 'bottom') {
-			objectClusters.flatMap(c => c).sort((a, b) => placementObjects[a].anchor.y - placementObjects[b].anchor.y);
+	const indicesToTry = objectClusters.flatMap(c => c);
+	const firstMode = strategy.firstPass.modes?.[0];
+	if (firstMode) {
+		if (firstMode === 'left' || firstMode === 'right' || firstMode === 'top-left' || firstMode === 'bottom-left') {
+			indicesToTry.sort((a, b) => placementObjects[a].anchor.x - placementObjects[b].anchor.x);
+		} else if (firstMode === 'top' || firstMode === 'bottom' || firstMode === 'top-right' || firstMode === 'bottom-right') {
+			indicesToTry.sort((a, b) => placementObjects[a].anchor.y - placementObjects[b].anchor.y);
 		} else {
-			objectClusters.flatMap(c => c).sort((a, b) => placementObjects[a].anchor.x - placementObjects[b].anchor.x);
-		}
-
-		// Attempt to place each object using the simple placement strategy
-		for (const idx of objectClusters.flatMap(c => c)) {
-			// Only process non-clustered or complex-unplaced objects
-			if (clusteredIndices.includes(idx) && !complexUnplaced.includes(idx)) continue;
-			const obj = placementObjects[idx];
-			const homeBandIndex = findHomeBandIndex(bandArr, obj.anchor.y);
-			const maxDistance = getMaxDistance(strategy.firstPass.maxDistance);
-			const placed = resolvePlacementSimple(obj, strategy, bandArr, occupancyArr, homeBandIndex, maxDistance);
-
-			if (placed) {
-				placements.set(obj.id, placed);
-
-				// Update occupancy for the band
-				const occ = occupancyArr[placed.bandIndex];
-				if (occ) {
-					const extents = getObjectExtents(placed.x, obj.dimensions.width);
-					occ.occupiedRanges.push({
-						start: extents.left,
-						end: extents.right,
-						width: extents.right - extents.left,
-						top: occ.band.top,
-						bottom: occ.band.bottom
-					} as Range);
-					occ.availableRanges = invertOccupiedRangesToAvailable(
-						consolidateOverlappingRanges(occ.occupiedRanges),
-						occ.band
-					);
-				}
-			} else {
-				unplacedIndices.push(idx);
-				failedToPlace.push({ id: obj.id, anchor: obj.anchor, dimensions: obj.dimensions });
-			}
+			indicesToTry.sort((a, b) => placementObjects[a].anchor.x - placementObjects[b].anchor.x);
 		}
 	}
 
-	// --- 3. Sweep placement pass for unplaced objects ---
+	// Prepare to collect indices of objects that will need a sweep placement pass
+	const sweepIndices: number[] = [];
 
-	// Sort unplaced objects for sweep direction
-	if (strategy.sweep.horizontal === 'sweep-to-left') {
-		unplacedIndices.sort((a, b) => placementObjects[a].anchor.x - placementObjects[b].anchor.x);
-	} else {
-		unplacedIndices.sort((a, b) => placementObjects[b].anchor.x - placementObjects[a].anchor.x);
-	}
+	// Iterate through all candidate indices for simple placement
+	for (const idx of indicesToTry) {
+		// Skip objects already placed by a complex placement strategy
+		if (complexPlacedIds.has(placementObjects[idx].id)) continue;
 
-	// Sort by y position too
-	unplacedIndices.sort((a, b) => placementObjects[a].anchor.y - placementObjects[b].anchor.y);
-
-	// Debug: Collect xSteps for each object swept
-	const sweepDebug: { [id: string]: any } = {};
-
-	// Attempt to place each unplaced object using the sweep strategy
-	for (const idx of unplacedIndices) {
-
+		// Get the placement object for this index
 		const obj = placementObjects[idx];
-		const homeBandIndex = findHomeBandIndex(bandArr, obj.anchor.y);
-		const maxDistance = getMaxDistance(strategy.sweep.maxDistance);
 
-		const placed = resolvePlacementSweep(obj, strategy, bandArr, occupancyArr, homeBandIndex, maxDistance, sweepDebug);
+		// Find the most appropriate band for the object's anchor y-position
+		const homeBandIndex = findHomeBandIndex(bandArr, obj.anchor.y);
+
+		// Determine the maximum allowed distance for this placement attempt
+		const maxDistance = getMaxDistance(strategy.firstPass.maxDistance);
+
+		// Attempt to place the object using the simple placement strategy
+		const placed = resolvePlacementSimple(obj, strategy, bandArr, occupancyArr, homeBandIndex, maxDistance);
 
 		if (placed) {
+			// If successfully placed, record the placement
 			placements.set(obj.id, placed);
 
-			// Update occupancy for the band
+			// Remove from unplaced candidates
+			unplacedCandidates.delete(obj.id);
+
+			// Update occupancy for the band where the object was placed
 			const occ = occupancyArr[placed.bandIndex];
 			if (occ) {
+				// Calculate the object's horizontal extents
 				const extents = getObjectExtents(placed.x, obj.dimensions.width);
+
+				// Mark this range as occupied in the band
 				occ.occupiedRanges.push({
 					start: extents.left,
 					end: extents.right,
@@ -820,21 +787,87 @@ export function calculateBandPlacement(config: BandPlacementConfig): {
 					top: occ.band.top,
 					bottom: occ.band.bottom
 				} as Range);
+
+				// Recalculate available ranges in the band after this placement
 				occ.availableRanges = invertOccupiedRangesToAvailable(
 					consolidateOverlappingRanges(occ.occupiedRanges),
 					occ.band
 				);
 			}
 		} else {
-			failedToPlace.push({ id: obj.id, anchor: obj.anchor, dimensions: obj.dimensions });
-			// console.log(`resolvePlacementSweep: Failed to place ${obj.id} at ${obj.anchor.x}, ${obj.anchor.y}.`);
+			// If not placed, add to sweepIndices for the next placement pass
+			sweepIndices.push(idx);
 		}
 	}
 
-	// --- Return placements, debug info, final occupancy, and failed placements ---
+	// --- 3. Sweep placement pass for unplaced objects ---
+	// Sort sweepIndices by horizontal direction (left or right) as specified in strategy
+	if (strategy.sweep.horizontal === 'sweep-to-left') {
+		sweepIndices.sort((a, b) => placementObjects[a].anchor.x - placementObjects[b].anchor.x);
+	} else {
+		sweepIndices.sort((a, b) => placementObjects[b].anchor.x - placementObjects[a].anchor.x);
+	}
+
+	// Then sort by vertical position (top to bottom)
+	sweepIndices.sort((a, b) => placementObjects[a].anchor.y - placementObjects[b].anchor.y);
+
+	// Prepare debug object for sweep placements
+	const sweepDebug: { [id: string]: any } = {};
+
+	// Attempt to place each remaining unplaced object using the sweep strategy
+	for (const idx of sweepIndices) {
+		const obj = placementObjects[idx];
+
+		// Find the object's home band index based on its anchor y-position
+		const homeBandIndex = findHomeBandIndex(bandArr, obj.anchor.y);
+
+		// Determine the maximum allowed distance for this sweep placement
+		const maxDistance = getMaxDistance(strategy.sweep.maxDistance);
+
+		// Attempt to place the object using the sweep placement strategy
+		const placed = resolvePlacementSweep(obj, strategy, bandArr, occupancyArr, homeBandIndex, maxDistance, sweepDebug);
+
+		if (placed) {
+			// Record the successful placement
+			placements.set(obj.id, placed);
+
+			// Remove from unplaced candidates
+			unplacedCandidates.delete(obj.id);
+
+			// Update occupancy for the band where the object was placed
+			const occ = occupancyArr[placed.bandIndex];
+			if (occ) {
+				// Calculate the object's horizontal extents
+				const extents = getObjectExtents(placed.x, obj.dimensions.width);
+
+				// Mark this range as occupied in the band
+				occ.occupiedRanges.push({
+					start: extents.left,
+					end: extents.right,
+					width: extents.right - extents.left,
+					top: occ.band.top,
+					bottom: occ.band.bottom
+				} as Range);
+
+				// Recalculate available ranges in the band after this placement
+				occ.availableRanges = invertOccupiedRangesToAvailable(
+					consolidateOverlappingRanges(occ.occupiedRanges),
+					occ.band
+				);
+			}
+		}
+	}
+
+	// --- Compile failed objects from remaining unplaced candidates ---
+	const failed: UnplacedPlacementObject[] = Array.from(unplacedCandidates.values()).map(obj => ({
+		id: obj.id,
+		anchor: obj.anchor,
+		dimensions: obj.dimensions
+	}));
+
 	return {
 		placements,
-		failed: failedToPlace,
+		failed,
 		debug: {
 			clusters: objectClusters,
 			sweep: sweepDebug
@@ -870,12 +903,7 @@ export function calculateBandPlacement(config: BandPlacementConfig): {
  * // clusters: [[0,1],[2]]
  */
 function detectPlacementClustersWithFlatbush(
-	placementObjects: {
-		id: string;
-		anchor: { x: number; y: number };
-		position: { x?: number; y?: number }; // Don't use this
-		dimensions: { width: number; height: number };
-	}[],
+	placementObjects: PlacementObject[],
 	clusterDetectionDistance: number | { x: number; y: number } = 20,
 ) {
 	// For each placement object, compute its bounding box from anchor and dimensions
@@ -892,26 +920,315 @@ function detectPlacementClustersWithFlatbush(
 	);
 }
 
-// Placeholder for future complex placement logic (for clusters)
 /**
  * Attempts to place clustered objects using a complex placement algorithm.
  * For now, returns all objects as unplaced.
  *
  * @param clusterIndices - Array of indices for clustered objects
  * @param placementObjects - Array of all placement objects
- * @returns { placed: Array<{ id: string, anchor: { x: number, y: number }, dimensions: { width: number, height: number } }>, unplaced: Array<{ id: string, anchor: { x: number, y: number }, dimensions: { width: number, height: number } }> }
+ * @param bands - Array of PlacementBand objects
+ * @param occupancy - Array of BandOccupancy objects
+ * @param strategy - The placement strategy to use
+ * @param alreadyPlaced - Array of BandPlacedObject objects that have already been placed
+ * @param chartDimensions - The dimensions of the chart
+ * @returns { placed: Array<{ id: string, anchor: { x: number, y: number }, dimensions: { width: number, height: number } }>, unplaced: Array<{ id: string, anchor: { x: number, y: number }, dimensions: { width: number, height: number } }>, debug: any }
  */
 function resolvePlacementComplex(
 	clusterIndices: number[],
-	placementObjects: Array<{ id: string, anchor: { x: number, y: number }, dimensions: { width: number, height: number } }>
+	placementObjects: PlacementObject[],
+	bands: PlacementBand[],
+	occupancy: BandOccupancy[],
+	strategy: PlacementStrategy,
+	alreadyPlaced: Array<{ id: string, x: number, y: number, dimensions: { width: number, height: number } }>,
+	chartDimensions: { width: number; height: number }
 ): {
-	placed: Array<{ id: string, anchor: { x: number, y: number }, dimensions: { width: number, height: number } }>;
-	unplaced: Array<{ id: string, anchor: { x: number, y: number }, dimensions: { width: number, height: number } }>;
+	placed: Array<{ id: string, anchor: { x: number, y: number }, dimensions: { width: number, height: number }, x: number, y: number, bandIndex: number }>;
+	unplaced: UnplacedPlacementObject[];
+	debug: any;
 } {
-	// TODO: Implement complex placement algorithm for clusters
-	// For now, return all as unplaced
+	/**
+	 * Complex Placement Algorithm Outline (Flatbush + YALPS)
+	 *
+	 * 1. Partitioning (if needed):
+	 *    - If the cluster is large, partition by band or spatially (using flatbush) into sub-clusters.
+	 *
+	 * 2. For each partition (cluster or sub-cluster):
+	 *    a. Feasible Placement Generation:
+	 *       - For each object:
+	 *         1. Generate candidate placements within a local area around the anchor (e.g., within a radius or a few bands).
+	 *         2. Only consider placements within allowed bands.
+	 *         3. Use flatbush to check for overlaps with obstacles and already-placed objects. Discard infeasible placements.
+	 *    b. ILP Problem Construction (using YALPS):
+	 *       - For all objects in the partition:
+	 *         1. For each object and each feasible placement, create a binary variable (placed or not).
+	 *         2. Constraints:
+	 *            - Each object must be placed exactly once.
+	 *            - No two objects may be placed in overlapping positions.
+	 *            - (Optional) Max distance from anchor.
+	 *         3. Objective: Minimise total displacement from anchors (or other quality metric).
+	 *    c. ILP Solving:
+	 *       - Use YALPS to solve the ILP for the partition (with a timeout).
+	 *       - If solved: record placements.
+	 *       - If unsolved (timeout or infeasible):
+	 *         - Optionally, expand search area and retry.
+	 *         - If still unsolved, fall back to greedy/sweep for remaining objects.
+	 *
+	 * 3. Merge Results:
+	 *    - Combine placements from all partitions.
+	 *    - If any objects remain unplaced, place them using a fallback (greedy, sweep, or push-pull).
+	 *
+	 * 4. Finalisation:
+	 *    - Update the global occupancy map with all placed objects.
+	 *    - Return placements, failed objects, and any debug information.
+	 */
+
+	// --- Precompute maps for fast lookup ---
+	const bandMap = new Map<number, PlacementBand>();
+	for (const band of bands) bandMap.set(band.index, band);
+	const occupancyMap = new Map<number, BandOccupancy>();
+	for (const occ of occupancy) occupancyMap.set(occ.bandIndex, occ);
+
+	// --- Prepare for Flatbush index of already placed objects (future use) ---
+	const flatbushIndex: any = null;
+
+	const allowedBandWindow = 2; // Allow home band ±2 for candidate search
+	const xStep = 25; // Step size in pixels for candidate x positions
+
+	const clusterObjects = clusterIndices.map(idx => placementObjects[idx]);
+
+	// console.log(`feasiblePlacement: Starting, got ${clusterObjects.length} objects`);
+
+	// --- Feasible Placement Generation ---
+	// Generate feasible placements for each object in the cluster
+	const DEBUG_OBJECT_ID = '36-B77W'; // Hardcoded debug id
+	let debugFeasiblePlacements: Array<{ x: number; y: number; bandIdx: number }> = [];
+
+	for (const obj of clusterObjects) {
+		const feasiblePlacements: Array<{ x: number; y: number; bandIdx: number }> = [];
+		const anchor = obj.anchor;
+		const dims = obj.dimensions;
+
+		// Find the object's home band index based on its anchor y position
+		const homeBandIdx = findHomeBandIndex(bands, anchor.y);
+		// Build a list of allowed band indices (home band ± allowedBandWindow)
+		const allowedBandIndices = [];
+		for (let offset = -allowedBandWindow; offset <= allowedBandWindow; offset++) {
+			const idx = homeBandIdx + offset;
+			if (idx >= 0 && idx < bands.length) allowedBandIndices.push(idx);
+		}
+
+		// Use precomputeBandCandidates to get band/y/occupancy for all allowed bands
+		const bandCandidates = precomputeBandCandidates(allowedBandIndices, bands, occupancy, homeBandIdx, dims);
+
+		// Set a maximum allowed vertical distance from the anchor (e.g., 2 * object height)
+		const maxAllowedYDist = 1.5 * dims.width;
+		// Set a maximum allowed horizontal distance from the anchor (e.g., 2 * object width)
+		const maxAllowedXDist = 1.5 * dims.width;
+
+		// For each candidate band, generate placements by sampling x and checking if x is in an available range
+		for (const { bandIndex, band, occupancy, y, yAlign } of bandCandidates) {
+			// Prune bands that are too far vertically from the anchor
+			if (Math.abs(y - anchor.y) > maxAllowedYDist) continue;
+
+			// Prefilter ranges that are too narrow for the object
+			const allRanges = occupancy.availableRanges.filter(range => range.end - range.start >= dims.width) || [];
+
+			// If there are no available ranges, skip this band
+			if (allRanges.length === 0) continue;
+
+			// For each available range, generate placements by sampling x and checking if x is in the range
+			for (const range of allRanges) {
+
+				// Determine the min and max x for this range, ensuring the object is fully within the range
+				const minX = range.start;
+				const maxX = range.end;
+				
+				// Generate candidate x positions radiating outward from the anchor
+				const anchorX = anchor.x;
+				const leftLimit = Math.ceil(range.start + dims.width / 2);
+				const rightLimit = Math.floor(range.end - dims.width / 2);
+				const candidateXs: number[] = [];
+				if (anchorX >= leftLimit && anchorX <= rightLimit) candidateXs.push(anchorX);
+				for (let offset = xStep; (anchorX - offset) >= leftLimit || (anchorX + offset) <= rightLimit; offset += xStep) {
+					if ((anchorX - offset) >= leftLimit) candidateXs.push(anchorX - offset);
+					if ((anchorX + offset) <= rightLimit) candidateXs.push(anchorX + offset);
+				}
+				for (const x of candidateXs) {
+					// Ensure the object fits fully within the range
+					const leftEdge = x - dims.width / 2;
+					const rightEdge = x + dims.width / 2;
+					if (leftEdge < range.start || rightEdge > range.end) continue;
+
+					// Prune x positions that are too far from the anchor
+					if (Math.abs(x - anchor.x) > maxAllowedXDist) continue;
+					const bbox = [
+						x - dims.width / 2,
+						y - dims.height / 2,
+						x + dims.width / 2,
+						y + dims.height / 2
+					];
+					// Use Flatbush to check for overlaps with obstacles/placed objects (future extension)
+					const overlaps = flatbushIndex ? flatbushIndex.search(...bbox) : [];
+					if (!overlaps || overlaps.length === 0) {
+						feasiblePlacements.push({ x, y, bandIdx: bandIndex });
+					}
+				}
+			}
+		}
+		// console.log(`feasiblePlacement: Got ${feasiblePlacements.length} feasible placements for ${obj.id}`);
+		if (obj.id === DEBUG_OBJECT_ID) {
+			debugFeasiblePlacements = feasiblePlacements.slice();
+		}
+		(obj as any).feasiblePlacements = feasiblePlacements;
+		if (feasiblePlacements.length === 0) {
+			console.warn(`[ComplexPlacement] Object ${obj.id} has 0 feasible placements.`);
+		}
+	}
+
+	// --- ILP Model Construction (YALPS) ---
+	// The objective function is set to minimise the sum of distances from anchor to placement for all objects.
+	// This ensures that, among all feasible solutions, the solver will prefer those where all objects are as close as possible to their anchors.
+	const objectiveKey = 'displacement';
+
+	// Build variables and constraints in YALPS-compatible format
+	const variables: Record<string, { displacement: number; [constraintKey: string]: number }> = {};
+	const constraints: Record<string, Constraint> = {};
+	const binaries: string[] = [];
+	const varKeyToPlacement: Record<string, { objectIdx: number; placementIdx: number }> = {};
+
+	for (let objIdx = 0; objIdx < clusterObjects.length; objIdx++) {
+		const obj = clusterObjects[objIdx];
+		const placements = (obj as any).feasiblePlacements as Array<{ x: number; y: number; bandIdx: number }>;
+		if (!placements || placements.length === 0) continue;
+		for (let pIdx = 0; pIdx < placements.length; pIdx++) {
+			const varKey = `${obj.id}@${pIdx}`;
+			const dx = placements[pIdx].x - obj.anchor.x;
+			const dy = placements[pIdx].y - obj.anchor.y;
+			const dist = Math.sqrt(dx*dx + dy*dy);
+			variables[varKey] = {
+				displacement: -dist,
+				[`assign_${obj.id}`]: 1
+			};
+			binaries.push(varKey);
+			varKeyToPlacement[varKey] = { objectIdx: objIdx, placementIdx: pIdx };
+		}
+		constraints[`assign_${obj.id}`] = { equal: 1 };
+	}
+
+	// --- Overlap constraints (YALPS format) ---
+	// Build a list of all placements with their bounding boxes for overlap checking
+	const allPlacements: Array<{ varKey: string; objectIdx: number; placementIdx: number; bbox: [number, number, number, number] }> = [];
+	for (const varKey in varKeyToPlacement) {
+		const { objectIdx, placementIdx } = varKeyToPlacement[varKey];
+		const obj = clusterObjects[objectIdx];
+		const placement = (obj as any).feasiblePlacements[placementIdx];
+		const dims = obj.dimensions;
+		const bbox: [number, number, number, number] = [
+			placement.x - dims.width / 2,
+			placement.y - dims.height / 2,
+			placement.x + dims.width / 2,
+			placement.y + dims.height / 2
+		];
+		allPlacements.push({ varKey, objectIdx, placementIdx, bbox });
+	}
+	for (let i = 0; i < allPlacements.length; i++) {
+		const a = allPlacements[i];
+		for (let j = i + 1; j < allPlacements.length; j++) {
+			const b = allPlacements[j];
+			if (a.objectIdx === b.objectIdx) continue; // Only between different objects
+			// Check for bounding box overlap (AABB intersection)
+			if (
+				a.bbox[0] < b.bbox[2] && a.bbox[2] > b.bbox[0] &&
+				a.bbox[1] < b.bbox[3] && a.bbox[3] > b.bbox[1]
+			) {
+				const overlapKey = `no_overlap_${a.varKey}_${b.varKey}`;
+				variables[a.varKey][overlapKey] = 1;
+				variables[b.varKey][overlapKey] = 1;
+				constraints[overlapKey] = { max: 1 };
+			}
+		}
+	}
+
+	const model: Model = {
+		direction: 'maximize',
+		objective: 'displacement',
+		variables,
+		constraints,
+		binaries
+	};
+
+	// --- ILP Solving ---
+	// Solve the model using YALPS with a timeout (e.g., 200ms)
+	const solution = solve(model, { timeout: 200 });
+
+	let placed: Array<{ id: string, anchor: { x: number, y: number }, dimensions: { width: number, height: number }, x: number, y: number, bandIndex: number }> = [];
+	let unplaced: UnplacedPlacementObject[] = [];
+
+	if (solution.status === 'optimal') {
+		// Map selected variables back to placements
+		const selectedVarKeys = new Set<string>(solution.variables.map(([varKey, value]) => varKey));
+		for (const varKey of selectedVarKeys) {
+			const mapping = varKeyToPlacement[varKey];
+			if (!mapping) continue;
+			const obj = clusterObjects[mapping.objectIdx];
+			const placement = (obj as any).feasiblePlacements[mapping.placementIdx];
+			// Update occupancy for the band
+			const occ = occupancyMap.get(placement.bandIdx);
+			if (occ) {
+				const extents = {
+					left: placement.x - obj.dimensions.width / 2,
+					right: placement.x + obj.dimensions.width / 2
+				};
+				occ.occupiedRanges.push({
+					start: extents.left,
+					end: extents.right,
+					width: extents.right - extents.left,
+					top: occ.band.top,
+					bottom: occ.band.bottom
+				} as Range);
+				occ.availableRanges = invertOccupiedRangesToAvailable(
+					consolidateOverlappingRanges(occ.occupiedRanges),
+					occ.band
+				);
+			}
+			placed.push({
+				id: obj.id,
+				x: placement.x,
+				y: placement.y,
+				anchor: obj.anchor,
+				bandIndex: placement.bandIdx,
+				dimensions: obj.dimensions
+			});
+		}
+		// Any objects not in placed are unplaced (ensure type UnplacedPlacementObject)
+		const placedIds = new Set(placed.map(p => p.id));
+		for (const obj of clusterObjects) {
+			if (!placedIds.has(obj.id)) {
+				unplaced.push({
+					id: obj.id,
+					anchor: obj.anchor,
+					dimensions: obj.dimensions
+				});
+			}
+		}
+	} else {
+		console.log(`[ComplexPlacement] Failed to solve ILP for ${clusterObjects.length} objects. Status: ${solution.status}`);
+		// If not optimal, fall back to all unplaced (ensure type UnplacedPlacementObject)
+		unplaced = clusterObjects.map(obj => ({
+			id: obj.id,
+			anchor: obj.anchor,
+			dimensions: obj.dimensions
+		}));
+	}
+
+	// Return placed and unplaced objects, and debug info
 	return {
-		placed: [],
-		unplaced: clusterIndices.map(idx => placementObjects[idx])
+		placed,
+		unplaced,
+		debug: {
+			feasiblePlacementsForDebugId: debugFeasiblePlacements,
+			solutionStatus: solution.status,
+			selectedVarKeys: solution.variables ? solution.variables.map(([k]) => k) : [],
+		}
 	};
 }

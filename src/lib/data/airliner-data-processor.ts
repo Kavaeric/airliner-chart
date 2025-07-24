@@ -1,5 +1,7 @@
+// [IMPORT] Third-party libraries //
+import Papa, { ParseResult } from "papaparse";
 // [IMPORT] Types/interfaces //
-import { AirlinerDataRaw } from "@/types/airliner";
+import { AirlinerDataRaw, Airliner } from "@/lib/data/airliner-types";
 
 export interface AirlinerData extends AirlinerDataRaw {
 	markerStylePax3Class: "diamond" | "line";
@@ -7,20 +9,80 @@ export interface AirlinerData extends AirlinerDataRaw {
 	markerStylePax1Class: "diamond" | "line";
 	markerStylePaxLimit: "diamond" | "line";
 	markerStylePaxExit: "diamond" | "line";
+	airlinerID: string;
 }
 
 /**
- * Processes raw airliner data to filter out invalid data and assign marker styles.
- * 
- * @param d - Raw data for a single airliner.
- * @returns Processed airliner data.
- * 
- * @example
- * const processedData = processAirlinerData(rawData);
+ * Loads and parses airliner CSV data into Airliner objects.
+ * This parser expects the CSV to have:
+ *   - The first row as headers (field names)
+ *   - The second row as type hints (e.g., 'string', 'number')
+ *   - Data rows after that
+ *   - Comment lines (starting with #) and empty lines are ignored
+ *
+ * The parser dynamically maps headers and types, so you don't need to hardcode field names.
+ * It uses PapaParse for robust CSV parsing.
+ *
+ * @param csvPath Path to the CSV file (relative to public/)
+ * @returns Promise<Airliner[]> Array of parsed airliner objects
  */
-export function processAirlinerData(d: AirlinerDataRaw): AirlinerData {
-	// Create a processed airliner data dictionary
-	let airlinerData: Record<string, any> = { ...d };
+export default async function loadAirlinerData(csvPath: string): Promise<Airliner[]> {
+
+	// Fetch the CSV file asynchronously
+	const response = await fetch(csvPath);
+	const csvText = await response.text();
+
+	// Parse the CSV asynchronously
+	return new Promise((resolve, reject) => {
+		Papa.parse(csvText, {
+			header: true,
+			skipEmptyLines: "greedy",
+			comments: "#",
+			transform: (value, field) => {
+				if (value === "" && field === 0) {
+					return null;
+				}
+				return value;
+			},
+
+			// When the CSV is fully parsed, process the data
+			complete: (results: ParseResult<any>) => {
+				// If the CSV is missing a row of type hints, reject the promise
+				const typeRow = results.data[0];
+				if (!typeRow) {
+					reject(new Error("CSV missing type row"));
+					return;
+				}
+
+				// Process the data
+				const data: Airliner[] = results.data.slice(1).map((row: any, idx: number) => {
+					const obj: any = {};
+					Object.keys(row).forEach(key => {
+						const type = typeRow[key];
+						let value = row[key];
+						if (type === "number") {
+							value = value === undefined || value === "" ? undefined : Number(value);
+						} else if (type === "string") {
+							value = value === "" ? undefined : value;
+						}
+						obj[key] = value;
+					});
+					return processAirlinerData(obj, idx);
+				});
+				resolve(data);
+			},
+			error: (error: any) => {
+				reject(error);
+			},
+		});
+	});
+}
+
+function processAirlinerData(d: AirlinerDataRaw, index: number): Airliner {
+	let airlinerData: any = { ...d };
+
+	// Assign unique airlinerID in the format idNumber-nameICAO
+	airlinerData.airlinerID = `${d.idNumber}-${d.nameICAO}`;
 
 	// Check if we have a valid range to render
 	// All airliners must have a listed range
@@ -58,5 +120,5 @@ export function processAirlinerData(d: AirlinerDataRaw): AirlinerData {
 	airlinerData.markerStylePaxLimit  = "line";
 	airlinerData.markerStylePaxExit   = "line";
 
-	return airlinerData as AirlinerData;
+	return airlinerData as Airliner;
 }

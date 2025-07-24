@@ -1,7 +1,7 @@
 "use client";
 
 // [IMPORT] React //
-import { useMemo, useState, useEffect, useRef } from "react";
+import React, { useMemo, useState, useEffect, useRef, useLayoutEffect } from "react";
 
 // [IMPORT] Third-party libraries //
 import { GridRows, GridColumns } from "@visx/grid";
@@ -17,6 +17,7 @@ import { MarkerDiamond } from "../shape/MarkerDiamond";
 import { MarkerPlus } from "../shape/MarkerPlus";
 import RectCross from "../shape/RectCross";
 import { Connector } from "@visx/annotation";
+import { MarkerLeader } from "../shape/MarkerLeader";
 
 // [IMPORT] Context providers/hooks //
 import { useChartScales } from "@/context/ChartScalesContext";
@@ -25,12 +26,11 @@ import { useChartLayout } from "@/context/ChartLayoutContext";
 import { useDebugMode } from "@/context/DebugContext";
 
 // [IMPORT] Utilities //
-import { processAirlinerData } from "@/lib/data/airliner-data-processor";
 import { getAirlinerMarkers, getAirlinerMarkerExtents, getAirlinerMarkerY } from "@/lib/data/process-airliner-markers";
-import { measureSVGElement } from "@/lib/utils/measure-svg-elements";
 import { calculateChartPlacementBands } from "@/lib/band-placement/chart-bands";
-import { calculateBandOccupancy } from "@/lib/band-placement/band-occupancy";
+import { calculateBandOccupancy, Obstacle } from "@/lib/band-placement/band-occupancy";
 import { calculateBandPlacement } from "@/lib/band-placement/calculate-band-placement";
+import { Airliner } from '@/lib/data/airliner-types';
 
 // [IMPORT] CSS styling //
 import plotStyles from "./AirlinerScatterPlot.module.css";
@@ -45,6 +45,12 @@ import { MarkerCross } from "../shape/MarkerCross";
  * - Plots each airliner with markers, connecting lines, and labels
  * - Renders elements in layers to control z-index ordering
  *
+ * Data flow is managed through a multi-stage pipeline:
+ * 1. Marker calculation (positions, bounding boxes, anchors)
+ * 2. Label measurement (for debug/placement)
+ * 3. Placement calculation (label placement, failure, occupancy)
+ * 4. Composition of main render data and debug data (per-airliner and global)
+ *
  * Receives all layout and scale info from parent.
  */
 export default function AirlinerScatterPlot({ 
@@ -54,16 +60,20 @@ export default function AirlinerScatterPlot({
 	width: number;
 	height: number;
 }) {
+	// === Context and chart config ===
+	// Retrieve chart scales (x/y), layout config, data, and debug mode from context providers.
 	const { xScaleView, yScaleView } = useChartScales();
 	const { xTickGridCount, yTickGridCount } = useChartLayout();
-	const data = useChartData();
+	const data = useChartData() as Airliner[];
 	const { debugMode } = useDebugMode();
-	// Constants for rendering
-	const markerSize = 12; // Diameter of the markers
+
+	// Marker visual config
+	const markerSize = 12;
 	const markerLineMajorWidth = 4;
 	const markerLineMinorWidth = 2;
 
-	// If the chart dimensions are 0, or no data, show loading/empty state
+	// === Early exit for empty chart ===
+	// If chart has no size or no data, show loading state.
 	if (width === 0 || height === 0 || data.length === 0) {
 		return (
 			<div className={plotStyles.chartArea}>
@@ -72,287 +82,372 @@ export default function AirlinerScatterPlot({
 		);
 	}
 
-	// Process all airliner data - memoised to prevent unnecessary recalculations
-	const airlinerData = useMemo(() => data.map(d => processAirlinerData(d)), [data]);
+	// === Plotting pipeline ===
+	// 1. Marker calculation for each airliner:
+	//    - For each airliner, calculate:
+	//        a) markerPositions: Array of pixel coordinates for each marker (e.g., per class/cabin)
+	//        b) markerBoundingBox: Bounding box (minX, maxX, minY, maxY) covering all markers for this airliner
+	//        c) labelAnchor: Anchor point for label placement (typically horizontally between min/max marker, vertically at markerY)
+	//    - Results are stored in a Map keyed by airlinerID for fast lookup in later steps.
+	const markerData = useMemo(() => {
+		// Create a new Map to hold per-airliner marker data
+		const map = new Map();
 
-	// Get the airliner markers for each airliner
-	const airlinerMarkers = useMemo(() => 
-		airlinerData.map((d, index) => getAirlinerMarkers(index, d, xScaleView, yScaleView)), 
-		[airlinerData, xScaleView, yScaleView]
-	);
+		// Iterate over each airliner in the dataset
+		data.forEach(airliner => {
+			// Calculate marker positions
+			// getAirlinerMarkers returns an array of marker positions (pixel coordinates) for this airliner,
+			// using the airliner's idNumber, data, and the current chart scales.
+			const markerPositions = getAirlinerMarkers(airliner.idNumber, airliner, xScaleView, yScaleView);
 
-	// Calculate bounding boxes for each airliner
-	const markerBoundingBoxes = useMemo(() => {
-		return airlinerMarkers.map((markers, index) => {
-			if (!markers) return null;
-			
-			// Get class marker extents using existing utility function
-			// This gives us the leftmost and rightmost class markers
-			const classExtents = getAirlinerMarkerExtents(markers, 'class');
-			
-			// If no valid class markers, skip this airliner
-			if (!classExtents.min || !classExtents.max) {
-				return null;
-			}
-			
-			// Calculate Y bounds using marker size
-			const markerY = getAirlinerMarkerY(markers);
+			// Calculate marker extents (min/max) for the 'class' dimension
+			// getAirlinerMarkerExtents returns the minimum and maximum marker positions along the 'class' axis.
+			// Used to determine the horizontal spread of the markers for this airliner.
+			const classExtents = getAirlinerMarkerExtents(markerPositions, 'class');
+
+			// Calculate the vertical position for the marker row
+			// getAirlinerMarkerY returns the y-coordinate (in pixels) for the marker row.
+			const markerY = getAirlinerMarkerY(markerPositions);
+
+			// Calculate marker bounding box
+			// The bounding box is expanded by half the marker size on each side to fully enclose all markers.
 			const halfSize = markerSize / 2;
-			
-			// Calculate extents based on requirements:
-			// - left extent: smallest available passenger capacity value (minX)
-			// - right extent: largest available passenger capacity value (maxX)
-			// - vertical extents: calculated through markerSize
-			return {
-				minX: classExtents.min.x - halfSize, // Left extent with marker size padding
-				maxX: classExtents.max.x + halfSize, // Right extent with marker size padding
-				minY: markerY - halfSize,            // Top extent
-				maxY: markerY + halfSize             // Bottom extent
-			};
-		}).filter(box => box !== null);
-	}, [airlinerMarkers, markerSize]);
+			const markerBoundingBox =
+				classExtents.min && classExtents.max
+					? {
+							minX: classExtents.min.x - halfSize,
+							maxX: classExtents.max.x + halfSize,
+							minY: markerY - halfSize,
+							maxY: markerY + halfSize
+					  }
+					: null; // If extents are missing, bounding box is null
 
-	// Consolidated airliner labels entity - contains all label-related data for each airliner
-	const airlinerLabels = useMemo(() => {
-		const labels = new Map<string, {
-			id: string;
-			anchor: { x: number; y: number };
-			markerRange: { left: number; right: number };
-			position: { x: number; y: number };
-		}>();
+			// Calculate label anchor point
+			// The label anchor is horizontally clamped between min and max marker x, and vertically at markerY.
+			// This ensures the label is positioned within the marker spread.
+			const labelAnchor =
+				classExtents.min && classExtents.max
+					? {
+							x: Math.min(
+								Math.max(classExtents.min.x, 0), // Clamp to at least 0
+								classExtents.max.x                // ...but not beyond max
+							),
+							y: markerY
+					  }
+					: null; // If extents are missing, anchor is null
 
-		// Generate airliner IDs (index + ICAO name)
-		const airlinerIds = airlinerData.map((d, index) => `${index}-${d.nameICAO}`);
-
-		// Calculate anchor coordinates and initialize label data
-		airlinerData.forEach((d, i) => {
-			const markers = airlinerMarkers[i];
-			if (!markers) return;
-
-			// Get class marker extents
-			const classExtents = getAirlinerMarkerExtents(markers, 'class');
-
-			// If no valid class markers, skip this airliner
-			if (!classExtents.min || !classExtents.max) {
-				return;
-			}
-
-			// Calculate the leftmost and rightmost x anchor positions (leftmost and rightmost class markers)
-			const xAnchorLeft = classExtents.min.x;
-			const xAnchorRight = classExtents.max.x;
-
-			// Calculate the x anchor position:
-			// - Default to xAnchorLeft
-			// - If xAnchorLeft < 0, clamp to 0
-			// - If xAnchorRight < 0, clamp to xAnchorRight
-			let xAnchor = xAnchorLeft;
-			if (xAnchorRight < 0) {
-				xAnchor = xAnchorRight;
-			} else if (xAnchorLeft < 0) {
-				xAnchor = 0;
-			}
-
-			// Calculate the y anchor position (use y from the first class marker)
-			const yAnchor = getAirlinerMarkerY(markers);
-
-			const airlinerId = airlinerIds[i];
-			labels.set(airlinerId, {
-				id: airlinerId,
-				anchor: { 
-					x: xAnchor, 
-					y: yAnchor 
-				},
-				markerRange: {
-					left: classExtents.min.x,
-					right: classExtents.max.x
-				},
-				position: { x: classExtents.min.x, y: yAnchor } // Initial position, will be updated by placement algorithm
+			// Store all calculated data for this airliner in the map ---
+			// Structure: { markerPositions, markerBoundingBox, labelAnchor }
+			map.set(airliner.airlinerID, {
+				markerPositions,
+				markerBoundingBox,
+				labelAnchor
 			});
 		});
-		// console.log('airlinerLabels', labels.get('1-A319'));
-		return labels;
-	}, [airlinerData, airlinerMarkers]);
 
-	// Update label measurements when DOM is ready
-	function calculateLabelMeasurements() {
-		const measurements = new Map<string, { width: number; height: number }>();
+		// Return the complete map of airliner marker data
+		return map;
+	}, [data, xScaleView, yScaleView, markerSize]);
 
-		airlinerLabels.forEach((label, airlinerId) => {
-			const index = airlinerData.findIndex((d, i) => `${i}-${d.nameICAO}` === airlinerId);
-			if (index !== -1) {
-				const measurementKey = `.measured-label-${index}`;
-				const measuredDimensions = measureSVGElement(document.querySelector(measurementKey) as SVGElement);
+	// 2. Label measurement: measure label dimensions for each airliner (used for placement and debug overlays)
+	//    - This section tracks the rendered size of each airliner's label in the SVG.
+	//    - The measured width/height is used for collision/placement logic and for debug overlays.
+	//    - Uses ResizeObserver to reactively update measurements if a label's size changes (e.g., due to font, data, or layout changes).
 
-				if (measuredDimensions) {
-					measurements.set(airlinerId, measuredDimensions);
-				}
-			}
+	// State: Maps airlinerID to an object containing { width, height } of the label's SVG bounding box.
+	const [labelMeasurements, setLabelMeasurements] = useState<{ [id: string]: { width: number; height: number } }>({});
+
+	// Ref: Holds a mapping from airlinerID to the actual SVG <g> element for each label.
+	//      This allows us to directly access the DOM node for measurement.
+	const labelRefs = useRef<{ [airlinerID: string]: SVGGElement | null }>({});
+
+	// Ref callback for measuring label bounding boxes
+	const handleLabelRef = (airlinerID: string) => (el: SVGGElement | null) => {
+		labelRefs.current[airlinerID] = el;
+		if (el) {
+			const bbox = el.getBBox();
+			setLabelMeasurements(prev => ({
+				...prev,
+				[airlinerID]: { width: bbox.width, height: bbox.height }
+			}));
+		}
+	};
+
+	// Track if all label measurements are complete
+	const [areLabelsMeasured, setAllLabelsMeasured] = useState(false);
+
+	// Whenever labelMeasurements or data changes, check if all labels are measured
+	useEffect(() => {
+		if (data.length === 0) {
+			setAllLabelsMeasured(false);
+			return;
+		}
+		console.log('labelMeasurements', labelMeasurements);
+		const allMeasured = data.every(airliner => !!labelMeasurements[airliner.airlinerID]);
+		setAllLabelsMeasured(allMeasured);
+	}, [labelMeasurements, data]);
+
+	// Reset label measurements and flag when data changes
+	useEffect(() => {
+		setLabelMeasurements({});
+		setAllLabelsMeasured(false);
+	}, [data]);
+
+	// Placement calculation: compute label placement, placement failure, and occupancy for each airliner
+	//    - This useMemo block prepares all data needed for label placement, including
+	//      collision avoidance and banding logic for the chart.
+	const placementData = useMemo(() => {
+		// Prepare placement objects for each airliner
+		// Each object contains:
+		//   - id: unique airlinerID
+		//   - anchor: the preferred anchor point for the label (usually near the marker)
+		//   - position: initial position (same as anchor, may be adjusted by placement)
+		//   - dimensions: measured width/height of the label (from labelMeasurements)
+		//   - markerBoundingBox: bounding box of the airliner's marker(s), used as an obstacle
+		const placementObjects = data.map(airliner => {
+			const marker = markerData.get(airliner.airlinerID);
+			const labelMeasurement = labelMeasurements[airliner.airlinerID] || null;
+			return {
+				id: airliner.airlinerID,
+				anchor: marker?.labelAnchor, // { x, y } or undefined
+				position: marker?.labelAnchor, // initial position, may be moved
+				dimensions: labelMeasurement, // { width, height } or null
+				markerBoundingBox: marker?.markerBoundingBox // { minX, maxX, minY, maxY } or undefined
+			};
 		});
 
-		console.log(`calculateLabelMeasurements: Measurements: ${measurements}`);
+		// Gather marker bounding boxes as obstacles
+		// These are used to prevent label overlap with markers.
+		// Only include bounding boxes that exist (filter out undefined).
+		const markerBoxObstacles = placementObjects
+			.map(obj => obj.markerBoundingBox)
+			.filter((box): box is { minX: number, maxX: number, minY: number, maxY: number } => !!box);
 
-		// Debug: Measure the first airliner label
-		const firstAirlinerLabel = document.querySelector('.measured-label-0') as SVGElement;
-		if (firstAirlinerLabel) {
-			const measuredDimensions = measureSVGElement(firstAirlinerLabel);
-			console.log(`calculateLabelMeasurements: First airliner label measurement: ${measuredDimensions}`);
-		}
+		// Only objects with both an anchor and measured dimensions are eligible for placement.
+		const validPlacementObjects = placementObjects.filter(obj => obj.anchor && obj.dimensions);
 
-		return measurements;
-	}
+		// This is used to determine the vertical spacing of chart bands.
+		let maxLabelHeight = Math.max(...validPlacementObjects.map(e => e.dimensions?.height || 0));
 
-	// Separate state for label measurements
-	const [labelMeasurements, setLabelMeasurements] = useState<Map<string, { width: number; height: number }>>(new Map());
+		// Fallback to a default if no valid heights found.
+		if (!isFinite(maxLabelHeight) || maxLabelHeight <= 0) maxLabelHeight = 20;
 
-	// Update label measurements when DOM is ready
-	useEffect(() => {
-		console.log(`labelMeasurements: Updating label measurements for ${airlinerLabels.size} airliners.`);
-		// Log the measurement for the first airliner
-		console.log(`labelMeasurements: First airliner measurement: ${labelMeasurements.get('0-A319')}`);
-		setLabelMeasurements(calculateLabelMeasurements());
-	}, [airlinerData]);
+		// Convert marker bounding boxes to band obstacles
+		// Each obstacle is represented by its centre position and height.
+		const bandObstacles = markerBoxObstacles.map(box => ({
+			position: { x: (box.minX + box.maxX) / 2, y: (box.minY + box.maxY) / 2 },
+			height: box.maxY - box.minY
+		}));
 
-	// Memoise chart placement bands
-	const chartPlacementBands = useMemo(() => {
-		if (airlinerLabels.size === 0 || labelMeasurements.size === 0) return [];
-		const maxLabelHeight = Math.max(...Array.from(labelMeasurements.values()).map(m => m.height));
-		const obstacles = airlinerMarkers
-			.map((markers) => {
-				const classExtents = getAirlinerMarkerExtents(markers, 'class');
-				if (!classExtents.min) return null;
-				return { position: { x: classExtents.min.x, y: classExtents.min.y }, height: markerSize};
-			})
-			.filter((o): o is { position: { x: number; y: number }; height: number } => o !== null);
-		return calculateChartPlacementBands(
-			{ width, height },
-			maxLabelHeight,
-			maxLabelHeight * 1,
-			obstacles,
-			2,
-			maxLabelHeight
+		// Calculate chart bands for label placement
+		// Bands are horizontal regions where labels can be placed, spaced by maxLabelHeight.
+		// The function also takes into account obstacles and band count.
+		const chartBands = calculateChartPlacementBands(
+			{ width, height },      // Chart dimensions
+			maxLabelHeight,         // Band height
+			maxLabelHeight,         // Minimum band gap
+			bandObstacles,          // Obstacles to avoid
+			3,                      // Number of bands (hardcoded)
+			maxLabelHeight          // Minimum band height
 		);
-	}, [airlinerLabels, labelMeasurements, airlinerMarkers, markerSize, width, height]);
 
-	// Memoise chart placement bands occupancy
-	const chartPlacementBandsOccupancy = useMemo(() => {
-		if (chartPlacementBands.length === 0 || markerBoundingBoxes.length === 0) return [];
-		return calculateBandOccupancy(
-			chartPlacementBands,
-			markerBoundingBoxes,
+		// Calculate band occupancy
+		// Determines which bands are blocked by obstacles (markers).
+		const occupancy = calculateBandOccupancy(
+			chartBands,
+			markerBoxObstacles,
 			width,
 			height
 		);
-	}, [chartPlacementBands, markerBoundingBoxes]);
 
-	// Memoise label placement calculation (positions, debug, occupancy)
-	const placementResult = useMemo(() => {
-		if (airlinerLabels.size === 0 || labelMeasurements.size === 0) return { placements: new Map(), debug: null, occupancy: [], failed: [] };
-
-		// Convert airlinerLabels Map to placement objects array
-		const placementObjects = Array.from(airlinerLabels.entries()).map(([airlinerId, label]) => {
-			const measurements = labelMeasurements.get(airlinerId) || { width: 200, height: 20 };
-			return {
-				id: airlinerId,
-				anchor: label.anchor,
-				position: label.anchor, // Just use anchor for now
-				dimensions: measurements
-			};
-		});
-
-		// Use the average label width and height as the cluster detection radii
-		const clusterDetectionRadius = {
-			x: Math.max(...Array.from(labelMeasurements.values()).map(m => m.width)) / 3,
-			y: Math.max(...Array.from(labelMeasurements.values()).map(m => m.height)) / 3
-		};
-
-		return calculateBandPlacement({
-			dimensions: { width, height },
-			bands: chartPlacementBands,
-			occupancy: chartPlacementBandsOccupancy,
-			objects: placementObjects,
-			clusterDetection: { distance: clusterDetectionRadius },
+		// Attempts to assign each label a position within the bands, avoiding collisions.
+		// Returns:
+		//   - placements: Map of airlinerID to placed position
+		//   - failed: Array of objects for labels that could not be placed
+		//   - occupancy: Updated occupancy map
+		const placementResult = calculateBandPlacement({
+			dimensions: { width, height }, // Chart size
+			bands: chartBands,             // Placement bands
+			occupancy,                     // Band occupancy
+			objects: validPlacementObjects, // Labels to place
+			clusterDetection: { distance: { x: 4, y: 4 } }, // Minimum separation for clusters
 			strategy: {
+				// First pass placement algorithm: try to place the labels in specific positions determined by the modes array
 				firstPass: {
-					modes: ['top-left', 'top', 'left', 'bottom-left', 'bottom'],
-					maxDistance: { x: 50, y: 35 },
+					modes: ['top-left', 'left', 'top'], // Placement strategies to try first
+					maxDistance: { x: 50, y: 90 },      // Max allowed move from anchor
 					offset: { x: 0, y: 0 }
 				},
+				// Second pass placement algorithm: if the first pass fails, try to place the labels by sweeping horizontally
+				// and finding placements as it goes
 				sweep: {
-					horizontal: 'sweep-to-right',
-					maxDistance: { x: 50, y: 25 },
+					horizontal: 'sweep-to-right',       // Sweep direction for fallback
+					maxDistance: { x: 50, y: 90 },
 					stepFactor: .5,
-					verticalSearch: [-1, 1, 0, -2, 2],
+					verticalSearch: [-1, 1, 0, -2, 2], // Order of vertical band search
 					maxIterations: 2,
-					xAlign: 'right-anchor'
+					xAlign: 'left-to-anchor'
 				}
 			}
 		});
-	}, [airlinerLabels, labelMeasurements, chartPlacementBands, chartPlacementBandsOccupancy]);
 
-	const labelPositions = placementResult.placements;
-	const labelPlacementDebug = placementResult.debug;
-	const labelPlacementOccupancy = placementResult.occupancy;
-	const labelPlacementFailed = placementResult.failed;
+		// Compose final placement map
+		// For each airliner, store:
+		//   - placement: the computed label position (or null if not placed)
+		//   - placementFailed: true if placement failed
+		//   - placementOccupancy: the final occupancy map (for debug/overlays)
+		const map = new Map();
+		placementObjects.forEach(obj => {
+			const placed = placementResult.placements.get(obj.id) || null;
+			const failed = placementResult.failed.some((f: any) => f.id === obj.id);
+			map.set(obj.id, {
+				placement: placed,
+				placementFailed: failed,
+				placementOccupancy: placementResult.occupancy
+			});
+		});
 
-	/*
-	
-	At this point, I'm going to take a break from the coding and address something directly.
+		// Return the placement map for use in rendering
+		return map;
+	}, [data, markerData, labelMeasurements, width, height]);
 
-	I say this knowing that I'm not a software engineer, and I barely count myself as a developer.
-	I am a product designer, though, so this may colour my perspective.
+	// Compose final maps
+	// Compose essentials for main chart rendering
+	//    - Combines marker and placement data for each airliner
+	//    - Access by airlinerID
+	const airlinePlotData = useMemo(() => {
+		const map = new Map();
+		data.forEach(airliner => {
+			const marker = markerData.get(airliner.airlinerID);
+			const placement = placementData.get(airliner.airlinerID);
+			/**
+			 * Main chart data object for each airliner.
+			 * @property {string} airlinerID - Unique identifier for the airliner.
+			 * @property {object} airlinerData - Original airliner data object.
+			 * @property {Array} markerPositions - Marker positions for the airliner.
+			 * @property {object|null} labelAnchor - Anchor point for label placement.
+			 * @property {{width: number, height: number}|null} labelDimensions - Bounding box of the rendered label (width/height), or null if not measured.
+			 * @property {object|null} placement - Final label placement position.
+			 * @property {boolean} placementFailed - True if label placement failed.
+			 */
+			map.set(airliner.airlinerID, {
+				airlinerID: airliner.airlinerID,
+				airlinerData: airliner,
+				markerPositions: marker?.markerPositions,
+				labelAnchor: marker?.labelAnchor,
+				labelDimensions: labelMeasurements[airliner.airlinerID] || null,
+				placement: placement?.placement,
+				placementFailed: placement?.placementFailed
+			});
+		});
+		return map;
+	}, [data, markerData, placementData, labelMeasurements]);
 
-	That is to say, I've decided I really hate TypeScript.
-	
-	This is specifically directed at you, dear reader, who is reading through this and wondering,
-	"gee, Kav, why the hell are you putting so many any[]s in your code? You should know better!"
-	
-	You know what? Fuck that.
+	// Compose global debug overlays (bands, occupancy, etc.)
+	//    - Repeats band and occupancy calculation for debug overlays
+	const airlinerChartDebug = useMemo(() => {
+		// chartBands and occupancy are calculated in placementData's useMemo
+		// To access them here, recalculate with the same logic
+		const placementObjects = data.map(airliner => {
+			const marker = markerData.get(airliner.airlinerID);
+			const labelMeasurement = labelMeasurements[airliner.airlinerID] || null;
+			return {
+				id: airliner.airlinerID,
+				anchor: marker?.labelAnchor,
+				position: marker?.labelAnchor,
+				dimensions: labelMeasurement,
+				markerBoundingBox: marker?.markerBoundingBox
+			};
+		});
+		// Gather marker bounding boxes as obstacles for band placement
+		// Each placementObject may have a markerBoundingBox describing the pixel bounds of its markers.
+		// We extract all defined bounding boxes to use as obstacles for label band calculation.
+		const markerBoxObstacles = placementObjects
+			.map(obj => obj.markerBoundingBox) // Extract bounding box (may be undefined)
+			.filter(
+				(box): box is { minX: number; maxX: number; minY: number; maxY: number } => !!box
+			); // Only keep defined boxes
 
-	I understand its purposes on large teams, where the code bases are enormous and you have individual
-	developers working on this fragment	of this file belonging to this class in a vast maze of
-	architecture that hasn't been properly updated since 1999.
+		// Filter placement objects to those eligible for label placement
+		// Only objects with both an anchor (desired label position) and measured dimensions (width/height)
+		// are considered valid for placement and band calculations.
+		const validPlacementObjects = placementObjects.filter(
+			obj => obj.anchor && obj.dimensions
+		);
 
-	I also appreciate its ability to type things within a given file, such as this one. Indeed, I like
-	it when it's used in this way, because a file like this should stick to one purpose, domain,
-	and concern, and the typing keeps me adhering to that.
+		// Determine the maximum label height for band sizing
+		// Find the tallest label among all valid placement objects.
+		// This value is used to set the vertical size of each band.
+		let maxLabelHeight = Math.max(
+			...validPlacementObjects.map(e => e.dimensions?.height || 0)
+		);
 
-	But I still hate it. I came in with an open mind and I hate it.
+		// Fallback: If no valid heights found, use a default height (20px).
+		if (!isFinite(maxLabelHeight) || maxLabelHeight <= 0) maxLabelHeight = 20;
 
-	Why, for instance, does everything have to be so strongly typed when passing data between components
-	or utilities? Is not the purpose of clean architecture to ensure that we can keep elements of the
-	codebase loosely coupled, and that we can change one thing without having to change everything?
-	Or am I mistaken and indeed the point is so that once a type is set that it can never, ever, ever,
-	ever be changed? I'm sure that's a great idea for everyone who complains about legacy systems.
+		// Convert marker bounding boxes to band obstacles
+		// Each obstacle is represented by its centre position and its height (vertical span).
+		// This helps prevent label bands from overlapping with marker areas.
+		const bandObstacles = markerBoxObstacles.map(box => ({
+			position: {
+				x: (box.minX + box.maxX) / 2, // Centre x of bounding box
+				y: (box.minY + box.maxY) / 2  // Centre y of bounding box
+			},
+			height: box.maxY - box.minY // Vertical span of the obstacle
+		}));
 
-	"Documentation as code" -- oh, excellent, because a type defs are such a great form	of documentation.
-	Is that how you conduct the rest of your life?
+		// Calculate chart bands for label placement
+		// Bands are horizontal regions where labels can be placed.
+		// The function takes:
+		//   - Chart dimensions ({ width, height })
+		//   - Band height (maxLabelHeight)
+		//   - Minimum band gap (maxLabelHeight, for now)
+		//   - Obstacles (bandObstacles) to avoid
+		//   - Band count (3, for now)
+		//   - Minimum band height (maxLabelHeight)
+		const chartBands = calculateChartPlacementBands(
+			{ width, height },     // Chart area dimensions
+			maxLabelHeight,        // Band height
+			maxLabelHeight,        // Minimum gap between bands
+			bandObstacles,         // Obstacles to avoid
+			3,                     // Number of bands (fixed)
+			maxLabelHeight         // Minimum band height
+		);
+		const occupancy = calculateBandOccupancy(chartBands, markerBoxObstacles, width, height);
 
-	"Ah, yes, dear, I've sold all our living room furniture and have replaced it with an enormous
-	taxidermic specimen of a giraffe. Why are you asking me all these questions? Can't you see the
-	form of it,	with four legs and a long neck? You can see what shape it is. What don't you understand?"
+		// Compose maps for bands and occupancy by band index
+		// These are used for debug overlays.
+		const bandMap = new Map();
+		chartBands.forEach((band, i) => bandMap.set(i, band));
+		const occupancyMap = new Map();
+		occupancy.forEach((occ, i) => occupancyMap.set(i, occ));
+		return {
+			chartBands,
+			occupancy,
+			bandMap,
+			occupancyMap
+		};
+	}, [data, markerData, labelMeasurements, width, height]);
 
-	"Oh, so you just hate types." No, types are lovely. Hell, you know I've done stuff in Unity C#, right?
-	It's not just "number", but "float", "int", "double", and probably a bunch of others I don't even
-	remember. That's fine with me.
+	// Compose per-airliner debug data
+	//    - Combines all debug info for each airliner for quick lookup
+	//    - Access by airlinerID
+	const airlinerPlotDebug = useMemo(() => {
+		const map = new Map();
+		data.forEach(airliner => {
+			const marker = markerData.get(airliner.airlinerID);
+			const placement = placementData.get(airliner.airlinerID);
+			map.set(airliner.airlinerID, {
+				...airlinePlotData.get(airliner.airlinerID),
+				markerBoundingBox: marker?.markerBoundingBox,
+				placementOccupancy: placement?.placementOccupancy,
+				labelMeasurement: labelMeasurements[airliner.airlinerID] || null
+			});
+		});
+		return map;
+	}, [data, markerData, placementData, airlinePlotData, labelMeasurements, debugMode]);
 
-	You ever need to charge your phone and you ask your friend for a cable? And they only have that
-	shitty Lightning one that breaks and doesn't even work with iPhones anymore? That's what typed
-	interfaces are. Oh, sure, maybe it's "safer" so you KNOW that it's a Lightning cable, but deep
-	down you know that the reason we all use USB-C is because it's universal and you don't have to
-	ask "hey, is it the right shape?"
-
-	Oh, but what of AI? Surely it can help us write better code nowadays, and help you with your miserable
-	little type problem? Well, no, of course not, because it doesn't understand architecture, it doesn't
-	understand the purpose of the code, and it doesn't understand the context of the code. Prompt it all
-	you want, and pretty soon with anything more complex than a single page that just adds two numbers
-	together, you'll find you've got crap architecture where everything is importing and exporting from
-	every other file in the project along with files still undescribed by science, with all your precious
-	type interfaces smeared in pieces across all of them like a fly hit by a windscreen wiper.
-
-	In short, I don't get along with TypeScript.
-	
-	 */
-
+	// Render SVG chart
 	return (
 		<div className={`${plotStyles.chartArea} ${responsiveStyles.responsiveContainer}`}>
 			<svg className={responsiveStyles.responsiveSVG}>
@@ -370,41 +465,41 @@ export default function AirlinerScatterPlot({
 					className={plotStyles.gridLine}
 				/>
 
-				{/* Connecting lines */}
-				{airlinerMarkers.map((coords, i) => coords ? (
+				{/* Connecting lines between markers for each airliner */}
+				{Array.from(airlinePlotData.values()).map((entry, i) => entry.markerPositions ? (
 					<AirlinerScatterLine
 						key={`lines-${i}`}
-						airlinerMarkers={coords}
+						airlinerMarkers={entry.markerPositions}
 						markerSize={markerSize}
 						markerLineMajorWidth={markerLineMajorWidth}
 						markerLineMinorWidth={markerLineMinorWidth}
 					/>
 				) : null)}
 
-				{/* Markers */}
-				{airlinerMarkers.map((coords, i) => coords ? (
+				{/* Markers for each airliner */}
+				{Array.from(airlinePlotData.values()).map((entry, i) => entry.markerPositions ? (
 					<AirlinerScatterMarker
 						key={`markers-${i}`}
-						airlinerMarkers={coords}
+						airlinerMarkers={entry.markerPositions}
 						markerSize={markerSize}
 					/>
 				) : null)}
 
-				{/* Visualise vertical space bands */}
-				{debugMode && chartPlacementBands.map((band, i) => (
+				{/* Visualise vertical space bands (debug, global) */}
+				{debugMode && airlinerChartDebug.chartBands.map((band, i) => (
 					<g key={`debug-band-${i}`}>
 						<rect
 							x={0}
 							y={band.top}
 							width={width}
-							height={band.height}
+							height={band.height || 0}
 							fill="none"
 							stroke="rgba(0, 150, 90, 0.3)"
 							strokeWidth={1}
 						/>
 						<text
 							x={10}
-							y={band.top + band.height / 2}
+							y={(band.top || 0) + (band.height ? band.height / 2 : 0)}
 							fill="rgba(0, 150, 90, 0.8)"
 							fontSize="12"
 							fontWeight="bold"
@@ -415,34 +510,12 @@ export default function AirlinerScatterPlot({
 					</g>
 				))}
 
-				{/* Visualise label bounding boxes */}
-				{debugMode && Array.from(airlinerLabels.entries()).map(([airlinerId, label], i) => {
-					const measurements = labelMeasurements.get(airlinerId) || { width: 100, height: 20 };
-					const placed = labelPositions.get(airlinerId);
-					if (!placed) return null;
-					return (
-						<RectCross
-							key={`debug-box-${i}`}
-							x={placed.x - measurements.width / 2}
-							y={placed.y - measurements.height / 2}
-							width={measurements.width}
-							height={measurements.height}
-							fill="none"
-							stroke="blue"
-							strokeWidth={2}
-							crossStroke="blue"
-							crossStrokeWidth={1}
-							crossLines="both"
-						/>
-					);
-				})}
-
 				{/* Label anchor coordinates, for debugging */}
-				{debugMode && Array.from(airlinerLabels.values()).map((label, i) => (
+				{debugMode && Array.from(airlinerPlotDebug.values()).map((entry, i) => (
 					<MarkerCross
 						key={`debug-dot-${i}`}
-						cx={label.anchor.x}
-						cy={label.anchor.y}
+						cx={entry.labelAnchor?.x || 0}
+						cy={entry.labelAnchor?.y || 0}
 						weight={4}
 						r={12}
 						fill="blue"
@@ -450,29 +523,31 @@ export default function AirlinerScatterPlot({
 					/>
 				))}
 
-				{/* Visualise marker bounding boxes */}
-				{debugMode && markerBoundingBoxes.map((boundingBox, i) => (
+				{/* Visualise marker bounding boxes (debug) */}
+				{debugMode && Array.from(airlinerPlotDebug.values()).map((entry, i) => (
 					<g key={`debug-marker-box-${i}`}>
-						<rect
-							x={boundingBox.minX}
-							y={boundingBox.minY}
-							width={boundingBox.maxX - boundingBox.minX}
-							height={boundingBox.maxY - boundingBox.minY}
-							fill="rgba(200, 80, 0, 0.5)"
-							stroke="rgba(80, 40, 0, 0.8)"
-							strokeWidth={2}
-						/>
+						{entry.markerBoundingBox &&
+							<rect
+								x={entry.markerBoundingBox.minX}
+								y={entry.markerBoundingBox.minY}
+								width={(entry.markerBoundingBox.maxX ?? 0) - (entry.markerBoundingBox.minX ?? 0)}
+								height={(entry.markerBoundingBox.maxY ?? 0) - (entry.markerBoundingBox.minY ?? 0)}
+								fill="rgba(200, 80, 0, 0.5)"
+								stroke="rgba(80, 40, 0, 0.8)"
+								strokeWidth={2}
+							/>
+						}
 					</g>
 				))}
 
 				{/* Visualise clusters (bounding rectangles and centroids) */}
-				{debugMode && labelPlacementDebug?.clusters && labelPlacementDebug.clusters.map((cluster: number[], i: number) => {
-					if (!Array.isArray(cluster) || cluster.length === 0) return null;
-					// Get anchor positions and bounding boxes for this cluster
-					const entries = cluster.map(idx => Array.from(airlinerLabels.values())[idx]);
-					const anchors = entries.map(entry => entry?.anchor || { x: 0, y: 0 });
-					const measurements = entries.map((entry, idx) => labelMeasurements.get(Array.from(airlinerLabels.keys())[cluster[idx]]) || { width: 100, height: 20 });
-					// Compute bounding rectangle
+				{debugMode && Array.from(airlinerPlotDebug.values()).map((entry, i) => {
+					if (!entry.placement || entry.placementFailed) return null;
+
+					// For single label, skip cluster visualisation
+					const anchors = [entry.placement.anchor];
+					const measurements = [labelMeasurements[entry.airlinerID] || { width: 100, height: 20 }];
+
 					const rects = anchors.map((a, j) => ({
 						minX: a.x - measurements[j].width / 2,
 						maxX: a.x + measurements[j].width / 2,
@@ -483,12 +558,11 @@ export default function AirlinerScatterPlot({
 					const maxX = Math.max(...rects.map(r => r.maxX));
 					const minY = Math.min(...rects.map(r => r.minY));
 					const maxY = Math.max(...rects.map(r => r.maxY));
-					// Compute centroid
 					const centroid = anchors.reduce((acc, a) => ({ x: acc.x + a.x, y: acc.y + a.y }), { x: 0, y: 0 });
 					centroid.x /= anchors.length;
 					centroid.y /= anchors.length;
-					const isTrueCluster = cluster.length > 1;
-					if (!isTrueCluster) return null; // Only render for true clusters
+					const isTrueCluster = anchors.length > 1;
+					if (!isTrueCluster) return null;
 
 					return (
 						<g key={`debug-cluster-${i}`}>
@@ -522,13 +596,12 @@ export default function AirlinerScatterPlot({
 					);
 				})}
 
-				{/* Visualise band occupancy (occupied and available ranges) */}
-				{debugMode && labelPlacementOccupancy.map((bandData, bandIndex) => (
-					<g key={`debug-band-occupancy-${bandIndex}`}>
-						{/* Visualise occupied ranges */}
-						{bandData.occupiedRanges.map((range, rangeIndex) => (
+				{/* Visualise band occupancy (debug, global) */}
+				{debugMode && airlinerChartDebug.occupancy.map((bandData, i) => (
+					<g key={`debug-band-occupancy-${i}`}>
+						{bandData.occupiedRanges && bandData.band && bandData.occupiedRanges.map((range: any, rangeIndex: number) => (
 							<rect
-								key={`debug-occupied-${bandIndex}-${rangeIndex}`}
+								key={`debug-occupied-${i}-${rangeIndex}`}
 								x={range.start}
 								y={bandData.band.top}
 								width={range.width}
@@ -541,75 +614,94 @@ export default function AirlinerScatterPlot({
 					</g>
 				))}
 
-				
-				{/* Visualise sweep xSteps as a continuous blue line with tick markers (debug only) */}
-				{debugMode && labelPlacementDebug?.sweep && Array.from(airlinerLabels.entries()).map(([airlinerId, label], i) => {
-					const xSteps: number[] = labelPlacementDebug.sweep[airlinerId]?.xSteps;
-					if (!xSteps || xSteps.length === 0) return null;
-					const y = label.anchor.y;
-					// Build points string for polyline
-					const points = xSteps.map((x: number) => `${x},${y}`).join(' ');
+				{/* Visualise label placement occupancy (debug) */}
+				{debugMode && Array.from(airlinerPlotDebug.values()).map((entry, i) => {
+					if (!entry.labelAnchor) return null;
+					const placed = entry.placement ? { x: entry.placement.x, y: entry.placement.y } : entry.labelAnchor;
+					const failed = entry.placementFailed;
+					const label = entry.labelMeasurement || { width: 60, height: 16 };
 					return (
-						<g key={`debug-sweep-line-${i}`}>
-							{/* Continuous line */}
-							<polyline
-								points={points}
-								fill="none"
-								stroke="blue"
-								strokeWidth={1.5}
-								opacity={0.7}
-							/>
-							{/* Tick markers */}
-							{xSteps.map((x: number, j: number) => (
-								<line
-									key={`debug-sweep-tick-${i}-${j}`}
-									x1={x}
-									y1={y - 4}
-									x2={x}
-									y2={y + 4}
-									stroke="blue"
-									strokeWidth={1}
-									opacity={0.8}
+						<rect
+							key={`debug-label-occupancy-${i}`}
+							x={placed.x - label.width / 2}
+							y={placed.y - label.height / 2}
+							width={label.width}
+							height={label.height}
+							fill={failed ? "rgba(255,0,0,0.2)" : "rgba(0,0,255,0.15)"}
+							stroke={failed ? "rgba(255,0,0,0.5)" : "rgba(0,0,255,0.4)"}
+							strokeWidth={1}
+							style={{ pointerEvents: 'none' }}
+						/>
+					);
+				})}
+
+				{/* Ghost measurement labels (hidden, for measurement only) */}
+				{/* Only render ghost labels until all label measurements are available */}
+				{!areLabelsMeasured && (
+					<g style={{ opacity: 0, pointerEvents: 'none', position: 'absolute' }}>
+						{data.map((airliner) => {
+							const entry = airlinePlotData.get(airliner.airlinerID);
+							if (!entry || !entry.labelAnchor) return null;
+							return (
+								<AirlinerScatterLabel
+									key={`measure-${airliner.airlinerID}`}
+									airlinerData={airliner}
+									coords={entry.labelAnchor}
+									classNames={`ghost-label-${airliner.airlinerID}`}
+									ref={handleLabelRef(airliner.airlinerID)}
 								/>
-							))}
-						</g>
-					);
-				})}
+							);
+						})}
+					</g>
+				)}
 
-				{/* Labels */}
-				{Array.from(airlinerLabels.entries()).map(([airlinerId, label], i) => {
-					const airlinerIndex = airlinerData.findIndex((d, idx) => `${idx}-${d.nameICAO}` === airlinerId);
-					const anchor = airlinerLabels.get(airlinerId)?.anchor || { x: 0, y: 0 };
-					const placed = labelPositions.get(airlinerId) || { x: anchor.x, y: anchor.y };
-					
-					if (!placed) return null;
-					
+				{/* Labels for each airliner, placed according to placement algorithm */}
+				{data.map((airliner, i) => {
+					const entry = airlinePlotData.get(airliner.airlinerID);
+					if (!entry) return null;
+					if (!entry.labelAnchor) return null;
+					if (!entry.placement) return null;
+
+					if (entry.placementFailed) return null;
+
 					return (
-						<g key={`label-${i}-${airlinerData[airlinerIndex]?.nameICAO || airlinerId}`}>
+						<g key={`label-${i}-${airliner.nameICAO || airliner.airlinerID}`}>
 							<AirlinerScatterLabel
-								airlinerData={airlinerData[airlinerIndex]}
-								coords={{
-									x: placed.x,
-									y: placed.y
-								}}
-								classNames={`measured-label-${airlinerIndex}`}
+								airlinerData={airliner}
+								coords={entry.placement}
+								classNames={`label-${airliner.airlinerID}`}
 							/>
-
-							{/* Debug line from anchor to position */}
-							<Connector
-								x={anchor.x}
-								y={anchor.y}
-								dx={placed.x - anchor.x}
-								dy={placed.y - anchor.y}
-								stroke="blue"
-								type="elbow"
-								pathProps={{
-									opacity: 0.5
+							<MarkerLeader
+								x1={entry.labelAnchor.x}
+								y1={entry.labelAnchor.y}
+								x2={entry.placement.x}
+								y2={entry.placement.y}
+								endBBox={entry.labelDimensions}
+								targetBBox={{
+									width: entry.labelDimensions.width / 2,
+									height: entry.labelDimensions.height
 								}}
+								angleStep={45}
+								stroke="grey"
+								strokeWidth={1}
+								opacity={0.5}
 							/>
 						</g>
 					);
 				})}
+
+				{/* Debug text showing label placements */}
+				{debugMode && (
+					<text
+						x={20}
+						y={20}
+						fontSize={16}
+						fill="black"
+					>
+						{`Placed ${Array.from(airlinePlotData.values()).filter(e => !e.placementFailed).length} out of ${airlinePlotData.size} labels, `}
+						{`ghost rendering ${typeof window !== "undefined" ? document.querySelectorAll('[class*="measured-label"]').length : 0}`}
+					</text>
+				)}
 			</svg>
 		</div>
 	);
