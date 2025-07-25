@@ -13,7 +13,7 @@ import { ChartLayoutContext } from "@/context/ChartLayoutContext";
 import { ChartScalesContext } from "@/context/ChartScalesContext";
 import { ChartFormatContext } from "@/context/ChartFormatContext";
 import { createChartDataContext } from "@/context/ChartDataContext";
-import { DebugProvider, useDebugMode } from "@/context/DebugContext";
+import { DebugProvider, useDebugMode } from "@/context/DebugModeContext";
 
 // [IMPORT] Utilities/helpers //
 import { useChartDimensions } from "@/lib/hooks/use-chart-dimensions";

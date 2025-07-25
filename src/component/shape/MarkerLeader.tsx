@@ -1,4 +1,5 @@
 import React from "react";
+import { useDebugMode } from "@/context/DebugModeContext";
 
 /**
  * Finds the closest point on the edge of a rectangle to a given point.
@@ -181,6 +182,19 @@ function snapToAngle(
 }
 
 /**
+ * Returns the Euclidean distance between two points.
+ *
+ * @param {number} x1 - X coordinate of the first point
+ * @param {number} y1 - Y coordinate of the first point
+ * @param {number} x2 - X coordinate of the second point
+ * @param {number} y2 - Y coordinate of the second point
+ * @returns {number} - The Euclidean distance between the two points
+ */
+function getEuclideanDistance(x1: number, y1: number, x2: number, y2: number) {
+	return Math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2);
+}
+
+/**
  * MarkerLeader
  *
  * Renders a leader line that always starts at a 45° angle (up-left, up-right, bottom-right, bottom-left)
@@ -211,6 +225,7 @@ export interface MarkerLeaderProps {
 	endBBox?: { width: number; height: number };
 	targetBBox?: { width: number; height: number };
 	angleStep?: number;
+	minLength?: number;
 	stroke?: string;
 	strokeWidth?: number;
 	className?: string;
@@ -224,11 +239,14 @@ export const MarkerLeader = React.forwardRef<SVGPathElement, MarkerLeaderProps &
 	endBBox,
 	targetBBox,
 	angleStep = 45,
+	minLength = 12,
 	stroke = "#222",
 	strokeWidth = 2,
 	className,
 	...rest
 }, ref) => {
+
+	const { debugMode } = useDebugMode();
 
 	let targetPoint: { x: number; y: number } = { x: x2, y: y2 };
 
@@ -238,22 +256,50 @@ export const MarkerLeader = React.forwardRef<SVGPathElement, MarkerLeaderProps &
 	}
 
 	// First snap to angle
-	const snappedEnd = snapToAngle(x1, y1, targetPoint.x, targetPoint.y, angleStep);
+	const angleSnappedEnd = snapToAngle(x1, y1, targetPoint.x, targetPoint.y, angleStep);
 	// Then clip to rectangle
-	const endPoint = clipLineToRect(x1, y1, snappedEnd.x, snappedEnd.y, x2, y2, endBBox?.width || 0, endBBox?.height || 0);
+	const endPoint = clipLineToRect(x1, y1, angleSnappedEnd.x, angleSnappedEnd.y, x2, y2, endBBox?.width || 0, endBBox?.height || 0);
+
+	// If the end point is too close to the start point, return
+	if (getEuclideanDistance(x1, y1, endPoint.x, endPoint.y) < minLength) {
+		return null;
+	}
 
 	// Draw the line
 	const path = `M ${x1} ${y1} L ${endPoint.x} ${endPoint.y}`;
 
 	return (
-		<path
-			d={path}
-			stroke={stroke}
-			strokeWidth={strokeWidth}
-			fill="none"
-			className={className}
-			ref={ref}
-			{...rest}
-		/>
+		<g>
+			{debugMode && (
+				<rect
+					x={x2 - (targetBBox?.width || 0) / 2}
+					y={y2 - (targetBBox?.height || 0) / 2}
+					width={targetBBox?.width || 0}
+					height={targetBBox?.height || 0}
+					fill="rgba(0, 0, 255, 0.1)"
+					stroke="rgba(0, 0, 255, 0.5)"
+					strokeWidth={1}
+				/>
+			)}
+			{debugMode && (
+				<circle
+					cx={targetPoint.x}
+					cy={targetPoint.y}
+					r={2}
+					fill="rgba(0, 0, 255, 0.1)"
+					stroke="rgba(0, 0, 255, 0.5)"
+					strokeWidth={1}
+				/>
+			)}
+			<path
+				d={path}
+				stroke={stroke}
+				strokeWidth={strokeWidth}
+				fill="none"
+				className={className}
+				ref={ref}
+				{...rest}
+			/>
+		</g>
 	);
 });

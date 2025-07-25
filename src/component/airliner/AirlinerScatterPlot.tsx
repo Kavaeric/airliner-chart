@@ -23,17 +23,18 @@ import { MarkerLeader } from "../shape/MarkerLeader";
 import { useChartScales } from "@/context/ChartScalesContext";
 import { useChartData } from "./AirlinerChart";
 import { useChartLayout } from "@/context/ChartLayoutContext";
-import { useDebugMode } from "@/context/DebugContext";
+import { useDebugMode } from "@/context/DebugModeContext";
 
 // [IMPORT] Utilities //
 import { getAirlinerMarkers, getAirlinerMarkerExtents, getAirlinerMarkerY } from "@/lib/data/process-airliner-markers";
 import { calculateChartPlacementBands } from "@/lib/band-placement/chart-bands";
-import { calculateBandOccupancy, Obstacle } from "@/lib/band-placement/band-occupancy";
+import { calculateBandOccupancy } from "@/lib/band-placement/band-occupancy";
 import { calculateBandPlacement } from "@/lib/band-placement/calculate-band-placement";
 import { Airliner } from '@/lib/data/airliner-types';
 
 // [IMPORT] CSS styling //
 import plotStyles from "./AirlinerScatterPlot.module.css";
+import labelStyles from "./AirlinerScatterLabel.module.css";
 import responsiveStyles from "@/component/ResponsiveSVG.module.css";
 import { MarkerCross } from "../shape/MarkerCross";
 
@@ -71,6 +72,9 @@ export default function AirlinerScatterPlot({
 	const markerSize = 12;
 	const markerLineMajorWidth = 4;
 	const markerLineMinorWidth = 2;
+	const labelFontSize = 14;
+	const labelPadding = 4;
+	const labelMargin = 0;
 
 	// === Early exit for empty chart ===
 	// If chart has no size or no data, show loading state.
@@ -83,69 +87,36 @@ export default function AirlinerScatterPlot({
 	}
 
 	// === Plotting pipeline ===
-	// 1. Marker calculation for each airliner:
-	//    - For each airliner, calculate:
-	//        a) markerPositions: Array of pixel coordinates for each marker (e.g., per class/cabin)
-	//        b) markerBoundingBox: Bounding box (minX, maxX, minY, maxY) covering all markers for this airliner
-	//        c) labelAnchor: Anchor point for label placement (typically horizontally between min/max marker, vertically at markerY)
-	//    - Results are stored in a Map keyed by airlinerID for fast lookup in later steps.
-	const markerData = useMemo(() => {
-		// Create a new Map to hold per-airliner marker data
+	// 1. Marker calculation for each airliner
+	const markerObjects = useMemo(() => {
 		const map = new Map();
-
-		// Iterate over each airliner in the dataset
 		data.forEach(airliner => {
-			// Calculate marker positions
-			// getAirlinerMarkers returns an array of marker positions (pixel coordinates) for this airliner,
-			// using the airliner's idNumber, data, and the current chart scales.
 			const markerPositions = getAirlinerMarkers(airliner.idNumber, airliner, xScaleView, yScaleView);
-
-			// Calculate marker extents (min/max) for the 'class' dimension
-			// getAirlinerMarkerExtents returns the minimum and maximum marker positions along the 'class' axis.
-			// Used to determine the horizontal spread of the markers for this airliner.
 			const classExtents = getAirlinerMarkerExtents(markerPositions, 'class');
-
-			// Calculate the vertical position for the marker row
-			// getAirlinerMarkerY returns the y-coordinate (in pixels) for the marker row.
 			const markerY = getAirlinerMarkerY(markerPositions);
-
-			// Calculate marker bounding box
-			// The bounding box is expanded by half the marker size on each side to fully enclose all markers.
 			const halfSize = markerSize / 2;
 			const markerBoundingBox =
 				classExtents.min && classExtents.max
 					? {
-							minX: classExtents.min.x - halfSize,
-							maxX: classExtents.max.x + halfSize,
-							minY: markerY - halfSize,
-							maxY: markerY + halfSize
-					  }
-					: null; // If extents are missing, bounding box is null
-
-			// Calculate label anchor point
-			// The label anchor is horizontally clamped between min and max marker x, and vertically at markerY.
-			// This ensures the label is positioned within the marker spread.
+						minX: classExtents.min.x - halfSize,
+						maxX: classExtents.max.x + halfSize,
+						minY: markerY - halfSize,
+						maxY: markerY + halfSize
+					}
+					: null;
 			const labelAnchor =
 				classExtents.min && classExtents.max
 					? {
-							x: Math.min(
-								Math.max(classExtents.min.x, 0), // Clamp to at least 0
-								classExtents.max.x                // ...but not beyond max
-							),
-							y: markerY
-					  }
-					: null; // If extents are missing, anchor is null
-
-			// Store all calculated data for this airliner in the map ---
-			// Structure: { markerPositions, markerBoundingBox, labelAnchor }
+						x: Math.min(Math.max(classExtents.min.x, 0), classExtents.max.x),
+						y: markerY
+					}
+					: null;
 			map.set(airliner.airlinerID, {
 				markerPositions,
 				markerBoundingBox,
 				labelAnchor
 			});
 		});
-
-		// Return the complete map of airliner marker data
 		return map;
 	}, [data, xScaleView, yScaleView, markerSize]);
 
@@ -166,9 +137,14 @@ export default function AirlinerScatterPlot({
 		labelRefs.current[airlinerID] = el;
 		if (el) {
 			const bbox = el.getBBox();
+
+			// Add padding and margin to the bounding box to get the final dimensions
+			const width = bbox.width + labelPadding * 2 + labelMargin * 2;
+			const height = bbox.height + labelPadding * 2 + labelMargin * 2;
+
 			setLabelMeasurements(prev => ({
 				...prev,
-				[airlinerID]: { width: bbox.width, height: bbox.height }
+				[airlinerID]: { width, height }
 			}));
 		}
 	};
@@ -182,7 +158,7 @@ export default function AirlinerScatterPlot({
 			setAllLabelsMeasured(false);
 			return;
 		}
-		console.log('labelMeasurements', labelMeasurements);
+		// console.log('labelMeasurements', labelMeasurements);
 		const allMeasured = data.every(airliner => !!labelMeasurements[airliner.airlinerID]);
 		setAllLabelsMeasured(allMeasured);
 	}, [labelMeasurements, data]);
@@ -193,111 +169,69 @@ export default function AirlinerScatterPlot({
 		setAllLabelsMeasured(false);
 	}, [data]);
 
-	// Placement calculation: compute label placement, placement failure, and occupancy for each airliner
-	//    - This useMemo block prepares all data needed for label placement, including
-	//      collision avoidance and banding logic for the chart.
-	const placementData = useMemo(() => {
-		// Prepare placement objects for each airliner
-		// Each object contains:
-		//   - id: unique airlinerID
-		//   - anchor: the preferred anchor point for the label (usually near the marker)
-		//   - position: initial position (same as anchor, may be adjusted by placement)
-		//   - dimensions: measured width/height of the label (from labelMeasurements)
-		//   - markerBoundingBox: bounding box of the airliner's marker(s), used as an obstacle
-		const placementObjects = data.map(airliner => {
-			const marker = markerData.get(airliner.airlinerID);
+	// 3. Label objects for placement
+	const labelObjects = useMemo(() => {
+		return data.map(airliner => {
+			const marker = markerObjects.get(airliner.airlinerID);
 			const labelMeasurement = labelMeasurements[airliner.airlinerID] || null;
 			return {
 				id: airliner.airlinerID,
-				anchor: marker?.labelAnchor, // { x, y } or undefined
-				position: marker?.labelAnchor, // initial position, may be moved
-				dimensions: labelMeasurement, // { width, height } or null
-				markerBoundingBox: marker?.markerBoundingBox // { minX, maxX, minY, maxY } or undefined
+				anchor: marker?.labelAnchor,
+				placedPosition: marker?.labelAnchor,
+				dimensions: labelMeasurement
 			};
 		});
+	}, [data, markerObjects, labelMeasurements]);
 
-		// Gather marker bounding boxes as obstacles
-		// These are used to prevent label overlap with markers.
-		// Only include bounding boxes that exist (filter out undefined).
-		const markerBoxObstacles = placementObjects
+	// 4. markerBoxObstacles for band/occupancy logic
+	const markerBoxObstacles = useMemo(() => {
+		return Array.from(markerObjects.values())
 			.map(obj => obj.markerBoundingBox)
 			.filter((box): box is { minX: number, maxX: number, minY: number, maxY: number } => !!box);
+	}, [markerObjects]);
 
-		// Only objects with both an anchor and measured dimensions are eligible for placement.
-		const validPlacementObjects = placementObjects.filter(obj => obj.anchor && obj.dimensions);
+	// 5. Placement calculation: only use valid label objects
+	const validLabelObjects = useMemo(() => labelObjects.filter(obj => obj.anchor && obj.dimensions), [labelObjects]);
 
-		// This is used to determine the vertical spacing of chart bands.
-		let maxLabelHeight = Math.max(...validPlacementObjects.map(e => e.dimensions?.height || 0));
-
-		// Fallback to a default if no valid heights found.
-		if (!isFinite(maxLabelHeight) || maxLabelHeight <= 0) maxLabelHeight = 20;
-
-		// Convert marker bounding boxes to band obstacles
-		// Each obstacle is represented by its centre position and height.
+	const placementData = useMemo(() => {
+		// Calculate chart bands for label placement
+		const maxLabelHeight = Math.max(...validLabelObjects.map(e => e.dimensions?.height || 0), 20);
 		const bandObstacles = markerBoxObstacles.map(box => ({
 			position: { x: (box.minX + box.maxX) / 2, y: (box.minY + box.maxY) / 2 },
 			height: box.maxY - box.minY
 		}));
-
-		// Calculate chart bands for label placement
-		// Bands are horizontal regions where labels can be placed, spaced by maxLabelHeight.
-		// The function also takes into account obstacles and band count.
 		const chartBands = calculateChartPlacementBands(
-			{ width, height },      // Chart dimensions
-			maxLabelHeight,         // Band height
-			maxLabelHeight,         // Minimum band gap
-			bandObstacles,          // Obstacles to avoid
-			3,                      // Number of bands (hardcoded)
-			maxLabelHeight          // Minimum band height
+			{ width, height },
+			maxLabelHeight,
+			maxLabelHeight,
+			bandObstacles
 		);
-
-		// Calculate band occupancy
-		// Determines which bands are blocked by obstacles (markers).
-		const occupancy = calculateBandOccupancy(
-			chartBands,
-			markerBoxObstacles,
-			width,
-			height
-		);
-
-		// Attempts to assign each label a position within the bands, avoiding collisions.
-		// Returns:
-		//   - placements: Map of airlinerID to placed position
-		//   - failed: Array of objects for labels that could not be placed
-		//   - occupancy: Updated occupancy map
+		const occupancy = calculateBandOccupancy(chartBands, markerBoxObstacles, width, height);
 		const placementResult = calculateBandPlacement({
-			dimensions: { width, height }, // Chart size
-			bands: chartBands,             // Placement bands
-			occupancy,                     // Band occupancy
-			objects: validPlacementObjects, // Labels to place
-			clusterDetection: { distance: { x: 4, y: 4 } }, // Minimum separation for clusters
+			dimensions: { width, height },
+			bands: chartBands,
+			occupancy,
+			objects: validLabelObjects,
+			clusterDetection: { distance: { x: 4, y: 4 } },
 			strategy: {
-				// First pass placement algorithm: try to place the labels in specific positions determined by the modes array
 				firstPass: {
-					modes: ['top-left', 'left', 'top'], // Placement strategies to try first
-					maxDistance: { x: 50, y: 90 },      // Max allowed move from anchor
+					modes: ['top-left', 'left', 'top'],
+					maxDistance: { x: 50, y: 90 },
 					offset: { x: 0, y: 0 }
 				},
-				// Second pass placement algorithm: if the first pass fails, try to place the labels by sweeping horizontally
-				// and finding placements as it goes
 				sweep: {
-					horizontal: 'sweep-to-right',       // Sweep direction for fallback
+					horizontal: 'sweep-to-right',
 					maxDistance: { x: 50, y: 90 },
 					stepFactor: .5,
-					verticalSearch: [-1, 1, 0, -2, 2], // Order of vertical band search
+					verticalSearch: [-1, 1, 0],
 					maxIterations: 2,
 					xAlign: 'left-to-anchor'
 				}
 			}
 		});
-
 		// Compose final placement map
-		// For each airliner, store:
-		//   - placement: the computed label position (or null if not placed)
-		//   - placementFailed: true if placement failed
-		//   - placementOccupancy: the final occupancy map (for debug/overlays)
 		const map = new Map();
-		placementObjects.forEach(obj => {
+		labelObjects.forEach(obj => {
 			const placed = placementResult.placements.get(obj.id) || null;
 			const failed = placementResult.failed.some((f: any) => f.id === obj.id);
 			map.set(obj.id, {
@@ -306,42 +240,30 @@ export default function AirlinerScatterPlot({
 				placementOccupancy: placementResult.occupancy
 			});
 		});
-
-		// Return the placement map for use in rendering
 		return map;
-	}, [data, markerData, labelMeasurements, width, height]);
+	}, [labelObjects, validLabelObjects, markerBoxObstacles, width, height]);
 
-	// Compose final maps
-	// Compose essentials for main chart rendering
-	//    - Combines marker and placement data for each airliner
-	//    - Access by airlinerID
+	// 6. Compose final data for rendering (merge marker and label data)
 	const airlinePlotData = useMemo(() => {
 		const map = new Map();
 		data.forEach(airliner => {
-			const marker = markerData.get(airliner.airlinerID);
+			const marker = markerObjects.get(airliner.airlinerID);
 			const placement = placementData.get(airliner.airlinerID);
-			/**
-			 * Main chart data object for each airliner.
-			 * @property {string} airlinerID - Unique identifier for the airliner.
-			 * @property {object} airlinerData - Original airliner data object.
-			 * @property {Array} markerPositions - Marker positions for the airliner.
-			 * @property {object|null} labelAnchor - Anchor point for label placement.
-			 * @property {{width: number, height: number}|null} labelDimensions - Bounding box of the rendered label (width/height), or null if not measured.
-			 * @property {object|null} placement - Final label placement position.
-			 * @property {boolean} placementFailed - True if label placement failed.
-			 */
+			const labelMeasurement = labelMeasurements[airliner.airlinerID] || null;
 			map.set(airliner.airlinerID, {
 				airlinerID: airliner.airlinerID,
 				airlinerData: airliner,
 				markerPositions: marker?.markerPositions,
+				markerBoundingBox: marker?.markerBoundingBox,
 				labelAnchor: marker?.labelAnchor,
-				labelDimensions: labelMeasurements[airliner.airlinerID] || null,
-				placement: placement?.placement,
-				placementFailed: placement?.placementFailed
+				labelDimensions: labelMeasurement,
+				placement: placement?.placement?.placement,
+				placementFailed: placement?.placementFailed,
+				debug: placement?.debug
 			});
 		});
 		return map;
-	}, [data, markerData, placementData, labelMeasurements]);
+	}, [data, markerObjects, placementData, labelMeasurements]);
 
 	// Compose global debug overlays (bands, occupancy, etc.)
 	//    - Repeats band and occupancy calculation for debug overlays
@@ -349,7 +271,7 @@ export default function AirlinerScatterPlot({
 		// chartBands and occupancy are calculated in placementData's useMemo
 		// To access them here, recalculate with the same logic
 		const placementObjects = data.map(airliner => {
-			const marker = markerData.get(airliner.airlinerID);
+			const marker = markerObjects.get(airliner.airlinerID);
 			const labelMeasurement = labelMeasurements[airliner.airlinerID] || null;
 			return {
 				id: airliner.airlinerID,
@@ -407,11 +329,9 @@ export default function AirlinerScatterPlot({
 		//   - Minimum band height (maxLabelHeight)
 		const chartBands = calculateChartPlacementBands(
 			{ width, height },     // Chart area dimensions
-			maxLabelHeight,        // Band height
-			maxLabelHeight,        // Minimum gap between bands
+			maxLabelHeight,        // Minimum band height
+			maxLabelHeight,        // Maximum band height
 			bandObstacles,         // Obstacles to avoid
-			3,                     // Number of bands (fixed)
-			maxLabelHeight         // Minimum band height
 		);
 		const occupancy = calculateBandOccupancy(chartBands, markerBoxObstacles, width, height);
 
@@ -427,7 +347,7 @@ export default function AirlinerScatterPlot({
 			bandMap,
 			occupancyMap
 		};
-	}, [data, markerData, labelMeasurements, width, height]);
+	}, [data, markerObjects, labelMeasurements, width, height]);
 
 	// Compose per-airliner debug data
 	//    - Combines all debug info for each airliner for quick lookup
@@ -435,17 +355,18 @@ export default function AirlinerScatterPlot({
 	const airlinerPlotDebug = useMemo(() => {
 		const map = new Map();
 		data.forEach(airliner => {
-			const marker = markerData.get(airliner.airlinerID);
+			const marker = markerObjects.get(airliner.airlinerID);
 			const placement = placementData.get(airliner.airlinerID);
 			map.set(airliner.airlinerID, {
 				...airlinePlotData.get(airliner.airlinerID),
 				markerBoundingBox: marker?.markerBoundingBox,
 				placementOccupancy: placement?.placementOccupancy,
-				labelMeasurement: labelMeasurements[airliner.airlinerID] || null
+				labelMeasurement: labelMeasurements[airliner.airlinerID] || null,
+				debug: placement?.debug
 			});
 		});
 		return map;
-	}, [data, markerData, placementData, airlinePlotData, labelMeasurements, debugMode]);
+	}, [data, markerObjects, placementData, airlinePlotData, labelMeasurements, debugMode]);
 
 	// Render SVG chart
 	return (
@@ -525,6 +446,7 @@ export default function AirlinerScatterPlot({
 
 				{/* Visualise marker bounding boxes (debug) */}
 				{debugMode && Array.from(airlinerPlotDebug.values()).map((entry, i) => (
+					
 					<g key={`debug-marker-box-${i}`}>
 						{entry.markerBoundingBox &&
 							<rect
@@ -532,8 +454,8 @@ export default function AirlinerScatterPlot({
 								y={entry.markerBoundingBox.minY}
 								width={(entry.markerBoundingBox.maxX ?? 0) - (entry.markerBoundingBox.minX ?? 0)}
 								height={(entry.markerBoundingBox.maxY ?? 0) - (entry.markerBoundingBox.minY ?? 0)}
-								fill="rgba(200, 80, 0, 0.5)"
-								stroke="rgba(80, 40, 0, 0.8)"
+								fill="rgba(13, 0, 255, 0.5)"
+								stroke="rgba(0, 35, 120, 0.8)"
 								strokeWidth={2}
 							/>
 						}
@@ -627,8 +549,9 @@ export default function AirlinerScatterPlot({
 							y={placed.y - label.height / 2}
 							width={label.width}
 							height={label.height}
-							fill={failed ? "rgba(255,0,0,0.2)" : "rgba(0,0,255,0.15)"}
-							stroke={failed ? "rgba(255,0,0,0.5)" : "rgba(0,0,255,0.4)"}
+							fill={failed ? "rgba(255, 0, 234, 0.1)" : "rgba(0,0,255,0.2)"}
+							stroke={failed ? "rgba(255, 0, 153, 0.2)" : "rgba(0,0,255,0.4)"}
+							strokeDasharray={failed ? "4, 4" : "0"}
 							strokeWidth={1}
 							style={{ pointerEvents: 'none' }}
 						/>
@@ -649,6 +572,7 @@ export default function AirlinerScatterPlot({
 									coords={entry.labelAnchor}
 									classNames={`ghost-label-${airliner.airlinerID}`}
 									ref={handleLabelRef(airliner.airlinerID)}
+									textSize={labelFontSize}
 								/>
 							);
 						})}
@@ -670,6 +594,7 @@ export default function AirlinerScatterPlot({
 								airlinerData={airliner}
 								coords={entry.placement}
 								classNames={`label-${airliner.airlinerID}`}
+								textSize={labelFontSize}
 							/>
 							<MarkerLeader
 								x1={entry.labelAnchor.x}
@@ -681,6 +606,7 @@ export default function AirlinerScatterPlot({
 									width: entry.labelDimensions.width / 2,
 									height: entry.labelDimensions.height
 								}}
+								minLength={12}
 								angleStep={45}
 								stroke="grey"
 								strokeWidth={1}

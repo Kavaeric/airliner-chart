@@ -8,7 +8,7 @@ import AirlinerChart from "@/component/airliner/AirlinerChart";
 import { ChartDataContext } from "@/component/airliner/AirlinerChart";
 
 // [IMPORT] Context providers/hooks //
-import { DebugProvider } from "@/context/DebugContext";
+import { DebugProvider } from "@/context/DebugModeContext";
 
 // [IMPORT] Utilities //
 import loadAirlinerData from "@/lib/data/airliner-data-processor";
@@ -115,7 +115,7 @@ export default function Home() {
 					</div>
 
 					{/* Chart component handles all the complex visualization logic */}
-					<DebugProvider initialDebugMode={false}>
+					<DebugProvider initialDebugMode={true}>
 						<AirlinerChart />
 					</DebugProvider>
 				</div>

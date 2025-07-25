@@ -3,26 +3,34 @@ import { BandOccupancy, consolidateOverlappingRanges, Range, invertOccupiedRange
 import { detectClustersWithFlatbush } from './detect-clusters-with-flatbush';
 import { solve, Model, Constraint } from 'yalps';
 
-// --- Type for unplaced objects (enforced throughout placement flow) ---
+
 /**
- * Represents an object to be placed by the algorithm.
- * This type is used for all placement object arrays and function parameters.
+ * @type {Object} DebugPlacementLogEntry
+ * Represents a debug placement log entry.
+ *
+ * @property {string} id - The id of the object being placed.
+ * @property {number} pass - Placement pass. e.g. right now, resolvePlacementSimple would be 0, resolvePlacementSweep would be 1.
+ * @property {string} algorithm - The algorithm that was used to place the object. e.g. resolvePlacementSimple, resolvePlacementSweep.
+ * @property {iteration} number - The algorithm's iteration (each algorithm starts at 0 internally).
+ * @property {any} placement - Arbitrary data about placement strategy.
+ * @property {boolean} placed - Whether the object was placed.
  */
+export type DebugPlacementLogEntry = {
+	id: string;
+	pass: number;
+	algorithm: string;
+	iteration: number;
+	placement: any;
+	isPlaced: boolean;
+}
+
+// --- Type for placement objects (enforced throughout placement flow) ---
 type PlacementObject = {
 	id: string;
 	anchor: { x: number; y: number };
-	position: { x?: number; y?: number };
 	dimensions: { width: number; height: number };
-};
-
-/**
- * Represents an object that could not be placed by the algorithm.
- * This type is used for all unplaced/failure arrays and return values.
- */
-type UnplacedPlacementObject = {
-	id: string;
-	anchor: { x: number; y: number };
-	dimensions: { width: number; height: number };
+	placedPosition: { x: number; y: number } | null;
+	bandIndex?: number;
 };
 
 /**
@@ -82,26 +90,6 @@ export type PlacementStrategy = {
 		xAlign: 'centre' | 'left-to-anchor' | 'right-to-anchor';
 	};
 };
-
-/**
- * @type {Object} BandPlacedObject
- * Represents an object that has been placed in a band.
- *
- * @property {string} id - Unique identifier for the placed object.
- * @property {number} x - The x position of the object.
- * @property {number} y - The y position of the object.
- * @property {Object} anchor - The anchor position of the object.
- *   @property {number} x - The anchor x coordinate.
- *   @property {number} y - The anchor y coordinate.
- * @property {number} bandIndex - The band index where the object was placed.
- */
-export type BandPlacedObject = {
-	id: string;
-	x: number;
-	y: number;
-	anchor: { x: number; y: number };
-	bandIndex: number;
-}
 
 /**
  * @type {Object} BandPlacementConfig
@@ -235,7 +223,7 @@ function getObjectExtents(x: number, width: number): { left: number; right: numb
  *   - `'left'`: If the object's extents are outside the band, place the object anyway, but align the object's right side to the right side of the range.
  *   - `'right'`: If the object's extents are outside the band, place the object anyway, but align the object's left side to the left side of the range.
  *   - `'both'`: Both `left` and `right`.
- * @returns BandPlacedObject if placement is successful, or null if not
+ * @returns PlacementObject if placement is successful, or null if not
  */
 function trySinglePlacement(
 	id: string,
@@ -248,7 +236,8 @@ function trySinglePlacement(
 	dimensions: { width: number; height: number },
 	maxDistance: { x: number; y: number },
 	ignoreBandExtents: 'none' | 'left' | 'right' | 'both' = 'both'
-): BandPlacedObject | null {
+): PlacementObject | null {
+
 	// 1. Treat anchor as immutable reference point
 	const anchor = { ...anchorWithOffset };
 
@@ -271,9 +260,9 @@ function trySinglePlacement(
 		selectedRange = selectRangeAtX(occupancy.availableRanges || [], candidateX);
 	}
 
-	if (!selectedRange) {
-		return null;
-	}
+	// If no range is found, return null
+	if (!selectedRange) return null;
+
 	// 4. Calculate if the object is at the start or end of the band
 	const atBandStart = selectedRange ? selectedRange.start === band.left : false;
 
@@ -300,10 +289,11 @@ function trySinglePlacement(
 		}
 	}
 
+	// 8. Calculate the final x position
 	let finalX: number;
 	finalX = candidateX;
 
-	// 8. Handle edge cases for narrow ranges
+	// 9. Handle edge cases for narrow ranges
 	if (atBandStart && allowLeftOverflow && selectedRange.width < dimensions.width) {
 		// If the object is at the start of the band, and allowed to overflow left, place the object at the right edge of the range
 		finalX = selectedRange.end - dimensions.width / 2;
@@ -320,26 +310,26 @@ function trySinglePlacement(
 		return null;
 	}
 	
-	// 9. Calculate the final y position
+	// 10. Calculate the final y position
 	let finalY = clampYPositionInBand(band, dimensions, anchor.y);
 
-	// 10. Clamp ranges
+	// 11. Clamp ranges
 	// Ensure the placement stays within the permitted range from the anchor
 	finalX = clampValue(finalX, anchor.x - maxDistance.x, anchor.x + maxDistance.x);
 
 	// If the left or right extents of the object are off the band, return null
-	if (finalX + dimensions.width / 2 < band.left) {return null;}
-	if (finalX - dimensions.width / 2 > band.right) {return null;}
+	if (finalX + dimensions.width / 2 < band.left) return null;
+	if (finalX - dimensions.width / 2 > band.right) return null;
 
 	// Clamp the finalY to the maximum allowed distance from the anchor
 	// finalY = clampValue(finalY, anchor.y - maxDistance.y, anchor.y + maxDistance.y);
 
-	// 11. Return placement object
+	// 12. Return placement object
 	return {
 		id,
-		x: finalX,
-		y: finalY,
 		anchor,
+		dimensions,
+		placedPosition: { x: finalX, y: finalY },
 		bandIndex: band.index
 	};
 }
@@ -440,19 +430,19 @@ function getMaxDistance(maxDistance?: { x?: number; y?: number }): { x: number; 
  * @param occupancyArr - Array of BandOccupancy objects
  * @param homeBandIndex - The index of the object's home band
  * @param maxDistance - Maximum allowed distance from anchor for placement
- * @returns BandPlacedObject if placement is successful, or null if no valid position is found
+ * @returns PlacementObject if placement is successful, or null if no valid position is found
  */
 function resolvePlacementSimple(
 	placementObject: PlacementObject,
-	strategy: PlacementStrategy,
+	strategy: PlacementStrategy['firstPass'],
 	bandArr: PlacementBand[],
 	occupancyArr: BandOccupancy[],
 	homeBandIndex: number,
-	maxDistance: { x: number; y: number }
-): BandPlacedObject | null {
+	maxDistance: { x: number; y: number },
+): { foundPlacement: PlacementObject | null, debugLog: DebugPlacementLogEntry[] } {
 	const anchor = placementObject.anchor;
 	const dimensions = placementObject.dimensions;
-	const offset = strategy.firstPass.offset;
+	const offset = strategy.offset;
 	const anchorWithOffset = {
 		x: anchor.x + (offset?.x ?? 0),
 		y: anchor.y + (offset?.y ?? 0)
@@ -460,20 +450,46 @@ function resolvePlacementSimple(
 	const band = bandArr[homeBandIndex];
 	const occupancy = occupancyArr[homeBandIndex];
 
+	let foundPlacement: PlacementObject | null = null;
+	let debugLog: DebugPlacementLogEntry[] = [];
+	let iteration = 0;
+
 	// Try each strategy in order based on the given list of modes, return the first successful placement
-	for (const mode of strategy.firstPass.modes) {
+	for (const mode of strategy.modes) {
+
+		// If a placement has been found, break out of the loop
+		if (foundPlacement) break;
+
 		switch (mode) {
 			case 'left': {
 				if (band && occupancy && anchorWithOffset.x) {
-					const placement = trySinglePlacement(placementObject.id, occupancy, band, anchorWithOffset, 'left-to-anchor', 'none', false, dimensions, maxDistance);
-					if (placement) return placement;
+					const placementIteration = trySinglePlacement(placementObject.id, occupancy, band, anchorWithOffset, 'left-to-anchor', 'none', false, dimensions, maxDistance);
+					debugLog.push({
+						id: placementObject.id,
+						pass: 0,
+						algorithm: 'resolvePlacementSimple',
+						iteration: iteration,
+						placement: mode,
+						isPlaced: placementIteration ? true : false
+					});
+					iteration++;
+					foundPlacement = placementIteration;
 				}
 				break;
 			}
 			case 'right': {
 				if (band && occupancy && anchorWithOffset.x) {
-					const placement = trySinglePlacement(placementObject.id, occupancy, band, anchorWithOffset, 'right-to-anchor', 'none', false, dimensions, maxDistance);
-					if (placement) return placement;
+					const placementIteration = trySinglePlacement(placementObject.id, occupancy, band, anchorWithOffset, 'right-to-anchor', 'none', false, dimensions, maxDistance);
+					debugLog.push({
+						id: placementObject.id,
+						pass: 0,
+						algorithm: 'resolvePlacementSimple',
+						iteration: iteration,
+						placement: mode,
+						isPlaced: placementIteration ? true : false
+					});
+					iteration++;
+					foundPlacement = placementIteration;
 				}
 				break;
 			}
@@ -481,8 +497,17 @@ function resolvePlacementSimple(
 				const bandAbove = bandArr[homeBandIndex - 1];
 				const occupancyAbove = occupancyArr[homeBandIndex - 1];
 				if (bandAbove && occupancyAbove) {
-					const placement = trySinglePlacement(placementObject.id, occupancyAbove, bandAbove, anchorWithOffset, 'centre', 'bottom', false, dimensions, maxDistance);
-					if (placement) return placement;
+					const placementIteration = trySinglePlacement(placementObject.id, occupancyAbove, bandAbove, anchorWithOffset, 'centre', 'bottom', false, dimensions, maxDistance);
+					debugLog.push({
+						id: placementObject.id,
+						pass: 0,
+						algorithm: 'resolvePlacementSimple',
+						iteration: iteration,
+						placement: mode,
+						isPlaced: placementIteration ? true : false
+					});
+					iteration++;
+					foundPlacement = placementIteration;
 				}
 				break;
 			}
@@ -490,8 +515,17 @@ function resolvePlacementSimple(
 				const bandBelow = bandArr[homeBandIndex + 1];
 				const occupancyBelow = occupancyArr[homeBandIndex + 1];
 				if (bandBelow && occupancyBelow) {
-					const placement = trySinglePlacement(placementObject.id, occupancyBelow, bandBelow, anchorWithOffset, 'centre', 'top', false, dimensions, maxDistance);
-					if (placement) return placement;
+					const placementIteration = trySinglePlacement(placementObject.id, occupancyBelow, bandBelow, anchorWithOffset, 'centre', 'top', false, dimensions, maxDistance);
+					debugLog.push({
+						id: placementObject.id,
+						pass: 0,
+						algorithm: 'resolvePlacementSimple',
+						iteration: iteration,
+						placement: mode,
+						isPlaced: placementIteration ? true : false
+					});
+					iteration++;
+					foundPlacement = placementIteration;
 				}
 				break;
 			}
@@ -499,8 +533,17 @@ function resolvePlacementSimple(
 				const bandAbove = bandArr[homeBandIndex - 1];
 				const occupancyAbove = occupancyArr[homeBandIndex - 1];
 				if (bandAbove && occupancyAbove) {
-					const placement = trySinglePlacement(placementObject.id, occupancyAbove, bandAbove, anchorWithOffset, 'left-to-anchor', 'bottom', false, dimensions, maxDistance);
-					if (placement) return placement;
+					const placementIteration = trySinglePlacement(placementObject.id, occupancyAbove, bandAbove, anchorWithOffset, 'left-to-anchor', 'bottom', false, dimensions, maxDistance);
+					debugLog.push({
+						id: placementObject.id,
+						pass: 0,
+						algorithm: 'resolvePlacementSimple',
+						iteration: iteration,
+						placement: mode,
+						isPlaced: placementIteration ? true : false
+					});
+					iteration++;
+					foundPlacement = placementIteration;
 				}
 				break;
 			}
@@ -508,8 +551,17 @@ function resolvePlacementSimple(
 				const bandAbove = bandArr[homeBandIndex - 1];
 				const occupancyAbove = occupancyArr[homeBandIndex - 1];
 				if (bandAbove && occupancyAbove) {
-					const placement = trySinglePlacement(placementObject.id, occupancyAbove, bandAbove, anchorWithOffset, 'right-to-anchor', 'bottom', false, dimensions, maxDistance);
-					if (placement) return placement;
+					const placementIteration = trySinglePlacement(placementObject.id, occupancyAbove, bandAbove, anchorWithOffset, 'right-to-anchor', 'bottom', false, dimensions, maxDistance);
+					debugLog.push({
+						id: placementObject.id,
+						pass: 0,
+						algorithm: 'resolvePlacementSimple',
+						iteration: iteration,
+						placement: mode,
+						isPlaced: placementIteration ? true : false
+					});
+					iteration++;
+					foundPlacement = placementIteration;
 				}
 				break;
 			}
@@ -517,8 +569,17 @@ function resolvePlacementSimple(
 				const bandBelow = bandArr[homeBandIndex + 1];
 				const occupancyBelow = occupancyArr[homeBandIndex + 1];
 				if (bandBelow && occupancyBelow) {
-					const placement = trySinglePlacement(placementObject.id, occupancyBelow, bandBelow, anchorWithOffset, 'left-to-anchor', 'top', false, dimensions, maxDistance);
-					if (placement) return placement;
+					const placementIteration = trySinglePlacement(placementObject.id, occupancyBelow, bandBelow, anchorWithOffset, 'left-to-anchor', 'top', false, dimensions, maxDistance);
+					debugLog.push({
+						id: placementObject.id,
+						pass: 0,
+						algorithm: 'resolvePlacementSimple',
+						iteration: iteration,
+						placement: mode,
+						isPlaced: placementIteration ? true : false
+					});
+					iteration++;
+					foundPlacement = placementIteration;
 				}
 				break;
 			}
@@ -526,8 +587,17 @@ function resolvePlacementSimple(
 				const bandBelow = bandArr[homeBandIndex + 1];
 				const occupancyBelow = occupancyArr[homeBandIndex + 1];
 				if (bandBelow && occupancyBelow) {
-					const placement = trySinglePlacement(placementObject.id, occupancyBelow, bandBelow, anchorWithOffset, 'right-to-anchor', 'top', false, dimensions, maxDistance);
-					if (placement) return placement;
+					const placementIteration = trySinglePlacement(placementObject.id, occupancyBelow, bandBelow, anchorWithOffset, 'right-to-anchor', 'top', false, dimensions, maxDistance);
+					debugLog.push({
+						id: placementObject.id,
+						pass: 0,
+						algorithm: 'resolvePlacementSimple',
+						iteration: iteration,
+						placement: mode,
+						isPlaced: placementIteration ? true : false
+					});
+					iteration++;
+					foundPlacement = placementIteration;
 				}
 				break;
 			}
@@ -535,8 +605,8 @@ function resolvePlacementSimple(
 				break;
 		}
 	}
-	// Explicitly return null if no placement was found in any case
-	return null;
+
+	return { foundPlacement: foundPlacement, debugLog: debugLog };
 }
 
 /**
@@ -582,41 +652,49 @@ function precomputeBandCandidates(
  * @param occupancyArr - Array of BandOccupancy objects
  * @param homeBandIndex - The index of the object's home band
  * @param maxDistance - Maximum allowed distance from anchor for placement
- * @param debugCollector - Optional debug collector to store xSteps for this object
- * @returns BandPlacedObject if placement is successful, or null if no valid position is found
+ * @returns PlacementObject if placement is successful, or null if no valid position is found
  */
 function resolvePlacementSweep(
 	placementObject: PlacementObject,
-	strategy: PlacementStrategy,
+	strategy: PlacementStrategy['sweep'],
 	bands: PlacementBand[],
 	occupancyArr: BandOccupancy[],
 	homeBandIndex: number,
-	maxDistance: { x: number; y: number },
-	debugCollector?: { [id: string]: any }
-): BandPlacedObject | null {
-	// Sweeps left to right to try to place an object based on the vertical search strategy
+	maxDistance: { x: number; y: number }
+): { foundPlacement: PlacementObject | null, debugLog: DebugPlacementLogEntry[] } {
 
-	const verticalSearch = strategy.sweep.verticalSearch;
+	let iteration = 0;
+	let foundPlacement: PlacementObject | null = null;
+	let debugLog: DebugPlacementLogEntry[] = [];
+
+	const verticalSearch = strategy.verticalSearch;
 	const bandIndicesToCheck = getBandSearchOrder(homeBandIndex, bands, verticalSearch);
 
-	const anchorX = placementObject.anchor.x + (strategy.sweep.offset?.x ?? 0);
+	const anchorX = placementObject.anchor.x + (strategy.offset?.x ?? 0);
 	const dimensions = placementObject.dimensions;
 
 	// If the x anchor is less than 0 (past left edge of the chart), skip
 	if (anchorX < 0 - dimensions.width) {
-		// console.log(`resolvePlacementSweep: Skipping ${placementObject.id} at ${placementObject.anchor.x}, ${placementObject.anchor.y} because it's past the left edge of the chart.`);
-		return null;
+		debugLog.push({
+			id: placementObject.id,
+			pass: 1,
+			algorithm: 'resolvePlacementSweep',
+			iteration: iteration,
+			placement: 'past_left_edge',
+			isPlaced: false
+		});
+		return { foundPlacement: null, debugLog };
 	}
 
-	const stepSize = strategy.sweep.stepFactor * dimensions.width;
-	const maxIterations = strategy.sweep.maxIterations;
+	const stepSize = strategy.stepFactor * dimensions.width;
+	const maxIterations = strategy.maxIterations;
 	
 	// Determine the number of steps for the sweep
 	const maxSteps = maxIterations !== undefined ? maxIterations : 20;
 
 	// Determine sweep direction: 'sweep-to-right' means positive X, 'sweep-to-left' means negative X
-	const direction = strategy.sweep.horizontal === 'sweep-to-right' ? 1 : -1;
-	const xAlign = strategy.sweep.xAlign;
+	const direction = strategy.horizontal === 'sweep-to-right' ? 1 : -1;
+	const xAlign = strategy.xAlign;
 
 	// Precompute candidate band/occupancy/y/yAlign for all bands to check
 	const bandCandidates = precomputeBandCandidates(bandIndicesToCheck, bands, occupancyArr, homeBandIndex, dimensions);
@@ -628,31 +706,41 @@ function resolvePlacementSweep(
 		xSteps.push(x);
 	}
 
-	// Debug: Collect xSteps for this object if a collector is provided
-	if (debugCollector) {
-		debugCollector[placementObject.id] = { xSteps };
-	}
-
-	// console.log(`resolvePlacementSweep: Precomputed steps ${xSteps.join(', ')} for ${placementObject.id}.`);
-
 	// Sweep loop: iterate over precomputed x-coordinates
 	for (const x of xSteps) {
 		for (const { band, occupancy, y, yAlign } of bandCandidates) {
+			// Create a candidate object with the x and y position
 			const candidate = { x, y };
 
-			// If the y position is beyond the maximum distance from the anchor, skip
+			// If the y position is too far from the anchor, skip
 			if (Math.abs(y - placementObject.anchor.y) > maxDistance.y) continue;
 
-			const placed = trySinglePlacement(placementObject.id, occupancy, band, candidate, xAlign, yAlign, false, dimensions, maxDistance);
-			if (placed) {
-				return placed;
+			// Try to place the object in the band
+			const placementIteration = trySinglePlacement(placementObject.id, occupancy, band, candidate, xAlign, yAlign, false, dimensions, maxDistance);
+			const success = !!placementIteration;
+
+			// Add a debug log entry
+			debugLog.push({
+				id: placementObject.id,
+				pass: 1,
+				algorithm: 'resolvePlacementSweep',
+				iteration: iteration,
+				placement: candidate,
+				isPlaced: success
+			});
+
+			// Increment the iteration count
+			iteration++;
+
+			// If the object was placed, break out of the loop
+			if (success) {
+				foundPlacement = placementIteration;
+				break;
 			}
 		}
 	}
 
-	// console.log(`resolvePlacementSweep: Failed to place ${placementObject.id} at ${placementObject.anchor.x}, ${placementObject.anchor.y}.`);
-
-	return null;
+	return { foundPlacement: foundPlacement, debugLog: debugLog };
 }
 
 /**
@@ -681,15 +769,15 @@ function getBandSearchOrder(homeBandIndex: number, bands: PlacementBand[], verti
  *
  * @param config - BandPlacementConfig object containing all placement parameters
  * @returns {
- *   `placements`: Map<string, BandPlacedObject> - Map of object IDs to their placed positions
+ *   `placements`: Map<string, PlacementObject> - Map of object IDs to their placed positions
  *   `debug`: any - Debug information (e.g., clusters, sweep xSteps)
  *   `occupancy`: BandOccupancy[] - Final occupancy state for all bands
  *   `failed`: Array<{ id: string, anchor: { x: number, y: number }, dimensions: { width: number, height: number } }> - List of objects that failed to place
  * }
  */
 export function calculateBandPlacement(config: BandPlacementConfig): {
-	placements: Map<string, BandPlacedObject>;
-	failed: UnplacedPlacementObject[];
+	placements: Map<string, PlacementObject>;
+	failed: PlacementObject[];
 	debug: any;
 	occupancy: BandOccupancy[];
 } {
@@ -703,7 +791,7 @@ export function calculateBandPlacement(config: BandPlacementConfig): {
 
 	// --- Detect clusters (for future complex placement) ---
 	const objectClusters = detectPlacementClustersWithFlatbush(placementObjects, clusterDetectionDistance);
-	const placements = new Map<string, BandPlacedObject>();
+	const placements = new Map<string, PlacementObject>();
 
 	// --- Prepare occupancy and band arrays for fast indexed access ---
 	let currentOccupancy = chartPlacementBandsOccupancy.map(occ => ({
@@ -713,47 +801,63 @@ export function calculateBandPlacement(config: BandPlacementConfig): {
 		availableRanges: occ.availableRanges.map(r => ({ ...r })),
 	}));
 
+	let debugPlacementLogs: { [id: string]: DebugPlacementLogEntry[] } = {};
+
 	// Use arrays for fast indexed access (preparing for batch/parallel processing)
 	const bandArr = chartPlacementBands;
 	let occupancyArr = currentOccupancy;
 
+	// Pass count and indices to try
+	let pass = 0;
+	let indicesToTry: number[][] = [[]];
+
 	// --- 1. Cluster detection (for future complex placement) ---
 	const clusteredIndices: number[] = [];
-	let debug: any = {};
 	const complexPlacedIds = new Set<string>();
 	for (const cluster of objectClusters) {
 		// All clusters (regardless of size) are processed in simple/sweep passes
 		clusteredIndices.push(...cluster);
 	}
 
-	// --- Unplaced and placed maps ---
-	const unplacedCandidates = new Map<string, PlacementObject>();
-	for (const idx of objectClusters.flatMap(c => c)) {
-		const obj = placementObjects[idx];
-		unplacedCandidates.set(obj.id, obj);
+	// Set the indices to try for this pass
+	indicesToTry[pass] = clusteredIndices;
+
+	// If there are no candidate indices for this pass, return current placements and logs
+	if (indicesToTry[pass].length === 0) {
+		return {
+			placements,
+			failed: placementObjects,
+			debug: {
+				clusters: objectClusters,
+				indicesToTry,
+				debugPlacementLogs
+			},
+			occupancy: currentOccupancy,
+		};
 	}
 
-	// --- 2. Simple placement pass ---
-	const indicesToTry = objectClusters.flatMap(c => c);
+	// Pre-sort the indices to try for this pass, to optimise placement order.
+	// The sort order is determined by the first placement mode in the strategy.
 	const firstMode = strategy.firstPass.modes?.[0];
+
 	if (firstMode) {
-		if (firstMode === 'left' || firstMode === 'right' || firstMode === 'top-left' || firstMode === 'bottom-left') {
-			indicesToTry.sort((a, b) => placementObjects[a].anchor.x - placementObjects[b].anchor.x);
-		} else if (firstMode === 'top' || firstMode === 'bottom' || firstMode === 'top-right' || firstMode === 'bottom-right') {
-			indicesToTry.sort((a, b) => placementObjects[a].anchor.y - placementObjects[b].anchor.y);
-		} else {
-			indicesToTry.sort((a, b) => placementObjects[a].anchor.x - placementObjects[b].anchor.x);
+		// If the first mode is left, sort by x position in ascending order (left first)
+		if (firstMode === 'left' ||	 firstMode === 'top-left' || firstMode === 'bottom-left') {
+			indicesToTry[pass].sort(
+				(a, b) => placementObjects[a].anchor.x - placementObjects[b].anchor.x
+			);
+		} else if (firstMode === 'right' || firstMode === 'top-right' || firstMode === 'bottom-right') {
+			// If the first mode is right, sort by x position in descending order (right first)
+			// Sort by x position in descending order (right first)
+			indicesToTry[pass].sort(
+				(a, b) => placementObjects[b].anchor.x - placementObjects[a].anchor.x
+			);
 		}
 	}
 
-	// Prepare to collect indices of objects that will need a sweep placement pass
-	const sweepIndices: number[] = [];
 
 	// Iterate through all candidate indices for simple placement
-	for (const idx of indicesToTry) {
-		// Skip objects already placed by a complex placement strategy
-		if (complexPlacedIds.has(placementObjects[idx].id)) continue;
-
+	for (const idx of indicesToTry[pass]) {
 		// Get the placement object for this index
 		const obj = placementObjects[idx];
 
@@ -764,20 +868,23 @@ export function calculateBandPlacement(config: BandPlacementConfig): {
 		const maxDistance = getMaxDistance(strategy.firstPass.maxDistance);
 
 		// Attempt to place the object using the simple placement strategy
-		const placed = resolvePlacementSimple(obj, strategy, bandArr, occupancyArr, homeBandIndex, maxDistance);
+		const { foundPlacement, debugLog } = resolvePlacementSimple(obj, strategy.firstPass, bandArr, occupancyArr, homeBandIndex, maxDistance);
 
-		if (placed) {
+		// After calling resolvePlacementSimple in the simple placement loop:
+		if (debugLog) {
+			debugPlacementLogs[obj.id] = debugLog;
+		}
+
+		// Only treat as placed if foundPlacement and foundPlacement.placedPosition are not null
+		if (foundPlacement && foundPlacement.placedPosition) {
 			// If successfully placed, record the placement
-			placements.set(obj.id, placed);
-
-			// Remove from unplaced candidates
-			unplacedCandidates.delete(obj.id);
+			placements.set(obj.id, foundPlacement);
 
 			// Update occupancy for the band where the object was placed
-			const occ = occupancyArr[placed.bandIndex];
-			if (occ) {
+			const occ = foundPlacement.bandIndex !== undefined ? occupancyArr[foundPlacement.bandIndex] : undefined;
+			if (occ && foundPlacement.placedPosition) {
 				// Calculate the object's horizontal extents
-				const extents = getObjectExtents(placed.x, obj.dimensions.width);
+				const extents = getObjectExtents(foundPlacement.placedPosition.x, obj.dimensions.width);
 
 				// Mark this range as occupied in the band
 				occ.occupiedRanges.push({
@@ -795,27 +902,39 @@ export function calculateBandPlacement(config: BandPlacementConfig): {
 				);
 			}
 		} else {
-			// If not placed, add to sweepIndices for the next placement pass
-			sweepIndices.push(idx);
+			// If not placed, add to next pass
+			if (!indicesToTry[pass + 1]) indicesToTry[pass + 1] = [];
+			indicesToTry[pass + 1].push(idx);
 		}
+	}
+
+	// Increment pass count
+	pass++;
+
+	// If there are no candidate indices for this pass, return current placements and logs
+	if (indicesToTry[pass].length === 0) {
+		return {
+			placements,
+			failed: placementObjects,
+			debug: {
+				clusters: objectClusters,
+				indicesToTry,
+				debugPlacementLogs
+			},
+			occupancy: currentOccupancy,
+		};
 	}
 
 	// --- 3. Sweep placement pass for unplaced objects ---
 	// Sort sweepIndices by horizontal direction (left or right) as specified in strategy
 	if (strategy.sweep.horizontal === 'sweep-to-left') {
-		sweepIndices.sort((a, b) => placementObjects[a].anchor.x - placementObjects[b].anchor.x);
+		indicesToTry[pass].sort((a, b) => placementObjects[a].anchor.x - placementObjects[b].anchor.x);
 	} else {
-		sweepIndices.sort((a, b) => placementObjects[b].anchor.x - placementObjects[a].anchor.x);
+		indicesToTry[pass].sort((a, b) => placementObjects[b].anchor.x - placementObjects[a].anchor.x);
 	}
 
-	// Then sort by vertical position (top to bottom)
-	sweepIndices.sort((a, b) => placementObjects[a].anchor.y - placementObjects[b].anchor.y);
-
-	// Prepare debug object for sweep placements
-	const sweepDebug: { [id: string]: any } = {};
-
 	// Attempt to place each remaining unplaced object using the sweep strategy
-	for (const idx of sweepIndices) {
+	for (const idx of indicesToTry[pass]) {
 		const obj = placementObjects[idx];
 
 		// Find the object's home band index based on its anchor y-position
@@ -825,20 +944,23 @@ export function calculateBandPlacement(config: BandPlacementConfig): {
 		const maxDistance = getMaxDistance(strategy.sweep.maxDistance);
 
 		// Attempt to place the object using the sweep placement strategy
-		const placed = resolvePlacementSweep(obj, strategy, bandArr, occupancyArr, homeBandIndex, maxDistance, sweepDebug);
+		const { foundPlacement, debugLog } = resolvePlacementSweep(obj, strategy.sweep, bandArr, occupancyArr, homeBandIndex, maxDistance);
 
-		if (placed) {
+		// After calling resolvePlacementSweep in the sweep placement loop:
+		if (debugLog) {
+			debugPlacementLogs[obj.id] = debugLog;
+		}
+
+		// Only treat as placed if foundPlacement and foundPlacement.placedPosition are not null
+		if (foundPlacement && foundPlacement.placedPosition) {
 			// Record the successful placement
-			placements.set(obj.id, placed);
-
-			// Remove from unplaced candidates
-			unplacedCandidates.delete(obj.id);
+			placements.set(obj.id, foundPlacement);
 
 			// Update occupancy for the band where the object was placed
-			const occ = occupancyArr[placed.bandIndex];
-			if (occ) {
+			const occ = foundPlacement.bandIndex !== undefined ? occupancyArr[foundPlacement.bandIndex] : undefined;
+			if (occ && foundPlacement.placedPosition) {
 				// Calculate the object's horizontal extents
-				const extents = getObjectExtents(placed.x, obj.dimensions.width);
+				const extents = getObjectExtents(foundPlacement.placedPosition.x, obj.dimensions.width);
 
 				// Mark this range as occupied in the band
 				occ.occupiedRanges.push({
@@ -855,22 +977,33 @@ export function calculateBandPlacement(config: BandPlacementConfig): {
 					occ.band
 				);
 			}
+		} else {
+			// If not placed, add to next pass
+			if (!indicesToTry[pass + 1]) indicesToTry[pass + 1] = [];
+			indicesToTry[pass + 1].push(idx);
 		}
 	}
 
+	// Increment pass count
+	pass++;
+
 	// --- Compile failed objects from remaining unplaced candidates ---
-	const failed: UnplacedPlacementObject[] = Array.from(unplacedCandidates.values()).map(obj => ({
-		id: obj.id,
-		anchor: obj.anchor,
-		dimensions: obj.dimensions
-	}));
+	// Use the remaining indices to try for this pass to compile the failed objects
+	const failed: PlacementObject[] = indicesToTry[pass].map(idx => placementObjects[idx]);
+
+	// console.log("placements", placements);
+	// console.log("failed", failed);
+	// console.log("debugPlacementLogs", debugPlacementLogs);
+	// console.log("indicesToTry", indicesToTry);
+	console.log(`calculateBandPlacement: After ${pass} passes with ${indicesToTry[0].length} objects, ${failed.length} failed, ${placements.size} placed`);
 
 	return {
 		placements,
 		failed,
 		debug: {
 			clusters: objectClusters,
-			sweep: sweepDebug
+			indicesToTry,
+			debugPlacementLogs
 		},
 		occupancy: currentOccupancy,
 	};
@@ -929,7 +1062,7 @@ function detectPlacementClustersWithFlatbush(
  * @param bands - Array of PlacementBand objects
  * @param occupancy - Array of BandOccupancy objects
  * @param strategy - The placement strategy to use
- * @param alreadyPlaced - Array of BandPlacedObject objects that have already been placed
+ * @param alreadyPlaced - Array of PlacementObject objects that have already been placed
  * @param chartDimensions - The dimensions of the chart
  * @returns { placed: Array<{ id: string, anchor: { x: number, y: number }, dimensions: { width: number, height: number } }>, unplaced: Array<{ id: string, anchor: { x: number, y: number }, dimensions: { width: number, height: number } }>, debug: any }
  */
@@ -939,11 +1072,11 @@ function resolvePlacementComplex(
 	bands: PlacementBand[],
 	occupancy: BandOccupancy[],
 	strategy: PlacementStrategy,
-	alreadyPlaced: Array<{ id: string, x: number, y: number, dimensions: { width: number, height: number } }>,
+	alreadyPlaced: Array<{ id: string, x: number, y: number, dimensions: { width: number; height: number } }>,
 	chartDimensions: { width: number; height: number }
 ): {
-	placed: Array<{ id: string, anchor: { x: number, y: number }, dimensions: { width: number, height: number }, x: number, y: number, bandIndex: number }>;
-	unplaced: UnplacedPlacementObject[];
+	placed: PlacementObject[];
+	unplaced: PlacementObject[];
 	debug: any;
 } {
 	/**
@@ -1161,8 +1294,8 @@ function resolvePlacementComplex(
 	// Solve the model using YALPS with a timeout (e.g., 200ms)
 	const solution = solve(model, { timeout: 200 });
 
-	let placed: Array<{ id: string, anchor: { x: number, y: number }, dimensions: { width: number, height: number }, x: number, y: number, bandIndex: number }> = [];
-	let unplaced: UnplacedPlacementObject[] = [];
+	let placed: PlacementObject[] = [];
+	let unplaced: PlacementObject[] = [];
 
 	if (solution.status === 'optimal') {
 		// Map selected variables back to placements
@@ -1193,32 +1326,23 @@ function resolvePlacementComplex(
 			}
 			placed.push({
 				id: obj.id,
-				x: placement.x,
-				y: placement.y,
 				anchor: obj.anchor,
-				bandIndex: placement.bandIdx,
-				dimensions: obj.dimensions
+				dimensions: obj.dimensions,
+				placedPosition: { x: placement.x, y: placement.y },
+				bandIndex: placement.bandIdx
 			});
 		}
-		// Any objects not in placed are unplaced (ensure type UnplacedPlacementObject)
+		// Any objects not in placed are unplaced (ensure type PlacementObject)
 		const placedIds = new Set(placed.map(p => p.id));
 		for (const obj of clusterObjects) {
 			if (!placedIds.has(obj.id)) {
-				unplaced.push({
-					id: obj.id,
-					anchor: obj.anchor,
-					dimensions: obj.dimensions
-				});
+				unplaced.push(obj);
 			}
 		}
 	} else {
 		console.log(`[ComplexPlacement] Failed to solve ILP for ${clusterObjects.length} objects. Status: ${solution.status}`);
-		// If not optimal, fall back to all unplaced (ensure type UnplacedPlacementObject)
-		unplaced = clusterObjects.map(obj => ({
-			id: obj.id,
-			anchor: obj.anchor,
-			dimensions: obj.dimensions
-		}));
+		// If not optimal, fall back to all unplaced (ensure type PlacementObject)
+		unplaced = clusterObjects;
 	}
 
 	// Return placed and unplaced objects, and debug info

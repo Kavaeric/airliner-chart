@@ -107,12 +107,9 @@ export function calculateChartPlacementBands(
 	dimensions: { width: number; height: number },
 	minBandHeight: number,
 	maxBandHeight: number,
-	obstacles: Obstacle[],
-	paddingBands: number = 2,
-	paddingBandHeight?: number
+	obstacles: Obstacle[]
 ): PlacementBand[] {
 	// ===== INPUT VALIDATION =====
-	// Validate all input parameters to ensure they meet requirements
 	if (minBandHeight <= 0) {
 		throw new Error('minBandHeight must be positive');
 	}
@@ -122,211 +119,96 @@ export function calculateChartPlacementBands(
 	if (dimensions.height <= 0) {
 		throw new Error('Chart height must be positive');
 	}
-	if (paddingBands < 0) {
-		throw new Error('paddingBands cannot be negative');
-	}
-	
-	// Clamp maxBandHeight to minBandHeight if it's smaller to ensure logical consistency
+
 	const effectiveMaxBandHeight = Math.max(minBandHeight, maxBandHeight);
-	
-	// Ensure paddingBandHeight is at least minBandHeight for consistent band sizing
-	const effectivePaddingHeight = Math.max(minBandHeight, paddingBandHeight ?? minBandHeight);
 
 	// ===== EARLY RETURN FOR EMPTY CASE =====
-	// If no obstacles exist, create a single band spanning the entire chart height
 	if (obstacles.length === 0) {
 		return [createPlacementBand(0, 0, dimensions.height, 0, dimensions.width)];
 	}
 
 	// ===== PHASE 1: INITIAL BAND CREATION =====
-	// Extract and sort obstacle Y positions for sequential processing
-	// Optimise: only sort if more than one obstacle (single obstacle doesn't need sorting)
 	const yPositions = obstacles.length > 1 
 		? obstacles.map(o => o.position.y).sort((a, b) => a - b)
 		: obstacles.map(o => o.position.y);
-	// console.log(`calculateChartPlacementBands: yPositions: ${yPositions}`);
 
-	// Calculate the maximum obstacle height to ensure bands are tall enough to avoid all obstacles
-	// If the obstacle height is less than the minimum band height, use the minimum band height instead
 	const maxObstacleHeight = Math.max(...obstacles.map(o => o.height), minBandHeight);
 
-	// Pre-allocate bands array with estimated capacity for performance
-	// Worst case: 2 bands per obstacle (space before + obstacle space) + 1 final band
-	const estimatedBandCount = obstacles.length * 2 + 1;
-	let bands: PlacementBand[] = new Array(estimatedBandCount);
+	let bands: PlacementBand[] = [];
 	let bandIndex = 0;
+	let currentY = 0;
+	let currentBand: PlacementBand | null = null;
 
-	// Initialise tracking variables for band creation
-	let currentY = 0; // Current Y position as we process obstacles
-	let currentBand: PlacementBand | null = null; // Currently active band being extended
-
-	// Process each obstacle position sequentially to create initial bands
 	for (let i = 0; i < yPositions.length; i++) {
 		const obstacleY = yPositions[i];
-		// Calculate obstacle boundaries using maximum height to ensure sufficient clearance
 		const obstacleTop = obstacleY - maxObstacleHeight / 2;
 		const obstacleBottom = obstacleY + maxObstacleHeight / 2;
 
-		// Check if this obstacle overlaps with the current band
 		if (currentBand && obstacleTop <= currentBand.bottom) {
-			// Extend the current band to include this overlapping obstacle
 			currentBand.bottom = Math.max(currentBand.bottom, obstacleBottom);
 			currentBand.height = currentBand.bottom - currentBand.top;
 			currentBand.centre = currentBand.top + currentBand.height / 2;
 		} else {
-			// No overlap - finalize current band and create new ones
-			
-			// Add the completed current band to our array (if it exists)
 			if (currentBand) {
-				bands[bandIndex++] = currentBand;
+				bands.push(currentBand);
 			}
-
-			// Create a band for the space between current position and this obstacle (if any)
 			if (obstacleTop > currentY) {
-				bands[bandIndex++] = createPlacementBand(bandIndex, currentY, obstacleTop, 0, dimensions.width);
+				bands.push(createPlacementBand(bandIndex++, currentY, obstacleTop, 0, dimensions.width));
 			}
-
-			// Start a new band for this obstacle
-			currentBand = createPlacementBand(bandIndex, obstacleTop, obstacleBottom, 0, dimensions.width);
+			currentBand = createPlacementBand(bandIndex++, obstacleTop, obstacleBottom, 0, dimensions.width);
 		}
-
-		// Update current position to the bottom of the processed obstacle
 		currentY = Math.max(currentY, obstacleBottom);
 	}
 
-	// Add the final band if it exists (for the last obstacle)
 	if (currentBand) {
-		bands[bandIndex++] = currentBand;
+		bands.push(currentBand);
 	}
-
-	// Create a band for any remaining space at the bottom of the chart
 	if (currentY < dimensions.height) {
-		bands[bandIndex++] = createPlacementBand(bandIndex, currentY, dimensions.height, 0, dimensions.width);
+		bands.push(createPlacementBand(bandIndex++, currentY, dimensions.height, 0, dimensions.width));
 	}
 
-	// Trim the pre-allocated array to actual size for memory efficiency
-	bands = bands.slice(0, bandIndex);
-
-	// ===== PHASE 2: BAND SPLITTING =====
-	// Split bands that exceed maximum height using padding strategy
-	// Pre-allocate splitBands array with estimated capacity for performance
-	// Worst case: each band splits into 3 parts (top padding + central + bottom padding)
-	const estimatedSplitCount = bands.length * 3;
-	const splitBands: PlacementBand[] = new Array(estimatedSplitCount);
-	let splitIndex = 0;
-	
-	// Process each band to determine if splitting is needed
+	// ===== PHASE 2: BAND SPLITTING (SIMPLE DIVISION) =====
+	let splitBands: PlacementBand[] = [];
 	for (let i = 0; i < bands.length; i++) {
 		const band = bands[i];
-		
-		// Check if this band exceeds the maximum allowed height
 		if (band.height > effectiveMaxBandHeight) {
-			// Calculate total space needed for padding bands
-			const totalPaddingHeight = paddingBands * 2 * effectivePaddingHeight;
-			const remainingHeight = band.height - totalPaddingHeight;
-			
-			// Check if padding approach is viable (central band must be at least minBandHeight)
-			if (remainingHeight >= minBandHeight) {
-				// Use padding strategy: create minimum-height bands at top and bottom
-				// with a central band filling the remaining space
-				
-				// Pre-allocate padding band arrays for performance
-				const topPaddingBands: PlacementBand[] = new Array(paddingBands);
-				const bottomPaddingBands: PlacementBand[] = new Array(paddingBands);
-				
-				// Create top padding bands (from top of original band)
-				for (let j = 0; j < paddingBands; j++) {
-					const topPaddingTop = band.top + (j * effectivePaddingHeight);
-					const topPaddingBottom = band.top + ((j + 1) * effectivePaddingHeight);
-					topPaddingBands[j] = createPlacementBand(band.index, topPaddingTop, topPaddingBottom, band.left, band.right);
-				}
-				
-				// Create bottom padding bands (from bottom of original band)
-				for (let j = 0; j < paddingBands; j++) {
-					const bottomPaddingTop = band.bottom - ((j + 1) * effectivePaddingHeight);
-					const bottomPaddingBottom = band.bottom - (j * effectivePaddingHeight);
-					bottomPaddingBands[j] = createPlacementBand(band.index, bottomPaddingTop, bottomPaddingBottom, band.left, band.right);
-				}
-				
-				// Create central band for the remaining space between padding bands
-				const centralBandTop = band.top + (paddingBands * effectivePaddingHeight);
-				const centralBandBottom = band.bottom - (paddingBands * effectivePaddingHeight);
-				const centralBand = createPlacementBand(band.index, centralBandTop, centralBandBottom, band.left, band.right);
-				
-				// Combine all bands efficiently: central band first, then padding bands
-				splitBands[splitIndex++] = centralBand;
-				for (let j = 0; j < paddingBands; j++) {
-					splitBands[splitIndex++] = topPaddingBands[j];
-					splitBands[splitIndex++] = bottomPaddingBands[j];
-				}
-			} else {
-				// Padding approach not viable - fallback to equal division
-				// Calculate maximum possible bands that meet minimum height requirement
-				const maxPossibleBands = Math.floor(band.height / effectivePaddingHeight);
-				const numBands = Math.max(1, maxPossibleBands);
-				const subBands = divideBand(band, numBands);
-				
-				// Copy sub-bands to splitBands array
-				for (let j = 0; j < subBands.length; j++) {
-					splitBands[splitIndex++] = subBands[j];
-				}
-			}
+			const numParts = Math.max(1, Math.floor(band.height / effectiveMaxBandHeight));
+			splitBands.push(...divideBand(band, numParts));
 		} else {
-			// Band is within acceptable size, keep as-is
-			splitBands[splitIndex++] = band;
+			splitBands.push(band);
 		}
 	}
-	
-	// Trim splitBands array to actual size and replace original bands
-	const finalSplitBands = splitBands.slice(0, splitIndex);
-	bands = replaceBandsByIndex(bands, 0, bands.length - 1, finalSplitBands);
+	bands = splitBands;
 
 	// ===== PHASE 3: BAND MERGING =====
-	// Merge bands that are below minimum height with their neighbours
 	let i = 0;
 	while (i < bands.length) {
 		const currentBand = bands[i];
-		
-		// Check if current band is too small and needs merging
 		if (currentBand.height < minBandHeight) {
 			const hasPrevBand = i > 0;
 			const hasNextBand = i < bands.length - 1;
-			
 			if (hasPrevBand && hasNextBand) {
-				// Both neighbours exist - merge with the smaller one to minimise impact
 				const prevBand = bands[i - 1];
 				const nextBand = bands[i + 1];
-				
 				if (prevBand.height <= nextBand.height) {
-					// Merge with previous band (smaller or equal)
 					bands = mergeBandsByIndex(bands, i - 1, i);
-					// Don't increment i - check the same position again after merge
 				} else {
-					// Merge with next band (smaller)
 					bands = mergeBandsByIndex(bands, i, i + 1);
-					// Don't increment i - check the same position again after merge
 				}
 			} else if (hasPrevBand) {
-				// Only previous band exists - merge with it
 				bands = mergeBandsByIndex(bands, i - 1, i);
-				// Don't increment i - check the same position again after merge
 			} else if (hasNextBand) {
-				// Only next band exists - merge with it
 				bands = mergeBandsByIndex(bands, i, i + 1);
-				// Don't increment i - check the same position again after merge
 			} else {
-				// Single band - can't merge, move to next
 				i++;
 			}
 		} else {
-			// Band is tall enough - move to next
 			i++;
 		}
 	}
 
-	// Ensure unique, continuous, and correct indexing for all bands, based on vertical order
 	bands = bands
-		.slice() // copy to avoid mutating in place
+		.slice()
 		.sort((a, b) => a.top - b.top)
 		.map((band, idx) => ({ ...band, index: idx }));
 
