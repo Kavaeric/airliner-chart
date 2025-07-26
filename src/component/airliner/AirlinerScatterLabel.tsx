@@ -6,39 +6,41 @@ import React from "react";
 import labelStyles from "./AirlinerScatterLabel.module.css";
 
 // [IMPORT] Types //
-import { AirlinerData } from "@/lib/data/airliner-data-processor";
-import { useDebugMode } from "@/context/DebugModeContext";
+import { AirlinerLabel } from "@/lib/data/airliner-types";
 
 interface AirlinerScatterLabelProps {
-	airlinerData: AirlinerData;
-	coords: { x: number; y: number };
-	labelOffset?: { x?: number; y?: number };
-	forcePosition?: { x: number; y: number };
+	airlinerID: string;
+	airlinerLabel: AirlinerLabel;
+	plotFormat: any;
 	classNames?: string;
-	dimensions?: { width: number; height: number };
-	textSize?: number;
+	debug?: boolean;
 }
 
 /**
  * AirlinerScatterLabel Component
  * 
- * Renders the label for a single airliner at 
+ * Renders the label for a single airliner.
+ * 
+ * @param {string} airlinerID - The ID of the airliner.
+ * @param {AirlinerLabel} airlinerLabel - The label for the airliner.
+ * @param {any} plotFormat - The plot format.
+ * @param {string} classNames - The class names for the label.
+ * @param {boolean} debug - Optional debug flag.
  */
 const AirlinerScatterLabel = React.forwardRef<SVGGElement, AirlinerScatterLabelProps>(
 	({
-		airlinerData,
-		coords,
+		airlinerID,
+		airlinerLabel,
+		plotFormat,
 		classNames = "",
-		textSize = 16
+		debug = false
 	}, ref) => {
-
-		const debugMode = useDebugMode();
 
 		const labelVerticalAnchor = "middle";
 		const labelTextAnchor = "middle";
 
 		const interruptionWeight = 8;
-		const interruptionOpacity = 0.8;
+		const interruptionOpacity = debug ? 0 : 0.8;
 		const interruptionColor = "#dddedf";
 		const interruptionMiterLimit = 1.5;
 		const interruptionLinejoin = "round";
@@ -50,14 +52,14 @@ const AirlinerScatterLabel = React.forwardRef<SVGGElement, AirlinerScatterLabelP
 			<g ref={ref}>
 				{/* This is the only way I can think of to have an outline that's on the outside */}
 				<Text
-					x={coords.x}
-					y={coords.y}
+					x={airlinerLabel.labelCoordinates?.x || airlinerLabel.labelAnchor.x}
+					y={airlinerLabel.labelCoordinates?.y || airlinerLabel.labelAnchor.y}
 					dx={dx}
 					dy={dy}
 					className={`${labelStyles.airlinerLabel} ${classNames}`}
 					verticalAnchor={labelVerticalAnchor}
 					textAnchor={labelTextAnchor}
-					fontSize={textSize}
+					fontSize={plotFormat.textSize}
 					fill="none"
 					stroke={interruptionColor}
 					strokeWidth={interruptionWeight}
@@ -65,21 +67,21 @@ const AirlinerScatterLabel = React.forwardRef<SVGGElement, AirlinerScatterLabelP
 					strokeLinejoin={interruptionLinejoin}
 					opacity={interruptionOpacity}
 				>
-					{airlinerData.nameCommon}
+					{airlinerLabel.labelText}
 				</Text>
 
 				{/* Label */}
 				<Text
-					x={coords.x}
-					y={coords.y}
+					x={airlinerLabel.labelCoordinates?.x || airlinerLabel.labelAnchor.x}
+					y={airlinerLabel.labelCoordinates?.y || airlinerLabel.labelAnchor.y}
 					dx={dx}
 					dy={dy}
 					className={`${labelStyles.airlinerLabel} ${classNames}`}
 					verticalAnchor={labelVerticalAnchor}
 					textAnchor={labelTextAnchor}
-					fontSize={textSize}
+					fontSize={plotFormat.textSize}
 				>
-					{airlinerData.nameCommon}
+					{airlinerLabel.labelText}
 				</Text>
 			</g>
 		);

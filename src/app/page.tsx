@@ -5,16 +5,15 @@ import { useState, useEffect } from "react";
 
 // [IMPORT] Internal components //
 import AirlinerChart from "@/component/airliner/AirlinerChart";
-import { ChartDataContext } from "@/component/airliner/AirlinerChart";
 
 // [IMPORT] Context providers/hooks //
 import { DebugProvider } from "@/context/DebugModeContext";
 
 // [IMPORT] Utilities //
-import loadAirlinerData from "@/lib/data/airliner-data-processor";
+import { loadAirlinerData } from "@/lib/data/airliner-data-processor";
 
 // [IMPORT] Types/interfaces //
-import { Airliner } from "@/lib/data/airliner-types";
+import { AirlinerData } from "@/lib/data/airliner-types";
 
 // [IMPORT] CSS styling //
 import styles from "./page.module.css";
@@ -34,7 +33,7 @@ export default function Home() {
 	
 	// Store the processed airliner data from CSV
 	// We can't use useMemo here since it's async
-	const [data, setData] = useState<Airliner[]>([]);
+	const [data, setData] = useState<AirlinerData[]>([]);
 	
 	// Track loading status for better user experience
 	const [loading, setLoading] = useState(true);
@@ -50,8 +49,16 @@ export default function Home() {
 			try {
 				// Fetch and parse the airliner CSV data
 				const airlinerData = await loadAirlinerData("/data/airliners.csv");
-				setData(airlinerData);
+
+				// Map the raw data to the AirlinerData type
+				setData(airlinerData.map(airliner => ({
+					airlinerID: `${airliner.idNumber}-${airliner.nameICAO}`,
+					airlinerData: airliner,
+				})));
+				
+				// Set loading to false
 				setLoading(false);
+
 			} catch (error) {
 				// Handle any errors from data loading
 				console.error("Error loading data:", error);
@@ -103,56 +110,54 @@ export default function Home() {
 	// ===== MAIN RENDER =====
 	// ChartDataContext.Provider makes airliner data available to all child components via context.
 	return (
-		<ChartDataContext.Provider value={data}>
-			<div className={styles.mainContainer}>
-				<div className={styles.aboveCut}>
-					{/* Header section with data info */}
-					<div className={styles.headerContainer}>
-						<h1>Airliner Chart</h1>
-						<p><b>Work-in-progress.</b> Visualise the passenger capacity and range of passenger jet airliners.</p>
-						<p>Use the janky debuggy viewport controls to zoom in and out, or grab the brushes to move the viewport.</p>
-						<p><a href="https://www.youtube.com/watch?v=WBpLrVCRS84">🎵 Cheers Elephant &mdash; Airliner 🎵</a></p>
-					</div>
-
-					{/* Chart component handles all the complex visualization logic */}
-					<DebugProvider initialDebugMode={true}>
-						<AirlinerChart />
-					</DebugProvider>
+		<div className={styles.mainContainer}>
+			<div className={styles.aboveCut}>
+				{/* Header section with data info */}
+				<div className={styles.headerContainer}>
+					<h1>Airliner Chart</h1>
+					<p><b>Work-in-progress.</b> Visualise the passenger capacity and range of passenger jet airliners.</p>
+					<p>Use the janky debuggy viewport controls to zoom in and out, or grab the brushes to move the viewport.</p>
+					<p><a href="https://www.youtube.com/watch?v=WBpLrVCRS84">🎵 Cheers Elephant &mdash; Airliner 🎵</a></p>
 				</div>
 
-				<div className={styles.belowCut}>
-					<table className={styles.dataTable}>
-						<thead>
-							<tr>
-								<th>Manufacturer</th>
-								<th>Name</th>
-								<th>3-Class capacity</th>
-								<th>2-Class capacity</th>
-								<th>1-Class capacity</th>
-								<th>Max capacity</th>
-								<th>Exit capacity</th>
-								<th>Range (km)</th>
-								<th>Status</th>
-							</tr>
-						</thead>
-						<tbody>
-							{data.map((airliner, i) => (
-								<tr key={airliner.airlinerID}>
-									<td>{airliner.manufacturer}</td>
-									<td>{airliner.nameCommon}</td>
-									<td>{airliner.pax3Class || '-'}</td>
-									<td>{airliner.pax2Class || '-'}</td>
-									<td>{airliner.pax1Class || '-'}</td>
-									<td>{airliner.paxLimit || '-'}</td>
-									<td>{airliner.paxExit || '-'}</td>
-									<td>{airliner.rangeKM?.toLocaleString() || 'N/A'}</td>
-									<td>{airliner.status}</td>
-								</tr>
-							))}
-						</tbody>
-					</table>
-				</div>
+				{/* Chart component handles all the complex visualization logic */}
+				<DebugProvider initialDebugMode={true}>
+					<AirlinerChart data={data} />
+				</DebugProvider>
 			</div>
-		</ChartDataContext.Provider>
+
+			<div className={styles.belowCut}>
+				<table className={styles.dataTable}>
+					<thead>
+						<tr>
+							<th>Manufacturer</th>
+							<th>Name</th>
+							<th>3-Class capacity</th>
+							<th>2-Class capacity</th>
+							<th>1-Class capacity</th>
+							<th>Max capacity</th>
+							<th>Exit capacity</th>
+							<th>Range (km)</th>
+							<th>Status</th>
+						</tr>
+					</thead>
+					<tbody>
+						{data.map((airliner) => (
+							<tr key={airliner.airlinerID}>
+								<td>{airliner.airlinerData.manufacturer}</td>
+								<td>{airliner.airlinerData.nameCommon}</td>
+								<td>{airliner.airlinerData.pax3Class || '-'}</td>
+								<td>{airliner.airlinerData.pax2Class || '-'}</td>
+								<td>{airliner.airlinerData.pax1Class || '-'}</td>
+								<td>{airliner.airlinerData.paxLimit || '-'}</td>
+								<td>{airliner.airlinerData.paxExit || '-'}</td>
+								<td>{airliner.airlinerData.rangeKM?.toLocaleString() || 'N/A'}</td>
+								<td>{airliner.airlinerData.status}</td>
+							</tr>
+						))}
+					</tbody>
+				</table>
+			</div>
+		</div>
 	);
 }

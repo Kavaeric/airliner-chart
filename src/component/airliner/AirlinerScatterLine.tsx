@@ -7,16 +7,14 @@ import { useChartScales } from "@/context/ChartScalesContext";
 import plotStyles from "./AirlinerScatterPlot.module.css";
 
 // [IMPORT] Types //
-import { AirlinerMarkers } from "@/lib/data/process-airliner-markers";
+import type { AirlinerMarkerSeries } from "@/lib/data/airliner-types";
 
 // [IMPORT] Utilities //
-import { getValidAirlinerMarkers, getAirlinerMarkerExtents, getAirlinerMarkerY } from "@/lib/data/process-airliner-markers";
 
 interface AirlinerScatterLineProps {
-	airlinerMarkers: AirlinerMarkers;
-	markerSize: number;
-	markerLineMajorWidth: number;
-	markerLineMinorWidth: number;
+	airlinerID: string;
+	airlinerMarkers: AirlinerMarkerSeries;
+	plotFormat: any;
 }
 
 /**
@@ -28,56 +26,55 @@ interface AirlinerScatterLineProps {
  * - Highlight line for visual emphasis
  */
 export default function AirlinerScatterLine({ 
+	airlinerID,
 	airlinerMarkers, 
-	markerSize,
-	markerLineMajorWidth,
-	markerLineMinorWidth
+	plotFormat
 }: AirlinerScatterLineProps) {
 
 	// Get the y coordinate for line rendering
-	const y = getAirlinerMarkerY(airlinerMarkers);
+	const y = airlinerMarkers.lines.y;
 
-	// Get the extents of the class markers
-	const classExtents = getAirlinerMarkerExtents(airlinerMarkers, 'class');
+	// Check if the major line is valid
+	const majorLineValid = Math.abs(airlinerMarkers.lines.x2 - airlinerMarkers.lines.x1) > 0;
 
-	// Get the extents of the limit markers
-	const limitExtents = getAirlinerMarkerExtents(airlinerMarkers, 'limit');
+	// Check if the minor line is valid
+	const minorLineValid = Math.abs(airlinerMarkers.lines.x3 - airlinerMarkers.lines.x2) > 0;
 
 	return (
 		<g>
 			{/* Line connecting largest class value to largest limit value */}
-			{limitExtents.max && classExtents.max && (
+			{minorLineValid && (
 				<line
-					x1={limitExtents.max.x}
-					x2={classExtents.max.x}
-					y1={y}
-					y2={y}
-					className={plotStyles.pointMarkerConnectingLineMinor}
-					strokeWidth={markerLineMinorWidth}
-				/>
+				x1={airlinerMarkers.lines.x3}
+				x2={airlinerMarkers.lines.x2}
+				y1={y}
+				y2={y}
+				className={plotStyles.pointMarkerConnectingLineMinor}
+				strokeWidth={plotFormat.markerLineMinorWidth}
+			/>
 			)}
 
 			{/* Line connecting min and max class values */}
-			{classExtents.max && classExtents.min && (
+			{majorLineValid && (
 				<line
-					x1={classExtents.max.x}
-					x2={classExtents.min.x}
-					y1={y}
-					y2={y}
-					className={plotStyles.pointMarkerConnectingLineMajor}
-					strokeWidth={markerLineMajorWidth}
-				/>
+				x1={airlinerMarkers.lines.x2}
+				x2={airlinerMarkers.lines.x1}
+				y1={y}
+				y2={y}
+				className={plotStyles.pointMarkerConnectingLineMajor}
+				strokeWidth={plotFormat.markerLineMajorWidth}
+			/>
 			)}
 
 			{/* Extra class value line for highlight */}
-			{classExtents.max && classExtents.min && (
+			{majorLineValid && (
 				<line
-					x1={classExtents.max.x}
-					x2={classExtents.min.x}
-					y1={y}
-					y2={y}
-					className={plotStyles.pointMarkerConnectingLineMajorHighlight}
-					strokeWidth={markerSize + 2}
+				x1={airlinerMarkers.lines.x2}
+				x2={airlinerMarkers.lines.x1}
+				y1={y}
+				y2={y}
+				className={plotStyles.pointMarkerConnectingLineMajorHighlight}
+					strokeWidth={plotFormat.markerSize + 2}
 				/>
 			)}
 		</g>

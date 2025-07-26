@@ -5,13 +5,10 @@ import { MarkerDiamond } from "@/component/shape/MarkerDiamond";
 import markerStyles from "./AirlinerScatterMarker.module.css";
 
 // [IMPORT] Types //
-import { AirlinerMarkers } from "@/lib/data/process-airliner-markers";
-
-// [IMPORT] Utilities //
-import { getValidAirlinerMarkers } from "@/lib/data/process-airliner-markers";
+import type { AirlinerMarkerSeries } from "@/lib/data/airliner-types";
 
 interface AirlinerScatterMarkerProps {
-	airlinerMarkers: AirlinerMarkers;
+	airlinerMarkers: AirlinerMarkerSeries;
 	markerSize: number;
 }
 
@@ -25,10 +22,19 @@ export default function AirlinerScatterMarker({
 	airlinerMarkers,
 	markerSize 
 }: AirlinerScatterMarkerProps) {
-	// Get valid class markers (diamonds)
-	const classMarkers = getValidAirlinerMarkers(airlinerMarkers, 'class');
-	// Get valid limit/exit markers (lines)
-	const limitMarkers = getValidAirlinerMarkers(airlinerMarkers, 'limit');
+
+	// Get class markers
+	const classMarkers = airlinerMarkers.markers.filter(marker =>
+		marker.markerClass === 'pax3Class' ||
+		marker.markerClass === 'pax2Class' ||
+		marker.markerClass === 'pax1Class'
+	);
+
+	// Get limit markers
+	const limitMarkers = airlinerMarkers.markers.filter(marker =>
+		marker.markerClass === 'paxLimit' ||
+		marker.markerClass === 'paxExit'
+	);
 
 	return (
 		<g>
@@ -36,11 +42,13 @@ export default function AirlinerScatterMarker({
 			{limitMarkers.map((coord, i) => (
 				<line
 					key={`line-${i}`}
-					x1={coord.x}
-					y1={coord.y - markerSize / 2}
-					x2={coord.x}
-					y2={coord.y + markerSize / 2}
+					x1={coord.markerCoordinates.x}
+					y1={coord.markerCoordinates.y - markerSize / 2}
+					x2={coord.markerCoordinates.x}
+					y2={coord.markerCoordinates.y + markerSize / 2}
 					className={markerStyles.markerLine}
+					stroke="red"
+					strokeWidth={1}
 				/>
 			))}
 
@@ -48,10 +56,13 @@ export default function AirlinerScatterMarker({
 			{classMarkers.map((coord, i) => (
 				<MarkerDiamond
 					key={`diamond-${i}`}
-					cx={coord.x}
-					cy={coord.y}
+					cx={coord.markerCoordinates.x}
+					cy={coord.markerCoordinates.y}
 					size={markerSize}
 					className={markerStyles.markerDiamond}
+					fill="red"
+					stroke="red"
+					strokeWidth={1}
 				/>
 			))}
 		</g>

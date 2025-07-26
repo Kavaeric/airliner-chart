@@ -25,7 +25,7 @@ export type DebugPlacementLogEntry = {
 }
 
 // --- Type for placement objects (enforced throughout placement flow) ---
-type PlacementObject = {
+export type PlacementObject = {
 	id: string;
 	anchor: { x: number; y: number };
 	dimensions: { width: number; height: number };
@@ -777,7 +777,7 @@ function getBandSearchOrder(homeBandIndex: number, bands: PlacementBand[], verti
  */
 export function calculateBandPlacement(config: BandPlacementConfig): {
 	placements: Map<string, PlacementObject>;
-	failed: PlacementObject[];
+	failed: Map<string, PlacementObject>;
 	debug: any;
 	occupancy: BandOccupancy[];
 } {
@@ -813,10 +813,11 @@ export function calculateBandPlacement(config: BandPlacementConfig): {
 
 	// --- 1. Cluster detection (for future complex placement) ---
 	const clusteredIndices: number[] = [];
-	const complexPlacedIds = new Set<string>();
+	const clusteredIds: string[] = [];
 	for (const cluster of objectClusters) {
 		// All clusters (regardless of size) are processed in simple/sweep passes
 		clusteredIndices.push(...cluster);
+		clusteredIds.push(...cluster.map(idx => placementObjects[idx].id));
 	}
 
 	// Set the indices to try for this pass
@@ -826,9 +827,9 @@ export function calculateBandPlacement(config: BandPlacementConfig): {
 	if (indicesToTry[pass].length === 0) {
 		return {
 			placements,
-			failed: placementObjects,
+			failed: new Map(placementObjects.map(obj => [obj.id, obj])),
 			debug: {
-				clusters: objectClusters,
+				clusters: clusteredIds,
 				indicesToTry,
 				debugPlacementLogs
 			},
@@ -915,9 +916,9 @@ export function calculateBandPlacement(config: BandPlacementConfig): {
 	if (indicesToTry[pass].length === 0) {
 		return {
 			placements,
-			failed: placementObjects,
+			failed: new Map(placementObjects.map(obj => [obj.id, obj])),
 			debug: {
-				clusters: objectClusters,
+				clusters: clusteredIds,
 				indicesToTry,
 				debugPlacementLogs
 			},
@@ -989,19 +990,20 @@ export function calculateBandPlacement(config: BandPlacementConfig): {
 
 	// --- Compile failed objects from remaining unplaced candidates ---
 	// Use the remaining indices to try for this pass to compile the failed objects
-	const failed: PlacementObject[] = indicesToTry[pass].map(idx => placementObjects[idx]);
+	const failed: Map<string, PlacementObject> = new Map(indicesToTry[pass].map(idx => [placementObjects[idx].id, placementObjects[idx]]));
 
 	// console.log("placements", placements);
 	// console.log("failed", failed);
 	// console.log("debugPlacementLogs", debugPlacementLogs);
 	// console.log("indicesToTry", indicesToTry);
-	console.log(`calculateBandPlacement: After ${pass} passes with ${indicesToTry[0].length} objects, ${failed.length} failed, ${placements.size} placed`);
+
+	console.log(`calculateBandPlacement: After ${pass} passes with ${indicesToTry[0].length} objects, ${failed.size} failed, ${placements.size} placed.`);
 
 	return {
 		placements,
 		failed,
 		debug: {
-			clusters: objectClusters,
+			clusters: clusteredIds,
 			indicesToTry,
 			debugPlacementLogs
 		},

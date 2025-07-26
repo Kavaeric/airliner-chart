@@ -1,5 +1,4 @@
 import React from "react";
-import { useDebugMode } from "@/context/DebugModeContext";
 
 /**
  * Finds the closest point on the edge of a rectangle to a given point.
@@ -146,7 +145,19 @@ function clipLineToRect(
  * @param {number} [angleStep=45] - Angle increment in degrees to snap to (default: 45)
  * @returns {{x: number, y: number}} - The new end point, snapped to the nearest angle
  */
-function snapToAngle(
+/**
+ * Given a start and end point, returns a new end point such that the line from start to end
+ * is "snapped" to the nearest multiple of `angleStep` degrees, but does NOT preserve the original distance.
+ * The new end point will be at the same distance as the original, but projected along the snapped angle.
+ *
+ * @param {number} startX - X coordinate of the start point
+ * @param {number} startY - Y coordinate of the start point
+ * @param {number} endX - X coordinate of the original end point
+ * @param {number} endY - Y coordinate of the original end point
+ * @param {number} [angleStep=45] - Angle increment in degrees to snap to (default: 45)
+ * @returns {{x: number, y: number}} - The new end point, snapped to the nearest angle, but not preserving distance
+ */
+function clampToAngle(
 	startX: number,
 	startY: number,
 	endX: number,
@@ -154,30 +165,25 @@ function snapToAngle(
 	angleStep: number = 45
 ) {
 	// --- Calculate the vector from start to end ---
-	const deltaX = endX - startX; // Horizontal distance from start to end
-	const deltaY = endY - startY; // Vertical distance from start to end
+	const deltaX = endX - startX;
+	const deltaY = endY - startY;
 
 	// --- Find the angle of this vector in degrees ---
-	// Math.atan2 returns the angle in radians between the positive X axis and the point (deltaX, deltaY)
-	// Multiply by (180 / Math.PI) to convert radians to degrees
 	const currentAngle = Math.atan2(deltaY, deltaX) * (180 / Math.PI);
 
 	// --- Snap the angle to the nearest allowed increment ---
-	// Divide by angleStep, round to nearest integer, then multiply back to get the snapped angle
 	const snappedAngle = Math.round(currentAngle / angleStep) * angleStep;
 
 	// --- Convert the snapped angle back to radians for trig functions ---
 	const snappedRadians = snappedAngle * (Math.PI / 180);
 
-	// --- Preserve the original distance between start and end ---
-	const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+	// --- Instead of preserving the original distance, use the original end point's offset projected onto the snapped angle ---
+	// Project the original vector's length onto the snapped angle's direction, but use only the direction, not the length
+	// We'll set the new end point to be the same offset as the original, but along the snapped angle
+	const absDelta = Math.max(Math.abs(deltaX), Math.abs(deltaY));
+	const newEndX = startX + Math.cos(snappedRadians) * absDelta;
+	const newEndY = startY + Math.sin(snappedRadians) * absDelta;
 
-	// --- Calculate the new end point using the snapped angle and original distance ---
-	// Use cosine and sine to get the new X and Y offsets from the start point
-	const newEndX = startX + Math.cos(snappedRadians) * distance;
-	const newEndY = startY + Math.sin(snappedRadians) * distance;
-
-	// --- Return the snapped end point ---
 	return { x: newEndX, y: newEndY };
 }
 
@@ -215,6 +221,7 @@ function getEuclideanDistance(x1: number, y1: number, x2: number, y2: number) {
  * @param {string} [props.stroke="#222"] - Stroke colour
  * @param {number} [props.strokeWidth=2] - Stroke width
  * @param {string} [props.className] - Optional className for styling
+ * @param {boolean} [props.debug=false] - Optional debug flag
  * @returns {React.ReactElement}
  */
 export interface MarkerLeaderProps {
@@ -222,31 +229,52 @@ export interface MarkerLeaderProps {
 	y1: number;
 	x2: number;
 	y2: number;
-	endBBox?: { width: number; height: number };
+	clippingBBox?: { width: number; height: number };
 	targetBBox?: { width: number; height: number };
 	angleStep?: number;
 	minLength?: number;
 	stroke?: string;
 	strokeWidth?: number;
 	className?: string;
+	debug?: boolean;
 }
 
+/**
+ * MarkerLeader Component
+ * 
+ * Renders a leader line that always starts at a 45° angle (up-left, up-right, bottom-right, bottom-left)
+ * from the start point, then connects to the end point.
+ * 
+ * The second segment is always orthogonal (horizontal or vertical) to the label, using a dynamic elbow.
+ * 
+ * @param {Object} props
+ * @param {number} props.x1 - Start x coordinate
+ * @param {number} props.y1 - Start y coordinate
+ * @param {number} props.x2 - End x coordinate
+ * @param {number} props.y2 - End y coordinate
+ * @param {Object} [props.clippingBBox] - Bounding box of the clipping area, such as the label's bounding box.
+ * @param {Object} [props.targetBBox] - Bounding box of the target. Can be smaller than the clipping box.
+ * @param {number} [props.angleStep=45] - Angle increment in degrees to snap to (default: 45)
+ * @param {number} [props.minLength=12] - Minimum length of the line
+ * @param {string} [props.stroke="#222"] - Stroke colour
+ * @param {number} [props.strokeWidth=2] - Stroke width
+ * @param {string} [props.className] - Optional className for styling
+ */
 export const MarkerLeader = React.forwardRef<SVGPathElement, MarkerLeaderProps & React.SVGProps<SVGPathElement>>(({
 	x1,
 	y1,
 	x2,
 	y2,
-	endBBox,
+	clippingBBox,
 	targetBBox,
 	angleStep = 45,
 	minLength = 12,
 	stroke = "#222",
 	strokeWidth = 2,
 	className,
+	debug = false,
 	...rest
 }, ref) => {
-
-	const { debugMode } = useDebugMode();
 
 	let targetPoint: { x: number; y: number } = { x: x2, y: y2 };
 
@@ -256,12 +284,19 @@ export const MarkerLeader = React.forwardRef<SVGPathElement, MarkerLeaderProps &
 	}
 
 	// First snap to angle
-	const angleSnappedEnd = snapToAngle(x1, y1, targetPoint.x, targetPoint.y, angleStep);
+	const angleSnappedEnd = clampToAngle(x1, y1, targetPoint.x, targetPoint.y, angleStep);
+
 	// Then clip to rectangle
-	const endPoint = clipLineToRect(x1, y1, angleSnappedEnd.x, angleSnappedEnd.y, x2, y2, endBBox?.width || 0, endBBox?.height || 0);
+	const endPoint = clipLineToRect(
+		x1, y1,
+		angleSnappedEnd.x, angleSnappedEnd.y,
+		x2, y2,
+		clippingBBox?.width  || targetBBox?.width  || 0,
+		clippingBBox?.height || targetBBox?.height || 0
+	);
 
 	// If the end point is too close to the start point, return
-	if (getEuclideanDistance(x1, y1, endPoint.x, endPoint.y) < minLength) {
+	if (getEuclideanDistance(x1, y1, targetPoint.x, targetPoint.y) < minLength) {
 		return null;
 	}
 
@@ -270,34 +305,49 @@ export const MarkerLeader = React.forwardRef<SVGPathElement, MarkerLeaderProps &
 
 	return (
 		<g>
-			{debugMode && (
+			{/* Debug: Target bounding box */}
+			{debug && (
 				<rect
 					x={x2 - (targetBBox?.width || 0) / 2}
 					y={y2 - (targetBBox?.height || 0) / 2}
 					width={targetBBox?.width || 0}
 					height={targetBBox?.height || 0}
-					fill="rgba(0, 0, 255, 0.1)"
+					fill="none"
 					stroke="rgba(0, 0, 255, 0.5)"
-					strokeWidth={1}
+					strokeWidth={2}
 				/>
 			)}
-			{debugMode && (
+
+			{/* Debug: Target point */}
+			{debug && (
 				<circle
 					cx={targetPoint.x}
 					cy={targetPoint.y}
-					r={2}
-					fill="rgba(0, 0, 255, 0.1)"
-					stroke="rgba(0, 0, 255, 0.5)"
+					r={3}
+					fill="rgba(0, 0, 255, 0.5)"
 					strokeWidth={1}
 				/>
 			)}
-			<path
+
+			{/* <path
 				d={path}
 				stroke={stroke}
 				strokeWidth={strokeWidth}
 				fill="none"
 				className={className}
 				ref={ref}
+				{...rest}
+			/> */}
+
+			{/* For now, just draw a straight line from the start to the target point */}
+			<line
+				x1={x1}
+				y1={y1}
+				x2={targetPoint.x}
+				y2={targetPoint.y}
+				className={className}
+				stroke={stroke}
+				strokeWidth={strokeWidth}
 				{...rest}
 			/>
 		</g>

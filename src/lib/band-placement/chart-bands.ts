@@ -35,10 +35,14 @@ export interface PlacementBand {
  * chart elements don't overlap with existing content like markers or labels.
  */
 export interface Obstacle {
-	/** Position of the obstacle on the chart */
-	position: { x: number; y: number };
-	/** Height of the obstacle (vertical space it occupies) */
-	height: number;
+	/** Minimum X coordinate of the obstacle */
+	minX: number;
+	/** Maximum X coordinate of the obstacle */
+	maxX: number;
+	/** Minimum Y coordinate of the obstacle */
+	minY: number;
+	/** Maximum Y coordinate of the obstacle */
+	maxY: number;
 }
 
 /**
@@ -86,11 +90,7 @@ function createPlacementBand(index: number, top: number, bottom: number, left: n
  * @param minBandHeight - Minimum height for a band (bands below this will be merged)
  * @param maxBandHeight - Maximum height for a band (bands above this will be split)
  * @param obstacles - Array of obstacles with position and height
- * @param paddingBands - Number of minimum-height padding bands to create on each side when splitting (default: 2)
- * @param paddingBandHeight - Height for padding bands, defaults to minBandHeight and clamps to it if below (default: minBandHeight)
  * @returns Array of chart bands with top, bottom, height, and centre properties
- * 
- * @throws {Error} When input parameters are invalid (negative values, etc.)
  * 
  * @example
  * ```typescript
@@ -99,7 +99,6 @@ function createPlacementBand(index: number, top: number, bottom: number, left: n
  *   20,  // minBandHeight
  *   100, // maxBandHeight
  *   [{ position: { x: 100, y: 50 }, height: 10 }],
- *   2    // paddingBands
  * );
  * ```
  */
@@ -116,9 +115,6 @@ export function calculateChartPlacementBands(
 	if (maxBandHeight <= 0) {
 		throw new Error('maxBandHeight must be positive');
 	}
-	if (dimensions.height <= 0) {
-		throw new Error('Chart height must be positive');
-	}
 
 	const effectiveMaxBandHeight = Math.max(minBandHeight, maxBandHeight);
 
@@ -128,21 +124,21 @@ export function calculateChartPlacementBands(
 	}
 
 	// ===== PHASE 1: INITIAL BAND CREATION =====
-	const yPositions = obstacles.length > 1 
-		? obstacles.map(o => o.position.y).sort((a, b) => a - b)
-		: obstacles.map(o => o.position.y);
-
-	const maxObstacleHeight = Math.max(...obstacles.map(o => o.height), minBandHeight);
+	// Use obstacle vertical extents for band calculation
+	const yExtents: number[] = [];
+	obstacles.forEach(o => {
+		yExtents.push(o.minY, o.maxY);
+	});
+	yExtents.sort((a, b) => a - b);
 
 	let bands: PlacementBand[] = [];
 	let bandIndex = 0;
 	let currentY = 0;
 	let currentBand: PlacementBand | null = null;
 
-	for (let i = 0; i < yPositions.length; i++) {
-		const obstacleY = yPositions[i];
-		const obstacleTop = obstacleY - maxObstacleHeight / 2;
-		const obstacleBottom = obstacleY + maxObstacleHeight / 2;
+	for (let i = 0; i < yExtents.length; i += 2) {
+		const obstacleTop = yExtents[i];
+		const obstacleBottom = yExtents[i + 1];
 
 		if (currentBand && obstacleTop <= currentBand.bottom) {
 			currentBand.bottom = Math.max(currentBand.bottom, obstacleBottom);

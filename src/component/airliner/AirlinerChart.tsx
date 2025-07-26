@@ -13,7 +13,7 @@ import { ChartLayoutContext } from "@/context/ChartLayoutContext";
 import { ChartScalesContext } from "@/context/ChartScalesContext";
 import { ChartFormatContext } from "@/context/ChartFormatContext";
 import { createChartDataContext } from "@/context/ChartDataContext";
-import { DebugProvider, useDebugMode } from "@/context/DebugModeContext";
+import { useDebugMode } from "@/context/DebugModeContext";
 
 // [IMPORT] Utilities/helpers //
 import { useChartDimensions } from "@/lib/hooks/use-chart-dimensions";
@@ -21,15 +21,15 @@ import { useChartScales } from "@/lib/hooks/use-chart-scales";
 import { useChartViewport } from "@/lib/hooks/use-chart-viewport";
 
 // [IMPORT] Types/interfaces //
-import { Airliner } from "@/lib/data/airliner-types";
 import type { ChartViewport } from "@/types/zoom";
+import type { AirlinerData, AirlinerModel } from "@/lib/data/airliner-types";
 
-// Create a typed ChartDataContext for Airliner
-export const { ChartDataContext, useChartData } = createChartDataContext<Airliner>();
+// Create a typed ChartDataContext for AirlinerModel
+export const { ChartDataContext, useChartData } = createChartDataContext<AirlinerModel>();
 
 // Props for the airliner chart component
 interface AirlinerChartProps {
-	// data: AirlinerData[]; // No longer needed, use context
+	data: AirlinerData[];
 	className?: string;
 }
 
@@ -47,17 +47,24 @@ interface ChartViewportLimits {
  * - Axis measurement (child-to-parent via onDimensionsChange)
  * - Chart area calculation (subtracts axis sizes and padding)
  * - Scale creation (data-to-pixel mapping)
+ * - Chart data transformation (into AirlinerModel)
  * - Passing all layout and scale info to child components
  *
  * This architecture ensures robust, race-condition-free measurement and
  * clear separation of layout, measurement, and rendering concerns.
  */
-export default function AirlinerChart({}: AirlinerChartProps) {
+export default function AirlinerChart({ data }: AirlinerChartProps) {
 	// Debug mode state management
 	const { debugMode, setDebugMode } = useDebugMode();
 	
-	// Access airliner data from context
-	const data = useChartData();
+	 // Transform raw CSV into chart-ready Airliner data with IDs
+	 const chartData: AirlinerData[] = useMemo(() => {
+		return data.map(airliner => ({
+			airlinerID: airliner.airlinerID,
+			airlinerData: airliner.airlinerData,
+		}))
+	 }, [data]);
+
 	// Measure container size and padding only (no axis logic here)
 	const [layout, chartContainerRef] = useChartDimensions();
 
@@ -91,14 +98,14 @@ export default function AirlinerChart({}: AirlinerChartProps) {
 	const scaleConfig = {
 		// Combine all relevant passenger capacity fields into a single array for yValues
 		xValues: [
-			...data.map(d => d.pax1Class),
-			...data.map(d => d.pax2Class),
-			...data.map(d => d.pax3Class),
-			...data.map(d => d.paxLimit),
-			...data.map(d => d.paxExit)
+			...data.map(d => d.airlinerData.pax1Class),
+			...data.map(d => d.airlinerData.pax2Class),
+			...data.map(d => d.airlinerData.pax3Class),
+			...data.map(d => d.airlinerData.paxLimit),
+			...data.map(d => d.airlinerData.paxExit)
 		].filter((v): v is number => typeof v === 'number' && !isNaN(v)),
 
-		yValues: data.map(d => d.rangeKM).filter((v): v is number => typeof v === 'number' && !isNaN(v)),
+		yValues: data.map(d => d.airlinerData.rangeKM).filter((v): v is number => typeof v === 'number' && !isNaN(v)),
 		xLabel: "Passenger Capacity",
 		yLabel: "Range (km)",
 		xPadding: 25,
@@ -279,6 +286,7 @@ export default function AirlinerChart({}: AirlinerChartProps) {
 	// ChartFormatContext provides axis labels and margins
 	// ChartDataContext provides the airliner data array
 	return (
+		<ChartDataContext.Provider value={chartData}>
 		<ChartLayoutContext.Provider value={layoutValue}>
 			<ChartScalesContext.Provider value={scalesValue}>
 				<ChartFormatContext.Provider value={formatValue}>
@@ -348,5 +356,6 @@ export default function AirlinerChart({}: AirlinerChartProps) {
 				</ChartFormatContext.Provider>
 			</ChartScalesContext.Provider>
 		</ChartLayoutContext.Provider>
+		</ChartDataContext.Provider>
 	);
 }

@@ -34,7 +34,7 @@ export interface RectCrossProps extends React.SVGProps<SVGRectElement> {
  * @param crossStrokeWidth - Stroke width for the cross (default: 2)
  * @param ...rest - Any other SVG rect props (e.g., fill, stroke, event handlers)
  */
-export default function RectCross({
+export function RectCross({
 	x,
 	y,
 	width,
