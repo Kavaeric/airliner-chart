@@ -7,13 +7,16 @@ import ChartBrushScatterMarker from "@/component/chart/ChartBrushScatterMarker";
 // [IMPORT] CSS styling //
 import brushStyles from "@/component/chart/ChartBrush.module.css";
 
+// [IMPORT] Types/interfaces //
+import type { AirlinerData } from "@/lib/data/airliner-types";
+
 interface BrushScatterProps {
 	width: number;
 	height: number;
 	axisMode: "x" | "y" | "both";
 	xScale: (value: number) => number;
 	yScale: (value: number) => number;
-	data: any[];
+	data: AirlinerData[];
 }
 
 const ChartBrushScatter = React.memo(function ChartBrushScatter({ width, height, axisMode, xScale, yScale, data }: BrushScatterProps) {
@@ -28,7 +31,9 @@ const ChartBrushScatter = React.memo(function ChartBrushScatter({ width, height,
 
 	return (
 		<React.Fragment>
-			{data.map((d: any, i: number) => {
+			{data.map((airlinerData: AirlinerData, i: number) => {
+				const d = airlinerData.airlinerData; // Access the actual airliner stats
+				
 				if (typeof d.rangeKM !== "number") {
 					// console.warn(`Airliner ${d.nameICAO} has no rangeKM value`);
 					return null;
@@ -40,7 +45,7 @@ const ChartBrushScatter = React.memo(function ChartBrushScatter({ width, height,
 
 				// Render major markers
 				const paxClassMarkers = paxClassKeys.map((key) => {
-					const paxValue = d[key];
+					const paxValue = d[key as keyof typeof d];
 
 					// If the pax value doesn't exist, skip it
 					if (typeof paxValue !== "number" || isNaN(paxValue)) return null; // Skip missing values
@@ -73,7 +78,7 @@ const ChartBrushScatter = React.memo(function ChartBrushScatter({ width, height,
 
 				// Render minor markers (skip if too close to any major or previous minor marker)
 				const paxLimitMarkers = paxLimitKeys.map((key) => {
-					const paxValue = d[key];
+					const paxValue = d[key as keyof typeof d];
 
 					// If the pax value doesn't exist, skip it
 					if (typeof paxValue !== "number" || isNaN(paxValue)) return null;

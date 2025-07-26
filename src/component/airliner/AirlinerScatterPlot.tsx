@@ -56,6 +56,9 @@ export default function AirlinerScatterPlot({
 	const data = useChartData() as AirlinerModel[];
 	const { debugMode } = useDebugMode();
 
+	// Hide/consolidate labels in clusters larger than this
+	const labelClusterThreshold = 3;
+
 	// === ViewModel ===
 	const {
 		airlinerEntries,		// Map of airliner IDs to their view model data
@@ -215,28 +218,32 @@ export default function AirlinerScatterPlot({
 				)}
 
 				{/* Leader lines */}
-				{Array.from(airlinerEntries.values()).map((airliner) =>
-					airliner.labels?.labelAnchor && airliner.labels?.labelCoordinates ? (
+				{Array.from(airlinerEntries.values()).map((airliner) => {
+					const label = airliner.labels;
+					if (!label?.labelAnchor || !label?.labelCoordinates) return null;
+					if (label.clusterSize && label.clusterSize > labelClusterThreshold) return null;
+					
+					return (
 						<MarkerLeader
 							key={airliner.airlinerID}
-							x1={airliner.labels?.labelAnchor.x}
-							y1={airliner.labels?.labelAnchor.y}
-							x2={airliner.labels?.labelCoordinates?.x}
-							y2={airliner.labels?.labelCoordinates?.y}
+							x1={label.labelAnchor.x}
+							y1={label.labelAnchor.y}
+							x2={label.labelCoordinates.x}
+							y2={label.labelCoordinates.y}
 							clippingBBox={{
-								width: airliner.labels.labelDimensions.width,
-								height: airliner.labels.labelDimensions.height 
+								width: label.labelDimensions.width,
+								height: label.labelDimensions.height 
 							}}
 							targetBBox={{
-								width: Math.max(20, airliner.labels.labelDimensions.width / 4),
-								height: airliner.labels.labelDimensions.height 
+								width: Math.max(20, label.labelDimensions.width / 4),
+								height: label.labelDimensions.height 
 							}}
 							minLength={12}
 							strokeWidth={1}
 							debug={debugMode}
 						/>
-					) : null
-				)}
+					);
+				})}
 
 				{/* Ghost labels (batch measurement) */}
 				{!areLabelsMeasured && (
@@ -262,7 +269,7 @@ export default function AirlinerScatterPlot({
 				{areLabelsMeasured && Array.from(airlinerEntries.values()).map((airliner) => {
 					const label = airliner.labels;
 					if (!label?.labelCoordinates) return null;
-					if (label.clusterSize > 2) return null;
+					if (label.clusterSize > labelClusterThreshold) return null;
 					return (
 						<AirlinerScatterLabel
 							key={airliner.airlinerID}
@@ -277,27 +284,29 @@ export default function AirlinerScatterPlot({
 
 				{/* Debug: Label bounding boxes */}
 				{debugMode && Array.from(airlinerEntries.values()).map((airliner) => {
-					if (!airliner.labels?.labelDimensions) return null;
+					const label = airliner.labels;
+					if (!label?.labelDimensions) return null;
+					if (label.clusterSize && label.clusterSize > labelClusterThreshold) return null;
 
 					// Draw at placed coordinates if available, otherwise at anchor
-					return airliner.labels?.labelCoordinates ? (
+					return label.labelCoordinates ? (
 						<RectCentre
 							key={airliner.airlinerID}
-							cx={airliner.labels.labelCoordinates.x}
-							cy={airliner.labels.labelCoordinates.y}
-							width={airliner.labels.labelDimensions.width}
-							height={airliner.labels.labelDimensions.height}
+							cx={label.labelCoordinates.x}
+							cy={label.labelCoordinates.y}
+							width={label.labelDimensions.width}
+							height={label.labelDimensions.height}
 							fill="rgba(22, 78, 234, 0.1)"
 							stroke="rgb(23, 116, 238)"
 							strokeWidth={1}
 						/>
-					) : airliner.labels.labelAnchor ? (
+					) : label.labelAnchor ? (
 						<RectCentre
 							key={airliner.airlinerID}
-							cx={airliner.labels.labelAnchor.x}
-							cy={airliner.labels.labelAnchor.y}
-							width={airliner.labels.labelDimensions.width}
-							height={airliner.labels.labelDimensions.height}
+							cx={label.labelAnchor.x}
+							cy={label.labelAnchor.y}
+							width={label.labelDimensions.width}
+							height={label.labelDimensions.height}
 							fill="rgba(0, 204, 255, 0.1)"
 							stroke="rgba(0, 204, 255, 0.7)"
 							strokeDasharray="4 2"
@@ -311,7 +320,7 @@ export default function AirlinerScatterPlot({
 					<g>
 						{Array.from(airlinerLabelClusters.entries()).map(([clusterIndex, cluster]) => {
 
-							if (cluster.labelIDs.length === 1) return null;
+							if (cluster.labelIDs.length <= labelClusterThreshold) return null;
 							
 							const fillColor = 'rgba(100, 237, 166, 0.15)';
 							const strokeColor = 'rgba(17, 175, 141, 0.8)';

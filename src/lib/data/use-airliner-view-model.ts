@@ -232,7 +232,7 @@ export function useAirlinerViewModel(
 		];
 
 		// Run cluster detection and return the result directly
-		return detectLabelClusters(allLabelsForClustering, 10); // Default cluster distance
+		return detectLabelClusters(allLabelsForClustering, 4); // Default cluster distance
 	}, [labelPlacement, labelFailed]);
 
 	/**
@@ -448,12 +448,12 @@ function calculateLabelPlacement(
 			strategy: {
 				firstPass: {
 					modes: ['top-left', 'left', 'top'],
-					maxDistance: { x: 50, y: 30 },
+					maxDistance: { x: 50, y: 40 },
 					offset: { x: 0, y: 0 }
 				},
 				sweep: {
 					horizontal: 'sweep-to-right',
-					maxDistance: { x: 50, y: 30 },
+					maxDistance: { x: 50, y: 40 },
 					stepFactor: .5,
 					verticalSearch: [-1, 1, 0],
 					maxIterations: 2,
