@@ -1,9 +1,6 @@
 // [IMPORT] Types/interfaces //
 import type { AirlinerStats, AirlinerMarker, AirlinerMarkerSeries, AirlinerLine} from "@/lib/data/airliner-types";
 
-// [IMPORT] Context providers/hooks //
-import { scaleLinear } from "@visx/scale";
-
 /**
  * @function plotAirlinerMarkerSeries
  * @description Converts AirlinerStats data into screen-space AirlinerMarker objects.
