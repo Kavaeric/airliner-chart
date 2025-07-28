@@ -2,9 +2,7 @@
 
 /* Diamond marker style */
 .markerDiamond {
-	fill: var(--background);
-	stroke-width: 2;
-	stroke: var(--brand-primary);
+	fill: var(--brand-primary-treble);
 	shape-rendering: geometricPrecision;
 }
 
@@ -13,6 +11,6 @@
 	stroke: var(--text-minor);
 	stroke-linecap: butt;
 	shape-rendering: geometricPrecision;
-	opacity: 0.4;
+	opacity: 1;
 	stroke-width: 2;
 } 

@@ -9,7 +9,7 @@
 	display: flex;
 	flex-direction: column;
 	width: 100vw;
-	height: 100vh;
+	height: 100vh; 
 }
 
 .belowCut {
@@ -34,20 +34,26 @@
 .headerContainer {
 	display: flex;
 	flex-direction: column;
-	padding: var(--space-lg);
+	background-color: var(--brand-primary-treble);
+	border-bottom: 1px solid var(--grey-800);
 }
 
 .headerContainer h1 {
-	margin-bottom: var(--space-lg);
-	font-size: var(--font-size-4xl);
-	font-weight: var(--font-weight-semibold);
-	color: var(--text-major);
+	font-size: 8em;
+	font-weight: var(--font-weight-regular);
+	color: var(--grey-950);
+	margin: 0;
+	padding: 0;
+	line-height: 0.75;
 }
 
-.headerContainer p {
-	margin-bottom: 0;
-	font-size: 1.1rem;
-	color: var(--text-major);
+.descriptionContainer {
+	padding: var(--space-lg);
+	background-color: var(--grey-950);
+	border-bottom: 1px solid var(--grey-900);
+	display: flex;
+	flex-direction: row;
+	justify-content: space-between;
 }
 
 @media (width <= 768px) {

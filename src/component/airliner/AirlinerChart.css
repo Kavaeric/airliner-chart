@@ -1,0 +1,235 @@
+/* AirlinerChart.module.css */
+
+/* ChartContainer Component (inlined from ChartContainer.module.css)
+ * 
+ * A container for the chart, which handles the layout of the chart and its components.
+ * 3x3 grid layout for chart components:
+ * ┌─────────────┬─────────────┬─────────────┐
+ * │ Y Brush     │ Y Axis      │ Chart Area  │
+ * ├─────────────┼─────────────┼─────────────┤
+ * │ empty       │ empty       │ X Axis      │
+ * ├─────────────┼─────────────┼─────────────┤
+ * │ empty       │ empty       │ X Brush     │
+ * └─────────────┴─────────────┴─────────────┘
+ */
+.chartContainer {
+	display: grid;
+	position: relative;
+	grid-template-areas:
+		"yBrush yAxis chartArea"
+		"empty1 empty2 xAxis"
+		"empty3 empty4 xBrush";
+
+	/* Explicit minmax values are needed to ensure the SVG chart can shrink
+	   because SVG sure is weird like that */
+	grid-template-rows:
+		minmax(0, auto)
+		minmax(0, var(--space-3xl))
+		minmax(0, var(--space-2xl));
+	grid-template-columns:
+		minmax(0, var(--space-2xl))
+		minmax(0, var(--space-3xl))
+		minmax(0, auto);
+	
+	width: 100%;
+	height: 100%;
+	min-height: 0; /* Allows flex child to shrink */
+	padding-top: var(--space-med);
+	border-bottom: 2px solid var(--text-major);
+	background: linear-gradient(to bottom, rgba(0, 0, 0, 0.02) 0%, transparent 10%, transparent 100%);
+}
+
+.empty1,
+.empty2,
+.empty3,
+.empty4 {
+	background-color: var(--text-major);
+}
+
+.empty1 {
+	grid-area: empty1 ;
+}
+
+.empty2 {
+	grid-area: empty2;
+}
+
+.empty3 {
+	grid-area: empty3;
+}
+
+.empty4 {
+	grid-area: empty4;
+}
+
+.chartArea {
+	position: relative; /* For proper layering */
+	z-index: 1; /* Ensure chart appears above axis labels */
+	grid-area: chartArea;
+	width: 100%;
+	height: 100%;
+	min-height: 0; /* Critical: allows grid item to shrink */
+	overflow: hidden; /* Prevent content from expanding beyond bounds */
+}
+
+/* Y-axis grid area */
+.yAxis {
+	grid-area: yAxis;
+	border-bottom: 1px solid var(--text-minor);
+}
+
+/* X-axis grid area */
+.xAxis {
+	grid-area: xAxis;
+	border-left: 1px solid var(--text-minor);
+}
+
+/* Chart Axes Styling (inlined from ChartAxes.module.css) */
+
+/* Base axis styling */
+.xAxis, .yAxis {
+	background-color: var(--text-major);
+}
+
+.axisLine {
+	stroke-width: 0;
+}
+
+.axisLabelX,
+.axisLabelY {
+	fill: var(--background);
+	font-family: var(--font-display);
+	font-size: var(--font-size-md);
+	font-weight: var(--font-weight-regular);
+	letter-spacing: var(--letter-spacing-wide);
+	text-transform: uppercase;
+}
+
+.axisLabelX {
+	dominant-baseline: baseline;
+	transform: translateY(calc(var(--space-md) * -1));
+}
+
+.axisLabelY {
+	dominant-baseline: hanging;
+	writing-mode: sideways-lr;
+	transform: translateX(var(--space-xs));
+}
+
+.xAxis .tick line,
+.yAxis .tick line {
+	stroke-width: 0;
+}
+
+/* Axes tick labels */
+.xAxis .tick text,
+.yAxis .tick text {
+	fill: var(--background);
+	font-family: var(--font-display);
+	font-weight: var(--font-weight-regular);
+	font-size: var(--font-size-sm);
+}
+
+.xAxis .tick text {
+	text-anchor: middle;
+}
+
+.yAxis .tick text {
+	text-anchor: end;
+}
+
+
+.xAxisBrush {
+	grid-area: xBrush;
+	border-left: 1px solid var(--text-minor);
+}
+
+.yAxisBrush {
+	grid-area: yBrush;
+	border-bottom: 1px solid var(--text-minor);
+}
+
+/* AirlinerScatterBrush Component Styling */
+
+/* Background styling for brush areas */
+.airlinerBrushBackground {
+	fill: var(--text-major);
+	opacity: 1;
+}
+
+.xAxisBrush .brushBorder,
+.yAxisBrush .brushBorder {
+	fill: none;
+	transition: height 0.2s ease-in-out, width 0.2s ease-in-out, x 0.2s ease-in-out, y 0.2s ease-in-out;
+}
+
+/* Limit line styling for passenger capacity limits */
+.airlinerBrushLimitLine {
+	stroke: var(--text-minor);
+	stroke-width: 1;
+	opacity: 1;
+}
+
+/* Passenger class range styling */
+.airlinerBrushPaxClassRange {
+	fill: var(--text-minor);
+	opacity: 1;
+}
+
+.airlinerBrushRangeKM {
+	stroke: var(--text-minor);
+	stroke-width: 1;
+	opacity: 1;
+}
+
+/* Variant: Inside Brush Control Area */
+.airlinerBrushControl .airlinerBrushBackground {
+	fill: var(--text-major);
+	transition: fill 0.1s ease-in-out;
+}
+
+.airlinerBrushControl .brushBorder {
+	fill: var(--brand-primary-bass);
+}
+
+.airlinerBrushControl .airlinerBrushLimitLine {
+	stroke: var(--brand-primary-bass);
+	stroke-width: 1;
+	opacity: 1;
+}
+
+.airlinerBrushControl .airlinerBrushPaxClassRange {
+	fill: var(--brand-primary-bass);
+	opacity: .5;
+}
+
+.airlinerBrushControl .airlinerBrushRangeKM {
+	stroke: var(--brand-primary-bass);
+	stroke-width: 1;
+	opacity: 1;
+}
+
+.airlinerBrushControl:hover .airlinerBrushBackground {
+	fill: var(--background);
+}
+
+.xAxisBrush .airlinerBrushControl:hover .brushBorder {
+	height: 8px;
+}
+
+.yAxisBrush .airlinerBrushControl:hover .brushBorder {
+	width: 8px;
+	x: calc(var(--space-2xl) - 8px);
+}
+
+.airlinerBrushControl:hover .airlinerBrushLimitLine {
+	stroke: var(--brand-primary-treble);
+}
+
+.airlinerBrushControl:hover .airlinerBrushPaxClassRange {
+	fill: var(--brand-primary-treble);
+}
+
+.airlinerBrushControl:hover .airlinerBrushRangeKM {
+	stroke: var(--brand-primary-treble);
+}

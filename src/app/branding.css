@@ -79,8 +79,10 @@
 	--size-256: 256px;
 
 	/* === Semantic tokens === */
-	--brand-primary: var(--red-treble-500);
-	--brand-primary-rgb: 211, 42, 26;
+	--brand-primary-treble: var(--red-treble-500);
+	--brand-primary-bass: var(--red-bass-500);
+	--brand-primary-rgb-treble: 211, 42, 26;
+	--brand-primary-rgb-bass: 255, 95, 95;
 	--background: var(--grey-900);
 
 	--text-major: var(--grey-100);
@@ -92,7 +94,7 @@
 	--border-diminished: var(--grey-600);
 
 	--chart-gridline: var(--grey-800);
-
+	--chart-grid-dot: var(--grey-700);
 	--link-hover-bg: rgba(var(--red-treble-500-rgb), var(--opacity-low));
 
 	/* === Semantic Spacing Tokens === */

@@ -1,66 +1,66 @@
-manufacturer,family,generation,variant,nameCommon,nameICAO,firstDelivery,manufactureEnd,status,bodyType,rangeKM,pax3Class,pax2Class,pax1Class,paxLimit,paxExit
-string,string,string,string,string,string,number,number,string,string,number,number,number,number,number,number
-,,,,,,,,,,,,,,,
-# Airbus A320 family,,,,,,,,,,,,,,,
-Airbus,A320,ceo,A318,A318ceo,A318,2003,2013,discontinued,narrow,5700,,107,117,132,136
-Airbus,A320,ceo,A319,A319ceo,A319,1996,,active,narrow,6940,,124,134,156,160
-Airbus,A320,ceo,A320,A320ceo,A320,1988,,active,narrow,6100,,150,164,186,180
-Airbus,A320,ceo,A321,A321ceo,A321,1994,,active,narrow,5900,,185,199,230,236
-Airbus,A320,neo,A319,A319neo,A19N,2019,,active,narrow,6950,,140,,160,
-Airbus,A320,neo,A320,A320neo,A20N,2016,,active,narrow,6500,,165,,195,
-Airbus,A320,neo,A321,A321neo,A21N,2017,,active,narrow,7400,,206,,244,
-,,,,,,,,,,,,,,,
-# Airbus A330 family,,,,,,,,,,,,,,,
-Airbus,A330,ceo,200,A330-200,A332,1998,,active,wide,13450,230,,,406,
-Airbus,A330,ceo,300,A330-300,A333,1993,,active,wide,11750,270,,,440,
-Airbus,A330,neo,800,A330-800,A338,2020,,active,wide,15094,240,,,406,
-Airbus,A330,neo,900,A330-900,A339,2018,,active,wide,13334,280,,,465,
-,,,,,,,,,,,,,,,
-# Airbus A340 family,,,,,,,,,,,,,,,
-Airbus,A340,,200,A340-200,A342,1993,2011,discontinued,wide,12400,210,303,,,420
-Airbus,A340,,300,A340-300,A343,1993,2011,discontinued,wide,13500,250,335,,,440
-Airbus,A340,,500,A340-500,A345,2003,2011,discontinued,wide,16670,313,,,,375
-Airbus,A340,,600,A340-600,A346,2002,2011,discontinued,wide,14450,380,,,,440
-,,,,,,,,,,,,,,,
-# Airbus A350 family,,,,,,,,,,,,,,,
-Airbus,A350,,900,A350-900,A359,2014,,active,wide,15372,300,315,,,440
-Airbus,A350,,900ULR,A350-900ULR,A359,2018,,active,wide,17964,300,315,,,440
-Airbus,A350,,1000,A350-1000,A35K,2018,,active,wide,16100,350,369,400,,480
-,,,,,,,,,,,,,,,
-# Airbus A380 family,,,,,,,,,,,,,,,
-Airbus,A380,,,A380,A388,2007,2021,discontinued,wide,14800,525,,,,853
-,,,,,,,,,,,,,,,
-# Boeing 737 family,,,,,,,,,,,,,,,
-Boeing,737,NG,600,737-600,B736,1999,2012,discontinued,narrow,5991,,108,123,,149
-Boeing,737,NG,700,737-700,B737,1997,2019,discontinued,narrow,5570,,128,140,,149
-Boeing,737,NG,800,737-800,B738,1998,2016,discontinued,narrow,5436,,160,184,,189
-Boeing,737,NG,900ER,737-900ER,B739,2007,2016,discontinued,narrow,5460,,177,215,,220
-Boeing,737,MAX,7,737 MAX 7,B37M,2017,,active,narrow,7000,,153,,172,
-Boeing,737,MAX,8,737 MAX 8,B38M,2017,,active,narrow,6500,,178,,189,
-Boeing,737,MAX,9,737 MAX 9,B39M,2017,,active,narrow,6100,,193,,220,
-Boeing,737,MAX,10,737 MAX 10,B3JM,,,development,narrow,5700,,204,,230,
-,,,,,,,,,,,,,,,
-# Boeing 747 family,,,,,,,,,,,,,,,
-Boeing,747,,400ER,747-400ER,B744,1989,2009,discontinued,wide,14045,416,,,,660
-Boeing,747,,8I,747-8I,B748,2005,2022,discontinued,wide,14320,467,,,,605
-,,,,,,,,,,,,,,,
-# Boeing 757 family,,,,,,,,,,,,,,,
-Boeing,757,,200,757-200,B752,1983,2004,discontinued,narrow,7250,,200,219,239,
-Boeing,757,,300,757-300,B753,1999,2004,discontinued,narrow,6295,,243,275,295,
-,,,,,,,,,,,,,,,
-# Boeing 767 family,,,,,,,,,,,,,,,
-Boeing,767,,200ER,767-200ER,B762,1984,2014,discontinued,wide,12200,174,210,245,,290
-Boeing,767,,300ER,767-300ER,B763,1983,2020,discontinued,wide,11070,210,261,290,,351
-Boeing,767,,400ER,767-400ER,B764,2000,,active,wide,10415,243,296,409,,375
-,,,,,,,,,,,,,,,
-# Boeing 777 family,,,,,,,,,,,,,,,
-Boeing,777,,200ER,777-200ER,B772,1997,,active,wide,13080,305,313,,,440
-Boeing,777,#NAME?,200LR,777-200LR,B77L,2006,,active,wide,15843,301,317,,,440
-Boeing,777,#NAME?,300ER,777-300ER,B77W,2004,,active,wide,13649,365,396,,,550
-Boeing,777,X,8,777-8,B778,,,development,wide,16190,,395,,,
-Boeing,777,X,9,777-9,B779,,,development,wide,13500,355,426,,,
-,,,,,,,,,,,,,,,
-# Boeing 787 family,,,,,,,,,,,,,,,
-Boeing,787,,8,787-8,B788,2011,,active,wide,13530,,242,359,,381
-Boeing,787,,9,787-9,B789,2014,,active,wide,14010,,290,406,,420
-Boeing,787,,10,787-10,B78X,2018,,active,wide,11720,,330,440,,440
+manufacturer,nameCommon,family,generation,variant,firstDelivery,manufactureEnd,status,bodyType,rangeKM,pax3Class,pax2Class,pax1Class,paxLimit,paxExit,idNumber,nameICAO
+string,string,string,string,string,number,number,string,string,number,number,number,number,number,number,number,string
+,,,,,,,,,,,,,,,,
+# Airbus A320 family,,,,,,,,,,,,,,,,
+Airbus,A318ceo,A320,ceo,A318,2003,2013,discontinued,narrow,5700,,107,117,132,136,0,A318
+Airbus,A319ceo,A320,ceo,A319,1996,,active,narrow,6940,,124,134,156,160,1,A319
+Airbus,A320ceo,A320,ceo,A320,1988,,active,narrow,6100,,150,164,186,180,2,A320
+Airbus,A321ceo,A320,ceo,A321,1994,,active,narrow,5900,,185,199,230,236,3,A321
+Airbus,A319neo,A320,neo,A319,2019,,active,narrow,6950,,140,,160,,4,A19N
+Airbus,A320neo,A320,neo,A320,2016,,active,narrow,6500,,165,,195,,5,A20N
+Airbus,A321neo,A320,neo,A321,2017,,active,narrow,7400,,206,,244,,6,A21N
+,,,,,,,,,,,,,,,,
+# Airbus A330 family,,,,,,,,,,,,,,,,
+Airbus,A330-200,A330,ceo,200,1998,,active,wide,13450,230,,,406,,7,A332
+Airbus,A330-300,A330,ceo,300,1993,,active,wide,11750,270,,,440,,8,A333
+Airbus,A330-800,A330,neo,800,2020,,active,wide,15094,240,,,406,,9,A338
+Airbus,A330-900,A330,neo,900,2018,,active,wide,13334,280,,,465,,10,A339
+,,,,,,,,,,,,,,,,
+# Airbus A340 family,,,,,,,,,,,,,,,,
+Airbus,A340-200,A340,,200,1993,2011,discontinued,wide,12400,210,303,,,420,11,A342
+Airbus,A340-300,A340,,300,1993,2011,discontinued,wide,13500,250,335,,,440,12,A343
+Airbus,A340-500,A340,,500,2003,2011,discontinued,wide,16670,313,,,,375,13,A345
+Airbus,A340-600,A340,,600,2002,2011,discontinued,wide,14450,380,,,,440,14,A346
+,,,,,,,,,,,,,,,,
+# Airbus A350 family,,,,,,,,,,,,,,,,
+Airbus,A350-900,A350,,900,2014,,active,wide,15372,300,315,,,440,15,A359
+Airbus,A350-900ULR,A350,,900ULR,2018,,active,wide,17964,300,315,,,440,16,A359
+Airbus,A350-1000,A350,,1000,2018,,active,wide,16100,350,369,400,,480,17,A35K
+,,,,,,,,,,,,,,,,
+# Airbus A380 family,,,,,,,,,,,,,,,,
+Airbus,A380,A380,,,2007,2021,discontinued,wide,14800,525,,,,853,18,A388
+,,,,,,,,,,,,,,,,
+# Boeing 737 family,,,,,,,,,,,,,,,,
+Boeing,737-600,737,NG,600,1999,2012,discontinued,narrow,5991,,108,123,,149,19,B736
+Boeing,737-700,737,NG,700,1997,2019,discontinued,narrow,5570,,128,140,,149,20,B737
+Boeing,737-800,737,NG,800,1998,2016,discontinued,narrow,5436,,160,184,,189,21,B738
+Boeing,737-900ER,737,NG,900ER,2007,2016,discontinued,narrow,5460,,177,215,,220,22,B739
+Boeing,737 MAX 7,737,MAX,7,2017,,active,narrow,7000,,153,,172,,23,B37M
+Boeing,737 MAX 8,737,MAX,8,2017,,active,narrow,6500,,178,,189,,24,B38M
+Boeing,737 MAX 9,737,MAX,9,2017,,active,narrow,6100,,193,,220,,25,B39M
+Boeing,737 MAX 10,737,MAX,10,,,development,narrow,5700,,204,,230,,26,B3JM
+,,,,,,,,,,,,,,,,
+# Boeing 747 family,,,,,,,,,,,,,,,,
+Boeing,747-400ER,747,,400ER,1989,2009,discontinued,wide,14045,416,,,,660,27,B744
+Boeing,747-8I,747,,8I,2005,2022,discontinued,wide,14320,467,,,,605,28,B748
+,,,,,,,,,,,,,,,,
+# Boeing 757 family,,,,,,,,,,,,,,,,
+Boeing,757-200,757,,200,1983,2004,discontinued,narrow,7250,,200,219,239,,29,B752
+Boeing,757-300,757,,300,1999,2004,discontinued,narrow,6295,,243,275,295,,30,B753
+,,,,,,,,,,,,,,,,
+# Boeing 767 family,,,,,,,,,,,,,,,,
+Boeing,767-200ER,767,,200ER,1984,2014,discontinued,wide,12200,174,210,245,,290,31,B762
+Boeing,767-300ER,767,,300ER,1983,2020,discontinued,wide,11070,210,261,290,,351,32,B763
+Boeing,767-400ER,767,,400ER,2000,,active,wide,10415,243,296,409,,375,33,B764
+,,,,,,,,,,,,,,,,
+# Boeing 777 family,,,,,,,,,,,,,,,,
+Boeing,777-200ER,777,,200ER,1997,,active,wide,13080,305,313,,,440,34,B772
+Boeing,777-200LR,777,-X,200LR,2006,,active,wide,15843,301,317,,,440,35,B77L
+Boeing,777-300ER,777,-X,300ER,2004,,active,wide,13649,365,396,,,550,36,B77W
+Boeing,777-8,777,X,8,,,development,wide,16190,,395,,,,37,B778
+Boeing,777-9,777,X,9,,,development,wide,13500,355,426,,,,38,B779
+,,,,,,,,,,,,,,,,
+# Boeing 787 family,,,,,,,,,,,,,,,,
+Boeing,787-8,787,,8,2011,,active,wide,13530,,242,359,,381,39,B788
+Boeing,787-9,787,,9,2014,,active,wide,14010,,290,406,,420,40,B789
+Boeing,787-10,787,,10,2018,,active,wide,11720,,330,440,,440,41,B78X

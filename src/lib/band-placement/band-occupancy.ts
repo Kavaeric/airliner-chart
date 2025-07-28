@@ -192,6 +192,8 @@ export function calculateBandOccupancy(
 	chartWidth: number,
 	chartHeight: number
 ): BandOccupancy[] {
+
+	const DEBUG_INDEX = 15;
 	
 	// Early exit for empty bands
 	if (chartPlacementBands.length === 0) {
@@ -242,27 +244,41 @@ export function calculateBandOccupancy(
 		// Check remaining obstacles for intersection with current band
 		for (let i = obstacleIndex; i < sortedObstacles.length; i++) {
 			const obstacle = sortedObstacles[i];
-			
+
 			// Early exit: if obstacle is entirely below current band, 
 			// it will be below all remaining bands too
 			if (obstacle.minY > currentBand.band.bottom) {
 				break;
 			}
-			
+
+			// Get the start of the obstacle, clamped to the left edge of the band
+			const obstacleStart = Math.max(obstacle.minX, currentBand.band.left);
+
+			// Ditto, end of the obstacle
+			const obstacleEnd = Math.min(obstacle.maxX, currentBand.band.right);
+
+			// Calculate the width of the obstacle
+			const obstacleWidth = obstacleEnd - obstacleStart;
+
+			// Early exit: if obstacle width is negative, move on to next obstacle
+			if (obstacleWidth < 0) {
+				continue;
+			}
+
 			// Optimized intersection detection using extracted function
 			if (intersectsVertically(obstacle, currentBand.band)) {
 				// Add the obstacle's horizontal range to this band
 				currentBand.occupiedRanges.push({
-					start: obstacle.minX,
-					end: obstacle.maxX,
-					width: obstacle.maxX - obstacle.minX,
+					start: obstacleStart,
+					end: obstacleEnd,
+					width: obstacleWidth,
 					top: currentBand.band.top,
 					bottom: currentBand.band.bottom
 				});
 			}
 		}
 	}
-	
+
 	// Consolidate overlapping ranges using sweep line algorithm
 	// For each band, merge overlapping and adjacent ranges into consolidated ranges
 	bandOccupancy.forEach((bandData) => {
@@ -281,6 +297,6 @@ export function calculateBandOccupancy(
 	bandOccupancy.forEach((bandData) => {
 		bandData.availableRanges = invertOccupiedRangesToAvailable(bandData.occupiedRanges, bandData.band);
 	});
-	
+
 	return bandOccupancy;
 } 

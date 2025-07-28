@@ -1,48 +1,93 @@
 // [IMPORT] Third-party libraries //
 import { Text } from "@visx/text";
+import React from "react";
 
 // [IMPORT] CSS styling //
 import labelStyles from "./AirlinerScatterLabel.module.css";
 
 // [IMPORT] Types //
-import { AirlinerData } from "@/lib/data/airliner-data-processor";
-import { useDebugMode } from "@/context/DebugContext";
+import { AirlinerLabel } from "@/lib/data/airliner-types";
 
 interface AirlinerScatterLabelProps {
-	airlinerData: AirlinerData;
-	coords: { x: number; y: number };
-	labelOffset?: { x?: number; y?: number };
-	forcePosition?: { x: number; y: number };
+	airlinerID: string;
+	airlinerLabel: AirlinerLabel;
+	plotFormat: any;
 	classNames?: string;
+	debug?: boolean;
 }
 
 /**
  * AirlinerScatterLabel Component
- *
- * Renders the label for a single airliner at the leftmost marker position.
- * Calculates the optimal label position and renders the airliner name.
+ * 
+ * Renders the label for a single airliner.
+ * 
+ * @param {string} airlinerID - The ID of the airliner.
+ * @param {AirlinerLabel} airlinerLabel - The label for the airliner.
+ * @param {any} plotFormat - The plot format.
+ * @param {string} classNames - The class names for the label.
+ * @param {boolean} debug - Optional debug flag.
  */
-export default function AirlinerScatterLabel({ 
-	airlinerData, 
-	coords, 
-	labelOffset = { x: 0, y: 0 },
-	classNames = ""
-}: AirlinerScatterLabelProps) {
-	const debugMode = useDebugMode();
+const AirlinerScatterLabel = React.forwardRef<SVGGElement, AirlinerScatterLabelProps>(
+	({
+		airlinerID,
+		airlinerLabel,
+		plotFormat,
+		classNames = "",
+		debug = false
+	}, ref) => {
 
-	return (
-		<>
-		<Text
-			x={coords.x}
-			y={coords.y}
-			className={`${labelStyles.airlinerLabel} ${classNames}`}
-			verticalAnchor="middle"
-			textAnchor="middle"
-		>
-			{airlinerData.nameCommon}
-		</Text>
-		</>
-	);
-}
+		const labelVerticalAnchor = "middle";
+		const labelTextAnchor = "middle";
+
+		const interruptionWeight = 8;
+		const interruptionOpacity = debug ? 0 : 0.8;
+		const interruptionColor = "#dddedf";
+		const interruptionMiterLimit = 1.5;
+		const interruptionLinejoin = "round";
+
+		const dx = 0;
+		const dy = 0;
+
+		return (
+			<g ref={ref}>
+				{/* This is the only way I can think of to have an outline that's on the outside */}
+				<Text
+					x={airlinerLabel.labelCoordinates?.x || airlinerLabel.labelAnchor.x}
+					y={airlinerLabel.labelCoordinates?.y || airlinerLabel.labelAnchor.y}
+					dx={dx}
+					dy={dy}
+					className={`${labelStyles.airlinerLabel} ${classNames}`}
+					verticalAnchor={labelVerticalAnchor}
+					textAnchor={labelTextAnchor}
+					fontSize={plotFormat.textSize}
+					fill="none"
+					stroke={interruptionColor}
+					strokeWidth={interruptionWeight}
+					strokeMiterlimit={interruptionMiterLimit}
+					strokeLinejoin={interruptionLinejoin}
+					opacity={interruptionOpacity}
+				>
+					{airlinerLabel.labelText}
+				</Text>
+
+				{/* Label */}
+				<Text
+					x={airlinerLabel.labelCoordinates?.x || airlinerLabel.labelAnchor.x}
+					y={airlinerLabel.labelCoordinates?.y || airlinerLabel.labelAnchor.y}
+					dx={dx}
+					dy={dy}
+					className={`${labelStyles.airlinerLabel} ${classNames}`}
+					verticalAnchor={labelVerticalAnchor}
+					textAnchor={labelTextAnchor}
+					fontSize={plotFormat.textSize}
+				>
+					{airlinerLabel.labelText}
+				</Text>
+			</g>
+		);
+	}
+);
+
+export default AirlinerScatterLabel;
 
 		

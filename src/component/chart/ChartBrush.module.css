@@ -2,21 +2,33 @@
 
 /* Brush control container */
 .chartBrush {
-	outline: 1px solid rgba(0, 0, 0, 0.1);
+	fill: rgba(0,0,0,0);
 }
 
-.xBrush {
-	grid-area: xBrush;
+.chartBrushControl {
+	fill: var(--brand-primary);
 }
 
-.yBrush {
-	grid-area: yBrush;
+.chartBrushScatter .chartBrushScatterBackground {
+	fill: var(--text-minor);
 }
 
-/* Brush control SVG rectangle */
-.xBrush .chartBrushControl,
-.yBrush .chartBrushControl {
-	fill: rgba(var(--neutral-black-rgb), var(--opacity-low));
-	stroke: var(--border-minor);
-	stroke-width: 2;
+.chartBrushScatter .paxClassRange {
+	fill: var(--background);
+}
+
+.chartBrushScatter .paxLimitRange {
+	stroke: var(--background);
+}
+
+.chartBrushControl .chartBrushScatterBackground {
+	fill: var(--brand-primary);
+}
+
+.chartBrushControl .paxClassRange {
+	fill: var(--background);
+}
+
+.chartBrushControl .paxLimitRange {
+	stroke: var(--background);
 }
