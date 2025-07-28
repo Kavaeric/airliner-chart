@@ -21,10 +21,6 @@ export default function RootLayout({
 			<body>
 				<div className={appStyles.wrapper}>
 					{children}
-
-					<div className={appStyles.footer}>
-						<p>Made by Kavaeric</p>
-					</div>
 				</div>
 			</body>
 		</html>

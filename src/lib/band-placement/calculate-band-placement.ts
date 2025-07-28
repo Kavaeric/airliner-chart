@@ -840,21 +840,9 @@ export function calculateBandPlacement(config: BandPlacementConfig): {
 	// Pre-sort the indices to try for this pass, to optimise placement order.
 	// The sort order is determined by the first placement mode in the strategy.
 	const firstMode = strategy.firstPass.modes?.[0];
-
-	if (firstMode) {
-		// If the first mode is left, sort by x position in ascending order (left first)
-		if (firstMode === 'left' ||	 firstMode === 'top-left' || firstMode === 'bottom-left') {
-			indicesToTry[pass].sort(
-				(a, b) => placementObjects[a].anchor.x - placementObjects[b].anchor.x
-			);
-		} else if (firstMode === 'right' || firstMode === 'top-right' || firstMode === 'bottom-right') {
-			// If the first mode is right, sort by x position in descending order (right first)
-			// Sort by x position in descending order (right first)
-			indicesToTry[pass].sort(
-				(a, b) => placementObjects[b].anchor.x - placementObjects[a].anchor.x
-			);
-		}
-	}
+	
+	// Temporary: Sort by anchor y-coordinate first (top to bottom)
+	indicesToTry[pass].sort((a, b) => placementObjects[a].anchor.y - placementObjects[b].anchor.y);
 
 
 	// Iterate through all candidate indices for simple placement
@@ -997,7 +985,7 @@ export function calculateBandPlacement(config: BandPlacementConfig): {
 	// console.log("debugPlacementLogs", debugPlacementLogs);
 	// console.log("indicesToTry", indicesToTry);
 
-	console.log(`calculateBandPlacement: After ${pass} passes with ${indicesToTry[0].length} objects, ${failed.size} failed, ${placements.size} placed.`);
+	// console.log(`calculateBandPlacement: After ${pass} passes with ${indicesToTry[0].length} objects, ${failed.size} failed, ${placements.size} placed.`);
 
 	return {
 		placements,

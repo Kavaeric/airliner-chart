@@ -47,8 +47,6 @@ export default function AirlinerScatterMarker({
 					x2={coord.markerCoordinates.x}
 					y2={coord.markerCoordinates.y + markerSize / 2}
 					className={markerStyles.markerLine}
-					stroke="red"
-					strokeWidth={1}
 				/>
 			))}
 
@@ -60,9 +58,6 @@ export default function AirlinerScatterMarker({
 					cy={coord.markerCoordinates.y}
 					size={markerSize}
 					className={markerStyles.markerDiamond}
-					fill="red"
-					stroke="red"
-					strokeWidth={1}
 				/>
 			))}
 		</g>

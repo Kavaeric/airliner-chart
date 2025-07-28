@@ -9,8 +9,6 @@ import plotStyles from "./AirlinerScatterPlot.module.css";
 // [IMPORT] Types //
 import type { AirlinerMarkerSeries } from "@/lib/data/airliner-types";
 
-// [IMPORT] Utilities //
-
 interface AirlinerScatterLineProps {
 	airlinerID: string;
 	airlinerMarkers: AirlinerMarkerSeries;
@@ -42,6 +40,16 @@ export default function AirlinerScatterLine({
 
 	return (
 		<g>
+			{/* Background line */}
+			<line
+				x1={airlinerMarkers.lines.x1}
+				x2={airlinerMarkers.lines.x3}
+				y1={y}
+				y2={y}
+				className={plotStyles.pointMarkerConnectingLineBackground}
+				strokeWidth={Math.max(plotFormat.markerLineMinorWidth, plotFormat.markerLineMajorWidth)}
+			/>
+
 			{/* Line connecting largest class value to largest limit value */}
 			{minorLineValid && (
 				<line
@@ -64,18 +72,6 @@ export default function AirlinerScatterLine({
 				className={plotStyles.pointMarkerConnectingLineMajor}
 				strokeWidth={plotFormat.markerLineMajorWidth}
 			/>
-			)}
-
-			{/* Extra class value line for highlight */}
-			{majorLineValid && (
-				<line
-				x1={airlinerMarkers.lines.x2}
-				x2={airlinerMarkers.lines.x1}
-				y1={y}
-				y2={y}
-				className={plotStyles.pointMarkerConnectingLineMajorHighlight}
-					strokeWidth={plotFormat.markerSize + 2}
-				/>
 			)}
 		</g>
 	);

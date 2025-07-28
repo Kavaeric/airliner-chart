@@ -13,7 +13,6 @@ import type { ChartViewport } from "@/types/zoom";
  * - Automatically filters out undefined, null, and NaN values
  * - Calculates min/max domains from the filtered value arrays
  * - Returns both full dataset scales and chart viewport scales
- * - Computes brush bounds for both X and Y axes
  *
  * This hook is stateless and pure: all logic is based on the provided values and dimensions.
  * The hook automatically filters out invalid values, so callers can pass raw data arrays.
@@ -25,51 +24,17 @@ import type { ChartViewport } from "@/types/zoom";
 export const useChartScales = (
 	chartDimensions: { width: number; height: number },
 	config: {
-		/**
-		 * Array of all x-axis values for domain calculation
-		 * Used to determine the min/max range for the x-axis scale
-		 */
-		xValues: number[];
-		/**
-		 * Array of all y-axis values for domain calculation  
-		 * Used to determine the min/max range for the y-axis scale
-		 */
-		yValues: number[];
-		/**
-		 * Label displayed on the x-axis
-		 */
-		xLabel?: string;
-		/**
-		 * Label displayed on the y-axis
-		 */
-		yLabel?: string;
-		/**
-		 * Optional margin to add/subtract from the x domain (in data units).
-		 * If provided, the x-axis will start at (min - xPadding) and end at (max + xPadding).
-		 */
-		xPadding?: number;
-		/**
-		 * Optional margin to add/subtract from the y domain (in data units).
-		 * If provided, the y-axis will start at (min - yPadding) and end at (max + yPadding).
-		 */
-		yPadding?: number;
-		/**
-		 * Optional rounding for the x-axis.
-		 * If provided, the x-axis will be rounded to the nearest multiple of this value.
-		 */
-		xNiceRounding?: number;
-		/**
-		 * Optional rounding for the y-axis.
-		 * If provided, the y-axis will be rounded to the nearest multiple of this value.
-		 */
-		yNiceRounding?: number;
-		/**
-		 * Optional limits on the chart viewport for both axes.
-		 * If provided, zoom operations will be constrained to these bounds.
-		 */
+		xValues: number[]; // Array of all x-axis values for domain calculation (used to determine min/max range)
+		yValues: number[]; // Array of all y-axis values for domain calculation (used to determine min/max range)
+		xLabel?: string; // Label displayed on the x-axis
+		yLabel?: string; // Label displayed on the y-axis
+		xPadding?: number; // Optional margin to add/subtract from the x domain (in data units)
+		yPadding?: number; // Optional margin to add/subtract from the y domain (in data units)
+		xNiceRounding?: number; // Optional rounding for the x-axis (nearest multiple)
+		yNiceRounding?: number; // Optional rounding for the y-axis (nearest multiple)
 		chartViewportLimits?: {
-			x: [number | null, number | null];
-			y: [number | null, number | null];
+			x: [number | null, number | null]; // Optional limits for x axis [min, max]
+			y: [number | null, number | null]; // Optional limits for y axis [min, max]
 		};
 	},
 	chartViewport: ChartViewport
@@ -98,7 +63,7 @@ export const useChartScales = (
 		Math.ceil((yMax + yPadding) / yNiceRounding) * yNiceRounding
 	];
 
-	// Create full dataset scales (used by brushes)
+	// Create full dataset scales
 	// Memoize the scales to prevent unnecessary re-renders
 	const xScale = useMemo(
 		() => scaleLinear<number>({
@@ -116,7 +81,7 @@ export const useChartScales = (
 		[yDomain[0], yDomain[1], chartHeight]
 	);
 
-	// Create chart viewport scales (used by axes and plot)
+	// Create chart viewport scales
 	const xScaleView = useMemo(
 		() => scaleLinear<number>({
 			domain: [chartViewport.x[0], chartViewport.x[1]],
@@ -133,27 +98,6 @@ export const useChartScales = (
 		[chartViewport.y[0], chartViewport.y[1], chartHeight]
 	);
 
-	// Compute brush bounds for both axes
-	// X brush: horizontal bounds showing current zoom viewport on full dataset scale
-	const xBrushBounds = [
-		xScale(xScaleView.domain()[0]), 
-		xScale(xScaleView.domain()[1])
-	] as [number, number];
-
-	// Y brush: vertical bounds showing current zoom viewport on full dataset scale
-	const yBrushBounds = [
-		yScale(yScaleView.domain()[1]), 
-		yScale(yScaleView.domain()[0])
-	] as [number, number];
-
-	// Utility function for getting brush bounds with custom dimensions
-	const getBrushBounds = () => {
-		return {
-			x: [xScale(xScaleView.domain()[0]), xScale(xScaleView.domain()[1])] as [number, number],
-			y: [yScale(yScaleView.domain()[1]), yScale(yScaleView.domain()[0])] as [number, number],
-		};
-	};
-
 	return {
 		xScale,      // Full dataset scale (for brushes)
 		yScale,      // Full dataset scale (for brushes)
@@ -163,10 +107,5 @@ export const useChartScales = (
 			x: [null, null] as [number | null, number | null],
 			y: [null, null] as [number | null, number | null],
 		},
-		brushBounds: {
-			x: xBrushBounds,
-			y: yBrushBounds,
-		},
-		getBrushBounds,
 	};
 }; 

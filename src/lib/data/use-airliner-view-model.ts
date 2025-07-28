@@ -77,9 +77,9 @@ export function useAirlinerViewModel(
 
 	// Plot visual config
 	const plotFormat = useMemo(() => ({
-		markerSize: 12,
-		markerLineMajorWidth: 4,
-		markerLineMinorWidth: 2,
+		markerSize: 8,
+		markerLineMajorWidth: 8,
+		markerLineMinorWidth: 8,
 		labelFontSize: 16,
 		labelPadding: 4,
 		labelMargin: 0
@@ -107,7 +107,7 @@ export function useAirlinerViewModel(
 
 	// Callback for batch label measurements
 	const batchUpdateLabelDimensions = useCallback((dimensionsMap: Map<string, {width: number, height: number}>) => {
-		console.log("[useAirlinerViewModel] batchUpdateLabelDimensions: Updating label dimensions");
+		// console.log("[useAirlinerViewModel] batchUpdateLabelDimensions: Updating label dimensions");
 		setLabelDimensions(dimensionsMap);
 		setAreLabelsMeasured(true);
 	}, []);
@@ -149,7 +149,7 @@ export function useAirlinerViewModel(
 	 * - The width or height changes
 	 */
 	const airlinerPlotBands = useMemo(() => {
-		console.log("[useAirlinerViewModel] airlinerPlotBands: Calculating airliner plot bands");
+		// console.log("[useAirlinerViewModel] airlinerPlotBands: Calculating airliner plot bands");
 		return plotChartBands(plotElements, width, height);
 	}, [plotElements, width, height]);
 
@@ -301,7 +301,7 @@ export function useAirlinerViewModel(
 	}, [plotElements, labelDimensions, labelPlacement, labelToClusterMap]);
 	
 	useEffect(() => {
-		console.log("[useAirlinerViewModel] Airliner entries updated. =================================================");
+		// console.log("[useAirlinerViewModel] Airliner entries updated. =================================================");
 	}, [airlinerEntries]);
 
 
@@ -320,7 +320,7 @@ export function useAirlinerViewModel(
 	}, [airlinerPlotBands, airlinerLabelClusters]);
 
 	useEffect(() => {
-		console.log("[useAirlinerViewModel] Airliner plot data updated. =================================================");
+		//console.log("[useAirlinerViewModel] Airliner plot data updated. =================================================");
 	}, [airlinerPlotData]);
 
 
@@ -447,7 +447,7 @@ function calculateLabelPlacement(
 			clusterDetection: { distance: { x: 4, y: 4 } },
 			strategy: {
 				firstPass: {
-					modes: ['top-left', 'left', 'top'],
+					modes: ['left', 'top', 'top-left'],
 					maxDistance: { x: 50, y: 40 },
 					offset: { x: 0, y: 0 }
 				},

@@ -13,7 +13,7 @@ import React from "react";
  * @param {number} endY - Y coordinate of the rectangle's centre
  * @param {number} rectWidth - Width of the rectangle
  * @param {number} rectHeight - Height of the rectangle
- * @returns {{x: number, y: number}} - The closest point on the rectangle's edge
+ * @returns {{x: number, y: number, edge: string, outwardDirection: string}} - The closest point on the rectangle's edge with edge and direction info
  */
 function getClosestPointOnRect(
 	startX: number,
@@ -35,8 +35,27 @@ function getClosestPointOnRect(
 	const closestX = Math.max(left, Math.min(startX, right));
 	const closestY = Math.max(top, Math.min(startY, bottom));
 
-	// Return the clamped coordinates, which are guaranteed to be on or inside the rectangle
-	return { x: closestX, y: closestY };
+	// Determine which edge the point is on and the outward direction
+	let edge = null;
+
+	if (closestX === left) {
+		edge = 'left';
+	} else if (closestX === right) {
+		edge = 'right';
+	} else if (closestY === top) {
+		edge = 'top';
+	} else if (closestY === bottom) {
+		edge = 'bottom';
+	}
+
+	// Return the clamped coordinates with edge and direction information
+	return { 
+		point: {
+			x: closestX, 
+			y: closestY, 
+		},
+		edge
+	};
 }
 
 /**
@@ -240,6 +259,18 @@ export interface MarkerLeaderProps {
 }
 
 /**
+ * Helper function. Takes two points and returns the midpoint between them.
+ * 
+ * @param x1 
+ * @param y1 
+ * @param x2 
+ * @param y2 
+ */
+function getMidPoint(x1: number, y1: number, x2: number, y2: number) {
+	return { x: (x1 + x2) / 2, y: (y1 + y2) / 2 };
+}
+
+/**
  * MarkerLeader Component
  * 
  * Renders a leader line that always starts at a 45° angle (up-left, up-right, bottom-right, bottom-left)
@@ -276,32 +307,39 @@ export const MarkerLeader = React.forwardRef<SVGPathElement, MarkerLeaderProps &
 	...rest
 }, ref) => {
 
+	let anchorPoint: { x: number; y: number } = { x: x1, y: y1 };
+	let midPoint: { x: number; y: number } = getMidPoint(x1, y1, x2, y2);
 	let targetPoint: { x: number; y: number } = { x: x2, y: y2 };
+
+	// If either the distance to any point along the edges of the clipping box is less than the min length, return
+	if (clippingBBox) {
+		const closestPointOnClippingBox = getClosestPointOnRect(x1, y1, x2, y2, clippingBBox.width, clippingBBox.height);
+		if (getEuclideanDistance(x1, y1, closestPointOnClippingBox.point.x, closestPointOnClippingBox.point.y) < minLength) {
+			return null;
+		}
+	}
+	
+	let outwardDirection = null;
 
 	// If the target bounding box is provided, use the closest point as the end target
 	if (targetBBox) {
-		targetPoint = getClosestPointOnRect(x1, y1, x2, y2, targetBBox.width, targetBBox.height);
+		const { point, edge } = getClosestPointOnRect(x1, y1, x2, y2, targetBBox.width, targetBBox.height);
+		targetPoint = point;
+		outwardDirection = edge;
 	}
 
-	// First snap to angle
-	const angleSnappedEnd = clampToAngle(x1, y1, targetPoint.x, targetPoint.y, angleStep);
-
-	// Then clip to rectangle
-	const endPoint = clipLineToRect(
-		x1, y1,
-		angleSnappedEnd.x, angleSnappedEnd.y,
-		x2, y2,
-		clippingBBox?.width  || targetBBox?.width  || 0,
-		clippingBBox?.height || targetBBox?.height || 0
-	);
-
-	// If the end point is too close to the start point, return
-	if (getEuclideanDistance(x1, y1, targetPoint.x, targetPoint.y) < minLength) {
-		return null;
+	// Draw a line perpendicular to the edge of the clipping box until it meets either the X or Y of the anchor point (x1, y1)
+	if (outwardDirection) {
+		if (outwardDirection === 'left' || outwardDirection === 'right') {
+			midPoint = { x: targetPoint.x, y: anchorPoint.y };
+		} else if (outwardDirection === 'top' || outwardDirection === 'bottom') {
+			midPoint = { x: anchorPoint.x, y: targetPoint.y };
+		}
 	}
 
 	// Draw the line
-	const path = `M ${x1} ${y1} L ${endPoint.x} ${endPoint.y}`;
+	const path = `M ${anchorPoint.x} ${anchorPoint.y} L ${midPoint.x} ${midPoint.y} L ${targetPoint.x} ${targetPoint.y}`;
+	
 
 	return (
 		<g>
@@ -329,25 +367,13 @@ export const MarkerLeader = React.forwardRef<SVGPathElement, MarkerLeaderProps &
 				/>
 			)}
 
-			{/* <path
+			<path
 				d={path}
 				stroke={stroke}
 				strokeWidth={strokeWidth}
 				fill="none"
 				className={className}
 				ref={ref}
-				{...rest}
-			/> */}
-
-			{/* For now, just draw a straight line from the start to the target point */}
-			<line
-				x1={x1}
-				y1={y1}
-				x2={targetPoint.x}
-				y2={targetPoint.y}
-				className={className}
-				stroke={stroke}
-				strokeWidth={strokeWidth}
 				{...rest}
 			/>
 		</g>
