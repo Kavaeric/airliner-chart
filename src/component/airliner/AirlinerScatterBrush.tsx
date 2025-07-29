@@ -8,7 +8,7 @@ import { useResponsiveSVG } from "@/context/ResponsiveSVG";
 
 // [IMPORT] Types/interfaces //
 import { plotAirlinerMarkerSeries } from "@/lib/data/plot-airliner-markers";
-import { RectCentre } from "../shape/RectCentre";
+import { RectCentre } from "@/component/shape/RectCentre";
 
 // [IMPORT] CSS styling //
 import brushStyles from "@/component/chart/ChartBrush.module.css";
@@ -129,13 +129,25 @@ export default function AirlinerScatterBrush({ className, axisMode = "x" }: Airl
 			/>
 
 			{/* Border */}
-			<rect
-				x={axisMode === "x" ? 0 : width - 2}
-				y={0}
-				width={axisMode === "x" ? width : 2}
-				height={axisMode === "y" ? height : 2}
-				className="brushBorder"
-			/>
+			{axisMode === "x" && (
+				<RectCentre
+					cx={width / 2}
+					cy={0}
+					width={width}
+					height={0}
+					className="brushBorder"
+				/>
+			)}
+
+			{axisMode === "y" && (
+				<RectCentre
+					cx={width}
+					cy={height / 2}
+					width={0}
+					height={height}
+					className="brushBorder"
+				/>
+			)}
 
 			{/* Limit coordinates as vertical lines */}
 			{axisMode === "x" && paxLimitCoordinates.map((x, index) => (

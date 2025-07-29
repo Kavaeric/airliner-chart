@@ -2,15 +2,15 @@
 
 /* Diamond marker style */
 .markerDiamond {
-	fill: var(--brand-primary-treble);
+	fill: var(--interactive-augmented);
 	shape-rendering: geometricPrecision;
 }
 
 /* Short line used as a marker */
 .markerLine {
-	stroke: var(--text-minor);
+	stroke: var(--interactive-diminished);
 	stroke-linecap: butt;
 	shape-rendering: geometricPrecision;
-	opacity: 1;
-	stroke-width: 2;
+	opacity: var(--opacity-100);
+	stroke-width: var(--border-weight-200);
 } 

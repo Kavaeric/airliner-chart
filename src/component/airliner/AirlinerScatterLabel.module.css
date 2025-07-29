@@ -2,6 +2,8 @@
 
 .airlinerLabel {
 	fill: var(--text-minor);
-	font-family: var(--font-display);
-	font-weight: var(--font-weight-normal);
+	font-family: var(--font-family-display);
+	font-weight: var(--font-weight-regular);
+	font-size: var(--text-size-400);
+	letter-spacing: var(--text-tracking-600);
 }

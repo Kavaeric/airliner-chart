@@ -57,7 +57,7 @@ function ChartContent({
 	const { plotArea, viewportScale, drag } = useResponsiveChartViewport();
 	
 	// Create wheel handler for both axes
-	const wheelHandler = drag.disableScrollBehaviour('both');
+	const wheelHandler = drag.wheelZoom('both');
 	
 	return (
 		<div 

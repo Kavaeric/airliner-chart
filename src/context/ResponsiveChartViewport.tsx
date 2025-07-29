@@ -47,8 +47,7 @@ interface ViewportState {
  *   - `start`: Start a drag operation. Call on mouseDown/touchStart to begin viewport panning.
  *   - `move`: Handle drag movement. Call on mouseMove/touchMove during a drag operation.
  *   - `end`: End a drag operation. Call on mouseUp/touchEnd to finish viewport panning.
- *   - `wheel`: Handle mouse wheel events for zooming the viewport.
- *   - `disableScrollBehaviour`: Create a wheel handler that prevents page scrolling and calls wheel.
+ *   - `wheelZoom`: Zoom in/out the viewport with the mouse wheel.
  *   - `isDragging`: Whether a drag operation is currently in progress.
  */
 interface ResponsiveChartViewportType {
@@ -66,7 +65,7 @@ interface ResponsiveChartViewportType {
 	};
 	view: {
 		move: (x: number, y: number) => void; // previously translateViewport
-		zoom: (factor: number, center?: { x: number; y: number }) => void; // previously zoomViewport
+		zoom: (factor: number, center?: { x: number; y: number }, axis?: 'x' | 'y' | 'both') => void; // previously zoomViewport
 		reset: () => void; // previously resetViewport
 		zoomToExtents: () => void; // previously zoomToExtents
 	},
@@ -74,8 +73,7 @@ interface ResponsiveChartViewportType {
 		start: (event: React.PointerEvent | React.MouseEvent | React.TouchEvent, axis?: 'x' | 'y' | 'both', invert?: boolean) => void; // previously viewDragStart
 		move: (event: PointerEvent | React.MouseEvent | React.TouchEvent, invert?: boolean) => void; // previously viewDragMove
 		end: (event?: PointerEvent | React.MouseEvent | React.TouchEvent) => void; // previously viewDragEnd
-		wheel: (event: React.WheelEvent, axis?: 'x' | 'y' | 'both', center?: { x: number; y: number }, invert?: boolean) => void; // previously viewWheel
-		disableScrollBehaviour: (axis?: 'x' | 'y' | 'both', center?: { x: number; y: number }, invert?: boolean) => (event: React.WheelEvent) => void; // previously disableScrollBehaviour
+		wheelZoom: (axis?: 'x' | 'y' | 'both', center?: { x: number; y: number }, invert?: boolean) => (event: React.WheelEvent) => void;
 		isDragging: boolean; // previously viewIsDragging
 	},
 }
@@ -491,25 +489,34 @@ export function ResponsiveChartViewport<T>({
 
 	/**
 	 * @function zoomViewport
-	 * zoomViewport(factor: number, center?: { x: number; y: number })
+	 * zoomViewport(factor: number, center?: { x: number; y: number }, axis?: 'x' | 'y' | 'both')
 	 * 
 	 * Zoom the viewport by a factor around a specified center point.
 	 * 
 	 * @param factor - The factor to zoom by. > 1 zooms in, < 1 zooms out.
 	 * @param center - Optional data coordinates to center the zoom on. If omitted, uses viewport center.
+	 * @param axis - Optional axis constraint ('x', 'y', or 'both'). Defaults to 'both'.
 	 * 
 	 * @example
 	 * ```jsx
 	 * <button onClick={() => {
 	 * 	if (viewportRef.current) {
-	 * 	  viewportRef.current.view.zoom(1.2);
+	 * 	  viewportRef.current.view.zoom(1.2); // Zoom in by 20% on both axes
 	 * 	}
 	 * }}>
 	 * 	Zoom in
 	 * </button>
+	 * 
+	 * <button onClick={() => {
+	 * 	if (viewportRef.current) {
+	 * 	  viewportRef.current.view.zoom(1.1, undefined, 'x'); // Zoom in by 10% on X-axis only
+	 * 	}
+	 * }}>
+	 * 	Zoom X-axis only
+	 * </button>
 	 * ```
 	 */
-	function zoomViewport(factor: number, center?: { x: number; y: number }) {
+	function zoomViewport(factor: number, center?: { x: number; y: number }, axis: 'x' | 'y' | 'both' = 'both') {
 		// Determine the centre of zoom.
 		// If a centre is provided, use it; otherwise, use the midpoint of the current viewport.
 		const centerX = center?.x ?? (viewport.x[0] + viewport.x[1]) / 2;
@@ -519,10 +526,10 @@ export function ResponsiveChartViewport<T>({
 		const xRange = viewport.x[1] - viewport.x[0];
 		const yRange = viewport.y[1] - viewport.y[0];
 
-		// Calculate the new width and height after zooming.
+		// Calculate the new width and height after zooming based on axis parameter
 		// A factor > 1 zooms in (smaller range), < 1 zooms out (larger range).
-		const newXRange = xRange / factor;
-		const newYRange = yRange / factor;
+		const newXRange = axis === 'y' ? xRange : xRange / factor;
+		const newYRange = axis === 'x' ? yRange : yRange / factor;
 
 		// Calculate the relative position of the zoom center within the current viewport
 		// This preserves the proportional position of the zoom center in the new viewport
@@ -790,8 +797,8 @@ export function ResponsiveChartViewport<T>({
 		// Apply invert direction if specified
 		const zoomFactor = invert ? (1 / baseZoomFactor) : baseZoomFactor;
 
-		// Use the zoomViewport function with the determined center
-		zoomViewport(zoomFactor, { x: zoomCenterX, y: zoomCenterY });
+		// Use the zoomViewport function with the determined center and axis
+		zoomViewport(zoomFactor, { x: zoomCenterX, y: zoomCenterY }, axis);
 	}, [zoomViewport]);
 
 	// Track SVG elements with wheel handlers for global prevention
@@ -821,7 +828,7 @@ export function ResponsiveChartViewport<T>({
 	}, []);
 
 	// Create a wheel handler that automatically prevents default behavior and registers the SVG
-	const disableScrollBehaviour = useCallback((axis: 'x' | 'y' | 'both' = 'both', center?: { x: number; y: number }, invert: boolean = false) => {
+	const wheelZoom = useCallback((axis: 'x' | 'y' | 'both' = 'both', center?: { x: number; y: number }, invert: boolean = false) => {
 		return (event: React.WheelEvent) => {
 			// Prevent default to avoid page scrolling
 			event.preventDefault();
@@ -861,11 +868,10 @@ export function ResponsiveChartViewport<T>({
 			start: viewDragStart,
 			move: viewDragMove,
 			end: viewDragEnd,
-			wheel: viewWheel,
-			disableScrollBehaviour,
+			wheelZoom,
 			isDragging: dragState.current.isDragging,
 		},
-	}), [width, height, xScale, yScale, xScaleView, yScaleView, translateViewport, zoomViewport, resetViewport, zoomToExtents, viewDragStart, viewDragMove, viewDragEnd, viewWheel, disableScrollBehaviour, dragState.current.isDragging]);
+	}), [width, height, xScale, yScale, xScaleView, yScaleView, translateViewport, zoomViewport, resetViewport, zoomToExtents, viewDragStart, viewDragMove, viewDragEnd, wheelZoom, dragState.current.isDragging]);
 
 	// Expose viewport functions via ref if provided
 	useImperativeHandle(viewportRef, () => viewportManager, [viewportManager]);
@@ -900,8 +906,7 @@ export function ResponsiveChartViewport<T>({
  *   - `start`: Start a drag operation. Call on mouseDown/touchStart to begin viewport panning.
  *   - `move`: Handle drag movement. Call on mouseMove/touchMove during a drag operation.
  *   - `end`: End a drag operation. Call on mouseUp/touchEnd to finish viewport panning.
- *   - `wheel`: Handle mouse wheel events for zooming the viewport.
- *   - `disableScrollBehaviour`: Create a wheel handler that prevents page scrolling and calls wheel.
+ *   - `wheelZoom`: Zoom in/out the viewport with the mouse wheel.
  *   - `isDragging`: Whether a drag operation is currently in progress.
  */
 export function useResponsiveChartViewport(): ResponsiveChartViewportType {

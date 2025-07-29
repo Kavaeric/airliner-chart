@@ -13,7 +13,7 @@ import AirlinerScatterLabel from './AirlinerScatterLabel';
 import { MarkerPlus } from "../shape/MarkerPlus";
 import { MarkerLeader } from "../shape/MarkerLeader";
 import { MarkerCross } from "../shape/MarkerCross";
-import { GridDots } from "../shape/GridDots";
+import { GridDots } from "../chart/GridDots";
 
 // [IMPORT] Context providers/hooks //
 import { useChartData } from "./AirlinerChart";
@@ -45,9 +45,6 @@ export default function AirlinerScatterPlot() {
 	const data = useChartData() as AirlinerModel[];
 	const { debugMode } = useDebugMode();
 
-	// Set up ref to disable scroll behaviour on scrollable region
-	const wheelHandler = drag.disableScrollBehaviour('both');
-
 	// Hide/consolidate labels in clusters larger than this
 	const labelClusterThreshold = 3;
 
@@ -60,8 +57,6 @@ export default function AirlinerScatterPlot() {
 		plotFormat,				// Formatting options for the plot
 		airlinerLabelClusters,	// Cluster detection results
 	} = useAirlinerViewModel(data, viewportScale.x, viewportScale.y, width, height, debugMode);
-
-
 
 	// === Batch label measurement logic ===
 	// ghostLabelIDs is an array of airliner IDs that have not yet been measured
@@ -86,10 +81,10 @@ export default function AirlinerScatterPlot() {
 			const bbox = el.getBBox();
 
 			// Add arbitrary padding to the width and height
-			const xPadding = 8;
-			const yPadding = 4;
-
-			pendingLabelDimensions.current.set(airlinerID, { width: bbox.width + xPadding, height: bbox.height + yPadding, xPadding, yPadding });
+			pendingLabelDimensions.current.set(airlinerID, {
+				width: bbox.width + plotFormat.labelPadding * 2 + plotFormat.labelMargin * 2,
+				height: bbox.height + plotFormat.labelPadding * 2 + plotFormat.labelMargin * 2
+			});
 
 			// If all ghost labels have been measured, call batchUpdateLabelDimensions
 			if (
@@ -145,7 +140,7 @@ export default function AirlinerScatterPlot() {
 				onMouseLeave={() => {
 					if (drag.isDragging) drag.end();
 				}}
-				onWheel={wheelHandler}
+				onWheel={drag.wheelZoom('both')}
 				style={{ cursor: 'grab', touchAction: 'none'  }}
 			/>
 

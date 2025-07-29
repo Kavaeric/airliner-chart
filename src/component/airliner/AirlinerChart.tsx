@@ -6,7 +6,6 @@ import AirlinerScatterPlot from "./AirlinerScatterPlot";
 import YAxis from "@/component/chart/ChartYAxis";
 import XAxis from "@/component/chart/ChartXAxis";
 import ChartBrush from "@/component/chart/ChartBrush";
-import ChartBrushControl from "@/component/chart/ChartBrushControl";
 import AirlinerScatterBrush from "./AirlinerScatterBrush";
 
 // [IMPORT] Context providers/hooks //
@@ -135,104 +134,126 @@ export default function AirlinerChart({ data }: AirlinerChartProps) {
 	// ChartDataContext provides the airliner data array
 	return (
 		<ChartDataContext.Provider value={chartData}>
-		<ResponsiveChartViewport
-			data={chartData}
-			xAccessor={(d: AirlinerData) => xAxisData.find(val => val === d.airlinerData.pax1Class || val === d.airlinerData.pax2Class || val === d.airlinerData.pax3Class || val === d.airlinerData.paxLimit || val === d.airlinerData.paxExit) ?? 0}
-			yAccessor={(d: AirlinerData) => d.airlinerData.rangeKM ?? 0}
-			width={plotWidth}
-			height={plotHeight}
-			initialViewport={ initialChartViewport }
-			constraints={ viewportConstraints }
-			viewportRef={ viewportRef }
-		>
-					<div className="chartContainer">
-						{/* Chart area (top-right) */}
-						<ResponsiveSVG
-							divProps={{ 
-								className: "chartArea",
-								ref: plotResizeRef, // This is the thing we want to measure as the plot area
-							}}
-							parentSizeProps={{ debounceTime: 1 }}
-							>
-							{viewportRef.current || data.length > 0
-								? <AirlinerScatterPlot/>
-								: <p>Chart loading...</p>}
-						</ResponsiveSVG>
-
-						{/* Y-axis brush (top-left) */}
-						<ResponsiveSVG
-							parentSizeProps={{ debounceTime: 1 }}
-							divProps={{ className: "yAxisBrush" }}
-						>
-							{/* Outer scatter plot (outside brush area) */}
-							<AirlinerScatterBrush axisMode="y" className="airlinerBrush"/>
-
-							{/* Brush control wrapper */}
-							<ChartBrushControl axisMode="y" className="airlinerBrushControl">
-								<AirlinerScatterBrush axisMode="y" className="airlinerBrush"/>
-							</ChartBrushControl>
-						</ResponsiveSVG>
-
-						{/* Y-axis (top-middle) */}
-						<ResponsiveSVG
-							parentSizeProps={{ debounceTime: 1 }}
-							divProps={{ className: "yAxis" }}
-						>
-							<YAxis label="Range (km × 1000)"/>
-						</ResponsiveSVG>
-						
-						{/* X-axis (middle-right) */}
-						<ResponsiveSVG
-							parentSizeProps={{ debounceTime: 1 }}
-							divProps={{ className: "xAxis" }}
-						>
-							<XAxis label="Passenger Capacity"/>
-						</ResponsiveSVG>
-						
-						{/* X-axis brush (bottom-right) */}
-						<ResponsiveSVG
-							parentSizeProps={{ debounceTime: 1 }}
-							divProps={{ className: "xAxisBrush" }}
-						>
-							{/* Outer scatter plot (outside brush area) */}
-							<AirlinerScatterBrush axisMode="x" className="airlinerBrush"/>
-
-							{/* Brush control wrapper */}
-							<ChartBrushControl axisMode="x" className="airlinerBrushControl">
-								<AirlinerScatterBrush axisMode="x" className="airlinerBrush"/>
-							</ChartBrushControl>
-						</ResponsiveSVG>
-
-						{/* janky debuggy zoom controls */}
-						<div style={{position: 'absolute', textAlign: 'right', top: 40, right: 40, zIndex: 1000}}>
-							<p>janky debuggy viewport controls</p>
-							<button onClick={() => viewportRef.current.view.reset()}>reset zoom</button>
-							<br />
-							<button onClick={() => viewportRef.current.view.move(0, -1000)}>Y--</button>
-							<button onClick={() => viewportRef.current.view.move(0, 1000)}>Y++</button>
-							<br />
-							<button onClick={() => viewportRef.current.view.move(-100, 0)}>X--</button>
-							<button onClick={() => viewportRef.current.view.move(100, 0)}>X++</button>
-							<br />
-							<button onClick={() => viewportRef.current.view.zoom(1.1)}>Zoom in</button>
-							<button onClick={() => viewportRef.current.view.zoom(0.9)}>Zoom out</button>
-							<br />
-							<input
-								type="checkbox"
-								id="debugMode"
-								checked={debugMode}
-								onChange={() => setDebugMode(!debugMode)}
-							/>
-							<label htmlFor="debugMode">Debug Mode</label>
-						</div>
-
-						{/* Empty grid areas */}
-						<div className="empty1"></div>
-						<div className="empty2"></div>
-						<div className="empty3"></div>
-						<div className="empty4"></div>
+			<ResponsiveChartViewport
+				data={chartData}
+				xAccessor={(d: AirlinerData) =>
+					xAxisData.find(
+						val =>
+							val === d.airlinerData.pax1Class ||
+							val === d.airlinerData.pax2Class ||
+							val === d.airlinerData.pax3Class ||
+							val === d.airlinerData.paxLimit ||
+							val === d.airlinerData.paxExit
+					) ?? 0
+				}
+				yAccessor={(d: AirlinerData) => d.airlinerData.rangeKM ?? 0}
+				width={plotWidth}
+				height={plotHeight}
+				initialViewport={initialChartViewport}
+				constraints={viewportConstraints}
+				viewportRef={viewportRef}
+			>
+				<div className="chartControls">
+					<div className="btn-group">
+						<button className="btn-diminished btn-icon-only" onClick={() => viewportRef.current.view.move(0, 1000)}>
+							<span className="material-symbols-sharp">keyboard_double_arrow_up</span>
+						</button>
+						<button className="btn-diminished btn-icon-only" onClick={() => viewportRef.current.view.move(0, -1000)}>
+							<span className="material-symbols-sharp">keyboard_double_arrow_down</span>
+						</button>
+						<button className="btn-diminished btn-icon-only" onClick={() => viewportRef.current.view.move(-50, 0)}>
+							<span className="material-symbols-sharp">keyboard_double_arrow_left</span>
+						</button>
+						<button className="btn-diminished btn-icon-only" onClick={() => viewportRef.current.view.move(50, 0)}>
+							<span className="material-symbols-sharp">keyboard_double_arrow_right</span>
+						</button>
 					</div>
-		</ResponsiveChartViewport>
+					<div className="btn-group">
+						<button className="btn-diminished btn-icon-only" onClick={() => viewportRef.current.view.zoom(1.1)}>
+							<span className="material-symbols-sharp">zoom_in</span>
+						</button>
+						<button className="btn-diminished btn-icon-only" onClick={() => viewportRef.current.view.zoom(0.9)}>
+							<span className="material-symbols-sharp">zoom_out</span>
+						</button>
+					</div>
+					<div className="btn-group">
+						<button className="btn-diminished btn-icon-left" onClick={() => viewportRef.current.view.reset()}>
+							<span className="material-symbols-sharp">zoom_out_map</span>
+							Reset zoom
+						</button>
+					</div>
+					<div className="btn-group">
+						<button className="btn-diminished btn-icon-only" onClick={() => setDebugMode(!debugMode)}>
+							<span className="material-symbols-sharp">bug_report</span>
+							Debug mode
+						</button>
+					</div>
+				</div>
+				<div className="chartContainer">
+					{/* Chart area (top-right) */}
+					<ResponsiveSVG
+						divProps={{
+							className: "chartArea",
+							ref: plotResizeRef, // This is the thing we want to measure as the plot area
+						}}
+						parentSizeProps={{ debounceTime: 1 }}
+					>
+						{viewportRef.current || data.length > 0
+							? <AirlinerScatterPlot />
+							: <p>Chart loading...</p>}
+					</ResponsiveSVG>
+
+					{/* Y-axis brush (top-left) */}
+					<ResponsiveSVG
+						parentSizeProps={{ debounceTime: 1 }}
+						divProps={{ className: "yAxisBrush" }}
+					>
+						{/* Outer scatter plot (outside brush area) */}
+						<AirlinerScatterBrush axisMode="y" className="airlinerBrush" />
+
+						{/* Brush control wrapper */}
+						<ChartBrush axisMode="y" className="airlinerBrushControl">
+							<AirlinerScatterBrush axisMode="y" className="airlinerBrush" />
+						</ChartBrush>
+					</ResponsiveSVG>
+
+					{/* Y-axis (top-middle) */}
+					<ResponsiveSVG
+						parentSizeProps={{ debounceTime: 1 }}
+						divProps={{ className: "yAxis" }}
+					>
+						<YAxis label="Range (km × 1000)" />
+					</ResponsiveSVG>
+
+					{/* X-axis (middle-right) */}
+					<ResponsiveSVG
+						parentSizeProps={{ debounceTime: 1 }}
+						divProps={{ className: "xAxis" }}
+					>
+						<XAxis label="Passenger Capacity" />
+					</ResponsiveSVG>
+
+					{/* X-axis brush (bottom-right) */}
+					<ResponsiveSVG
+						parentSizeProps={{ debounceTime: 1 }}
+						divProps={{ className: "xAxisBrush" }}
+					>
+						{/* Outer scatter plot (outside brush area) */}
+						<AirlinerScatterBrush axisMode="x" className="airlinerBrush" />
+
+						{/* Brush control wrapper */}
+						<ChartBrush axisMode="x" className="airlinerBrushControl">
+							<AirlinerScatterBrush axisMode="x" className="airlinerBrush" />
+						</ChartBrush>
+					</ResponsiveSVG>
+
+					{/* Empty grid areas */}
+					<div className="empty1"></div>
+					<div className="empty2"></div>
+					<div className="empty3"></div>
+					<div className="empty4"></div>
+				</div>
+			</ResponsiveChartViewport>
 		</ChartDataContext.Provider>
 	);
 }

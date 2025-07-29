@@ -1,13 +1,7 @@
-/* Branding tokens and font-face definitions */
-
+/* Color primitives */
 :root {
-	/* === Primitives === */
-	--white: #ffffff;
-	--black: #000000;
-	--black-rgb: 0, 0, 0;
-
 	/* Red Treble Ramp */
-	--red-treble-50: #fff6f1;
+	--red-treble-050: #fff6f1;
 	--red-treble-100: #ffcec3;
 	--red-treble-200: #ffa493;
 	--red-treble-300: #ff715d;
@@ -28,19 +22,15 @@
 	--red-bass-400: #be1829;
 	--red-bass-500: #de3f44;
 	--red-bass-600: #ff5f5f; /* Primary brand colour, dark mode */
+	--red-bass-600-rgb: 255, 95, 95;
 	--red-bass-700: #ff8681;
 	--red-bass-800: #ffafa9;
 	--red-bass-900: #ffd3cf;
 	--red-bass-950: #fff8f6;
 
-	/* Neutral Greys */
-	--neutral-black: #000000;
-	--neutral-white: #ffffff;
-	--neutral-black-rgb: 0, 0, 0;
-	--neutral-white-rgb: 255, 255, 255;
-
 	/* Grey Ramp */
-	--grey-50: #0c0d0d;
+	--grey-000: #000000;
+	--grey-050: #0c0d0d;
 	--grey-100: #1d1f1f;
 	--grey-200: #2c2d2e;
 	--grey-300: #444647;
@@ -51,25 +41,42 @@
 	--grey-800: #c2c3c4;
 	--grey-900: #dddedf;
 	--grey-950: #f9fafc;
+	--grey-1000: #ffffff;
+	--grey-000-rgb: 0, 0, 0;
+	--grey-1000-rgb: 255, 255, 255;
 
-	/* Opacity */
-	--opacity-low: 0.1;
-	--opacity-medium: 0.5;
-	--opacity-high: 0.8;
+	/* Opacity tokens */
+	--opacity-100: 1;
+	--opacity-90: 0.9;
+	--opacity-80: 0.8;
+	--opacity-70: 0.7;
+	--opacity-60: 0.6;
+	--opacity-50: 0.5;
+	--opacity-40: 0.4;
+	--opacity-30: 0.3;
+	--opacity-20: 0.2;
+	--opacity-10: 0.1;
+	--opacity-05: 0.05;
+	--opacity-00: 0;
 
-	/* === Length primitives === */
+	/* === Size primitives === */
+	--size-0: 0px;
 	--size-1: 1px;
 	--size-2: 2px;
 	--size-4: 4px;
+	--size-6: 6px;
 	--size-8: 8px;
+	--size-10: 10px;
 	--size-12: 12px;
 	--size-16: 16px;
 	--size-20: 20px;
 	--size-24: 24px;
 	--size-28: 28px;
 	--size-32: 32px;
+	--size-36: 36px;
 	--size-40: 40px;
 	--size-48: 48px;
+	--size-60: 60px;
 	--size-64: 64px;
 	--size-80: 80px;
 	--size-96: 96px;
@@ -78,40 +85,7 @@
 	--size-192: 192px;
 	--size-256: 256px;
 
-	/* === Semantic tokens === */
-	--brand-primary-treble: var(--red-treble-500);
-	--brand-primary-bass: var(--red-bass-500);
-	--brand-primary-rgb-treble: 211, 42, 26;
-	--brand-primary-rgb-bass: 255, 95, 95;
-	--background: var(--grey-900);
-
-	--text-major: var(--grey-100);
-	--text-minor: var(--grey-400);
-	--text-link: var(--red-treble-500);
-
-	--border-major: var(--grey-100);
-	--border-minor: var(--grey-400);
-	--border-diminished: var(--grey-600);
-
-	--chart-gridline: var(--grey-800);
-	--chart-grid-dot: var(--grey-700);
-	--link-hover-bg: rgba(var(--red-treble-500-rgb), var(--opacity-low));
-
-	/* === Semantic Spacing Tokens === */
-	--space-xxs: var(--size-4);
-	--space-xs: var(--size-8);
-	--space-sm: var(--size-12);
-	--space-md: var(--size-16);
-	--space-lg: var(--size-24);
-	--space-xl: var(--size-32);
-	--space-2xl: var(--size-48);
-	--space-3xl: var(--size-64);
-	--space-4xl: var(--size-80);
-
-	/* === Typography  === */
-	--font-hk-grotesk: "HK Grotesk Pro", Arial, Helvetica, sans-serif;
-	--font-hk-nova: "HK Nova", Arial, Helvetica, sans-serif;
-
+	/* Typography primitives */
 	--font-weight-thin: 100;
 	--font-weight-extralight: 200;
 	--font-weight-light: 300;
@@ -124,285 +98,345 @@
 	--font-weight-black: 900;
 	--font-weight-ultra: 950;
 
-	--font-size-sm: var(--size-12);
-	--font-size-md: var(--size-16);
-	--font-size-lg: var(--size-20);
-	--font-size-xl: var(--size-24);
-	--font-size-2xl: var(--size-28);
-	--font-size-3xl: var(--size-32);
-	--font-size-4xl: var(--size-48);
+	/* Leading AKA line height */
+	--text-leading-000: 1em;
+	--text-leading-100: 1.1em;
+	--text-leading-200: 1.2em;
+	--text-leading-400: 1.5em;
 
-	--line-height-tight: 1.1;
-	--line-height-snug: 1.25;
-	--line-height-normal: 1.5;
-	--line-height-loose: 1.75;
+	/* Tracking AKA letter spacing */
+	--text-tracking-200: -0.02em;
+	--text-tracking-400: 0em;
+	--text-tracking-600: 0.02em;
+	--text-tracking-800: 0.04em;
 
-	--letter-spacing-tight: -0.01em;
-	--letter-spacing-normal: 0em;
-	--letter-spacing-wide: 0.02em;
+	/* Font family primitives */
+	--font-family-sans: "HK Grotesk Pro", sans-serif;
+	--font-family-display: "HK Nova", sans-serif;
 
-	/* === Semantic Typography Tokens === */
-	--font-body: var(--font-hk-grotesk);
-	--font-display: var(--font-hk-nova);
+	/* === Semantic tokens === */
 
-	--body-font-size: var(--font-size-md);
-	--body-font-weight: var(--font-weight-regular);
-	--body-line-height: var(--line-height-normal);
-	--body-letter-spacing: var(--letter-spacing-normal);
+	/* Defining colour scheme to use new CSS color-scheme property */
+	color-scheme: light dark;
 
-	--heading-font-family: var(--font-display);
-	--heading-font-weight: var(--font-weight-bold);
-	--heading-line-height: var(--line-height-tight);
-	--heading-letter-spacing: var(--letter-spacing-normal);
+	/* Semantic tokens */
+	--surface-augmented: light-dark(var(--red-treble-500), var(--red-bass-600));
+	--surface-major: light-dark(var(--grey-950), var(--grey-050));
+	--surface-minor: light-dark(var(--grey-900), var(--grey-100));
+	--surface-diminished: light-dark(var(--grey-800), var(--grey-200));
 
-	--label-font-family: var(--font-display);
-	--label-font-size: var(--font-size-xs);
-	--label-font-weight: var(--font-weight-bold);
-	--label-letter-spacing: var(--letter-spacing-normal);
+	--text-augmented: light-dark(var(--red-treble-500), var(--red-bass-600));
+	--text-major: light-dark(var(--grey-100), var(--grey-950));
+	--text-minor: light-dark(var(--grey-300), var(--grey-800));
+	--text-diminished: light-dark(var(--grey-600), var(--grey-700));
+	--text-disabled: light-dark(var(--grey-700), var(--grey-600));
+
+	--interactive-font-family: var(--font-family-display);
+	--interactive-font-size: var(--text-size-400);
+	--interactive-text-transform: uppercase;
+	--interactive-text-tracking: var(--text-tracking-800);
+	--interactive-min-height: var(--size-48);
+
+	--interactive-augmented: light-dark(
+		var(--red-treble-500),
+		var(--red-bass-600)
+	);
+	--interactive-augmented-hover: light-dark(
+		var(--red-treble-400),
+		var(--red-bass-700)
+	);
+	--interactive-augmented-active: light-dark(
+		var(--red-treble-600),
+		var(--red-bass-500)
+	);
+	--interactive-augmented-inverse: light-dark(
+		var(--grey-950),
+		var(--grey-050)
+	);
+
+	--interactive-major: light-dark(var(--grey-200), var(--grey-900));
+	--interactive-major-hover: light-dark(var(--grey-300), var(--grey-950));
+	--interactive-major-active: light-dark(var(--grey-100), var(--grey-800));
+	--interactive-major-inverse: light-dark(var(--grey-950), var(--grey-050));
+
+	--interactive-minor: light-dark(var(--grey-300), var(--grey-800));
+
+	--interactive-diminished: light-dark(var(--grey-500), var(--grey-600));
+
+	--interactive-font-weight-augmented: var(--font-weight-semibold);
+	--interactive-font-weight-major: var(--font-weight-semibold);
+	--interactive-font-weight-minor: var(--font-weight-medium);
+	--interactive-font-weight-diminished: var(--font-weight-medium);
+
+	--highlight-hover-augmented: light-dark(
+		rgba(var(--red-treble-500-rgb), var(--opacity-10)),
+		rgba(var(--red-bass-600-rgb), var(--opacity-20))
+	);
+	--highlight-active-augmented: light-dark(
+		rgba(var(--red-treble-500-rgb), var(--opacity-05)),
+		rgba(var(--red-bass-600-rgb), var(--opacity-10))
+	);
+
+	--highlight-hover-major: light-dark(
+		rgba(var(--grey-000-rgb), var(--opacity-10)),
+		rgba(var(--grey-1000-rgb), var(--opacity-20))
+	);
+	--highlight-active-major: light-dark(
+		rgba(var(--grey-000-rgb), var(--opacity-05)),
+		rgba(var(--grey-1000-rgb), var(--opacity-10))
+	);
+
+	--highlight-hover-minor: light-dark(
+		rgba(var(--grey-1000-rgb), var(--opacity-40)),
+		rgba(var(--grey-1000-rgb), var(--opacity-10))
+	);
+	--highlight-active-minor: light-dark(
+		rgba(var(--grey-000-rgb), var(--opacity-10)),
+		rgba(var(--grey-1000-rgb), var(--opacity-20))
+	);
+
+	--highlight-hover-diminished: light-dark(
+		rgba(var(--grey-1000-rgb), var(--opacity-20)),
+		rgba(var(--grey-1000-rgb), var(--opacity-05))
+	);
+	--highlight-active-diminished: light-dark(
+		rgba(var(--grey-000-rgb), var(--opacity-05)),
+		rgba(var(--grey-1000-rgb), var(--opacity-10))
+	);
+
+	--border-augmented: light-dark(var(--red-treble-500), var(--red-bass-600));
+	--border-major: light-dark(var(--grey-600), var(--grey-400));
+	--border-minor: light-dark(var(--grey-700), var(--grey-300));
+	--border-diminished: light-dark(var(--grey-800), var(--grey-200));
+	--border-focus: light-dark(none, none);
+
+	--status-success: light-dark(none, none);
+	--status-warning: light-dark(none, none);
+	--status-error: light-dark(none, none);
+	--status-info: light-dark(none, none);
+
+	/* Typography tokens */
+	--text-size-100: var(--size-8);
+	--text-size-200: var(--size-10);
+	--text-size-300: var(--size-12);
+	--text-size-400: var(--size-16);
+	--text-size-500: var(--size-20);
+	--text-size-600: var(--size-24);
+	--text-size-700: var(--size-28);
+	--text-size-800: var(--size-36);
+	--text-size-900: var(--size-48);
+	--text-size-1000: var(--size-60);
+	--text-size-1100: var(--size-80);
+
+	/* Spacing tokens */
+	--space-025: var(--size-2); /* 2px */
+	--space-050: var(--size-4); /* 4px */
+	--space-075: var(--size-6); /* 6px */
+	--space-100: var(--size-8); /* 8px */
+	--space-150: var(--size-12); /* 12px */
+	--space-200: var(--size-16); /* 16px */
+	--space-300: var(--size-24); /* 24px */
+	--space-400: var(--size-32); /* 32px */
+	--space-500: var(--size-40); /* 40px */
+	--space-600: var(--size-48); /* 48px */
+	--space-800: var(--size-64); /* 64px */
+	--space-1000: var(--size-80); /* 80px */
+	--space-2000: var(--size-160); /* 160px */
+
+	--space-negative-025: calc(var(--size-2) * -1); /* 2px */
+	--space-negative-050: calc(var(--size-4) * -1); /* 4px */
+	--space-negative-075: calc(var(--size-6) * -1); /* 6px */
+	--space-negative-100: calc(var(--size-8) * -1); /* 8px */
+	--space-negative-150: calc(var(--size-12) * -1); /* 12px */
+	--space-negative-200: calc(var(--size-16) * -1); /* 16px */
+	--space-negative-300: calc(var(--size-24) * -1); /* 24px */
+	--space-negative-400: calc(var(--size-32) * -1); /* 32px */
+	--space-negative-500: calc(var(--size-40) * -1); /* 40px */
+	--space-negative-600: calc(var(--size-48) * -1); /* 48px */
+	--space-negative-800: calc(var(--size-64) * -1); /* 64px */
+	--space-negative-1000: calc(var(--size-80) * -1); /* 80px */
+	--space-negative-2000: calc(var(--size-160) * -1); /* 160px */
+
+	/* Border width tokens */
+	--border-weight-100: var(--size-1);
+	--border-weight-200: var(--size-2);
+
+	/* Icon size tokens */
+	--icon-size-100: var(--size-16);
+	--icon-size-200: var(--size-20);
+	--icon-size-300: var(--size-24);
+	--icon-size-400: var(--size-40);
+	--icon-size-800: var(--size-64);
+
+	--opacity-disabled: var(--opacity-50);
+
+	/* === Component tokens === */
+	/* Captions: for metadata, timestamps, and supplementary information */
+
+	/* Form tokens */
+	--form-input-padding-x: var(--size-12);
+	--form-input-padding-y: var(--size-8);
+	--form-input-border-width: 1px;
+	--form-input-font-size: var(--text-sm);
+
+	--form-label-font-size: var(--text-sm);
+	--form-label-font-weight: var(--font-weight-medium);
+	--form-label-margin-bottom: var(--size-4);
+
+	--form-group-margin-bottom: var(--size-16);
+
+	/* Card tokens */
+	--card-padding: var(--size-20);
+	--card-border-width: 1px;
+
+	--card-title-font-size: var(--text-lg);
+	--card-title-font-weight: var(--font-weight-semibold);
+	--card-title-margin-bottom: var(--size-8);
+
+	--card-content-margin-bottom: var(--size-16);
+
+	/* Table tokens */
+	--table-cell-padding: var(--size-12);
+	--table-border-width: 1px;
+
+	--table-header-font-weight: var(--font-weight-semibold);
+	--table-header-background: var(--surface-sunken);
+
+	/* Modal tokens */
+	--modal-padding: var(--size-24);
+	--modal-max-width: 500px;
+	--modal-max-height: 80vh;
+	--modal-overlay-background: rgba(0, 0, 0, 0.5);
+
+	/* Alert tokens */
+	--alert-padding-x: var(--size-16);
+	--alert-padding-y: var(--size-12);
+
+	--alert-border-left-width: 4px;
+	--alert-margin-bottom: var(--size-16);
+
+	--alert-font-size: var(--text-sm);
+	--alert-font-weight: var(--font-weight-medium);
+
+	/* Tab tokens */
+	--tab-padding-x: var(--size-16);
+	--tab-padding-y: var(--size-12);
+	--tab-border-bottom-width: 2px;
+	--tab-font-size: var(--text-sm);
+	--tab-font-weight: var(--font-weight-medium);
+
+	/* Accordion tokens */
+	--accordion-header-padding: var(--size-16);
+	--accordion-content-padding: var(--size-16);
+	--accordion-border-width: 1px;
+
+	--accordion-header-font-weight: var(--font-weight-medium);
+	--accordion-header-cursor: pointer;
+
+	/* Pagination tokens */
+	--pagination-button-padding-x: var(--size-12);
+	--pagination-button-padding-y: var(--size-8);
+	--pagination-button-border-width: 1px;
+	--pagination-button-font-size: var(--text-sm);
+
+	/* Badge tokens */
+	--badge-padding-x: var(--size-8);
+	--badge-padding-y: var(--size-2);
+	--badge-font-size: var(--text-xs);
+	--badge-font-weight: var(--font-weight-medium);
+
+	/* Loading tokens */
+	--loading-spinner-size: var(--size-24);
+	--loading-spinner-border-width: 2px;
+	--loading-spinner-animation-duration: 1s;
+
+	--loading-skeleton-animation-duration: 1.5s;
+
+	/* Navigation tokens */
+	--nav-header-padding: var(--size-16) 0;
+	--nav-header-border-bottom-width: 1px;
+	--nav-header-z-index: 100;
+
+	--nav-logo-font-size: var(--text-lg);
+	--nav-logo-font-weight: var(--font-weight-bold);
+
+	--nav-menu-gap: var(--size-24);
+	--nav-menu-item-padding: var(--size-8) var(--size-12);
+
+	--nav-search-padding-right: var(--size-32);
+	--nav-search-padding-left: var(--size-12);
+	--nav-search-padding-y: var(--size-8);
+
+	/* Hero tokens */
+	--hero-padding-y: var(--size-80);
+	--hero-padding-x: var(--size-16);
+	--hero-margin-bottom: var(--size-64);
+
+	--hero-title-font-size: var(--text-4xl);
+	--hero-title-font-weight: var(--font-weight-bold);
+	--hero-title-margin-bottom: var(--size-16);
+
+	--hero-description-font-size: var(--text-lg);
+	--hero-description-margin-bottom: var(--size-32);
+	--hero-description-max-width: 600px;
+
+	/* Footer tokens */
+	--footer-padding-y: var(--size-48);
+	--footer-padding-x: var(--size-16);
+	--footer-margin-top: var(--size-80);
+	--footer-border-top-width: 1px;
+
+	--footer-section-gap: var(--size-32);
+	--footer-section-title-font-size: var(--text-lg);
+	--footer-section-title-font-weight: var(--font-weight-semibold);
+	--footer-section-title-margin-bottom: var(--size-16);
+
+	--footer-link-margin-bottom: var(--size-8);
+
+	--social-icon-size: var(--size-32);
+	--social-icon-gap: var(--size-12);
+	--social-icon-border-width: 1px;
+
+	/* Layout tokens */
+	--container-max-width: 1200px;
+	--container-padding: var(--size-16);
+
+	--section-margin-bottom: var(--size-64);
+	--section-padding: var(--size-24);
+	--section-border-width: 1px;
+
+	--component-grid-gap: var(--size-16);
+	--component-demo-padding: var(--size-16);
+	--component-demo-border-width: 1px;
+
+	/* Status background tokens */
+	--status-success-bg: rgba(34, 197, 94, 0.1);
+	--status-warning-bg: rgba(251, 191, 36, 0.1);
+	--status-error-bg: rgba(239, 68, 68, 0.1);
+	--status-info-bg: rgba(59, 130, 246, 0.1);
+
+	--status-success-text: #166534;
+	--status-warning-text: #92400e;
+	--status-error-text: #991b1b;
+	--status-info-text: #1e40af;
+
+	/* Chart tokens */
+	--chart-placeholder-height: var(--size-200);
+	--chart-placeholder-border-width: 1px;
+
+	/* Responsive breakpoints */
+	--breakpoint-sm: 640px;
+	--breakpoint-md: 768px;
+	--breakpoint-lg: 1024px;
+	--breakpoint-xl: 1280px;
+	--breakpoint-2xl: 1536px;
+
+	/* Z-index tokens */
+	--z-dropdown: 1000;
+	--z-sticky: 1020;
+	--z-fixed: 1030;
+	--z-modal-backdrop: 1040;
+	--z-modal: 1050;
+	--z-popover: 1060;
+	--z-tooltip: 1070;
 }
-
-/* === HK Grotesk Pro === */
-
-/* Hairline - 100 */
-/*@font-face {
-	font-family: 'HK Grotesk Pro';
-	font-style: normal;
-	font-weight: 100;
-	src: url('/fonts/HKGroteskPro/HKGroteskPro-Hairline.woff2') format('woff2');
-	font-display: swap;
-}
-@font-face {
-	font-family: 'HK Grotesk Pro';
-	font-style: italic;
-	font-weight: 100;
-	src: url('/fonts/HKGroteskPro/HKGroteskPro-HairlineItalic.woff2') format('woff2');
-	font-display: swap;
-}*/
-
-/* Thin - 175, standardise to 200 */
-/*@font-face {
-	font-family: 'HK Grotesk Pro';
-	font-style: normal;
-	font-weight: 200;
-	src: url('/fonts/HKGroteskPro/HKGroteskPro-Thin.woff2') format('woff2');
-	font-display: swap;
-}
-@font-face {
-	font-family: 'HK Grotesk Pro';
-	font-style: italic;
-	font-weight: 200;
-	src: url('/fonts/HKGroteskPro/HKGroteskPro-ThinItalic.woff2') format('woff2');
-	font-display: swap;
-}*/
-
-/* ExtraLight - 250, standardise to 200 */
-/* @font-face {
-	font-family: 'HK Grotesk Pro';
-	font-style: normal;
-	font-weight: 200;
-	src: url('/fonts/HKGroteskPro/HKGroteskPro-ExtraLight.woff2') format('woff2');
-	font-display: swap;
-}
-@font-face {
-	font-family: 'HK Grotesk Pro';
-	font-style: italic;
-	font-weight: 200;
-	src: url('/fonts/HKGroteskPro/HKGroteskPro-ExtraLightItalic.woff2') format('woff2');
-	font-display: swap;
-} */
-
-/* Light - 300 */
-/* @font-face {
-	font-family: 'HK Grotesk Pro';
-	font-style: normal;
-	font-weight: 300;
-	src: url('/fonts/HKGroteskPro/HKGroteskPro-Light.woff2') format('woff2');
-	font-display: swap;
-}
-@font-face {
-	font-family: 'HK Grotesk Pro';
-	font-style: italic;
-	font-weight: 300;
-	src: url('/fonts/HKGroteskPro/HKGroteskPro-LightItalic.woff2') format('woff2');
-	font-display: swap;
-} */
-
-/* Regular - 400 */
-@font-face {
-	font-family: "HK Grotesk Pro";
-	font-style: normal;
-	font-weight: 400;
-	src: url("/fonts/HKGroteskPro/HKGroteskPro-Regular.woff2") format("woff2");
-	font-display: swap;
-}
-@font-face {
-	font-family: "HK Grotesk Pro";
-	font-style: italic;
-	font-weight: 400;
-	src: url("/fonts/HKGroteskPro/HKGroteskPro-Italic.woff2") format("woff2");
-	font-display: swap;
-}
-
-/* Medium - 500 */
-/* @font-face {
-	font-family: 'HK Grotesk Pro';
-	font-style: normal;
-	font-weight: 500;
-	src: url('/fonts/HKGroteskPro/HKGroteskPro-Medium.woff2') format('woff2');
-	font-display: swap;
-}
-@font-face {
-	font-family: 'HK Grotesk Pro';
-	font-style: italic;
-	font-weight: 500;
-	src: url('/fonts/HKGroteskPro/HKGroteskPro-MediumItalic.woff2') format('woff2');
-	font-display: swap;
-}
-
-/* Semi-Bold - 600 */
-/* @font-face {
-	font-family: 'HK Grotesk Pro';
-	font-style: normal;
-	font-weight: 600;
-	src: url('/fonts/HKGroteskPro/HKGroteskPro-SemiBold.woff2') format('woff2');
-	font-display: swap;
-}
-@font-face {
-	font-family: 'HK Grotesk Pro';
-	font-style: italic;
-	font-weight: 600;
-	src: url('/fonts/HKGroteskPro/HKGroteskPro-SemiBoldItalic.woff2') format('woff2');
-	font-display: swap;
-} */
-
-/* Bold - 700 */
-@font-face {
-	font-family: "HK Grotesk Pro";
-	font-style: normal;
-	font-weight: 700;
-	src: url("/fonts/HKGroteskPro/HKGroteskPro-Bold.woff2") format("woff2");
-	font-display: swap;
-}
-@font-face {
-	font-family: "HK Grotesk Pro";
-	font-style: italic;
-	font-weight: 700;
-	src: url("/fonts/HKGroteskPro/HKGroteskPro-BoldItalic.woff2")
-		format("woff2");
-	font-display: swap;
-}
-
-/* Extra-Bold - 800 */
-/*@font-face {
-	font-family: 'HK Grotesk Pro';
-	font-style: normal;
-	font-weight: 800;
-	src: url('/fonts/HKGroteskPro/HKGroteskPro-ExtraBold.woff2') format('woff2');
-	font-display: swap;
-}
-@font-face {
-	font-family: 'HK Grotesk Pro';
-	font-style: italic;
-	font-weight: 800;
-	src: url('/fonts/HKGroteskPro/HKGroteskPro-ExtraBoldItalic.woff2') format('woff2');
-	font-display: swap;
-}*/
-
-/* Black - 900 */
-/* @font-face {
-	font-family: 'HK Grotesk Pro';
-	font-style: normal;
-	font-weight: 900;
-	src: url('/fonts/HKGroteskPro/HKGroteskPro-Black.woff2') format('woff2');
-	font-display: swap;
-}
-@font-face {
-	font-family: 'HK Grotesk Pro';
-	font-style: italic;
-	font-weight: 900;
-	src: url('/fonts/HKGroteskPro/HKGroteskPro-BlackItalic.woff2') format('woff2');
-	font-display: swap;
-} */
-
-/* === HK Nova === */
-
-/* Thin - 100 */
-/* @font-face {
-	font-family: 'HK Nova';
-	font-style: normal;
-	font-weight: 100;
-	src: url('/fonts/HKNova/HKNova-Thin.woff2') format('woff2');
-	font-display: swap;
-} */
-
-/* ExtraLight - 200 */
-/* @font-face {
-	font-family: 'HK Nova';
-	font-style: normal;
-	font-weight: 200;
-	src: url('/fonts/HKNova/HKNova-ExtraLight.woff2') format('woff2');
-	font-display: swap;
-} */
-
-/* Light - 300 */
-/* @font-face {
-	font-family: 'HK Nova';
-	font-style: normal;
-	font-weight: 300;
-	src: url('/fonts/HKNova/HKNova-Light.woff2') format('woff2');
-	font-display: swap;
-} */
-
-/* Regular - 400 */
-@font-face {
-	font-family: "HK Nova";
-	font-style: normal;
-	font-weight: 400;
-	src: url("/fonts/HKNova/HKNova-Regular.woff2") format("woff2");
-	font-display: swap;
-}
-
-/* Medium - 500 */
-@font-face {
-	font-family: "HK Nova";
-	font-style: normal;
-	font-weight: 500;
-	src: url("/fonts/HKNova/HKNova-Medium.woff2") format("woff2");
-	font-display: swap;
-}
-
-/* Semi-Bold - 600 */
-@font-face {
-	font-family: "HK Nova";
-	font-style: normal;
-	font-weight: 600;
-	src: url("/fonts/HKNova/HKNova-SemiBold.woff2") format("woff2");
-	font-display: swap;
-}
-
-/* Bold - 700 */
-@font-face {
-	font-family: "HK Nova";
-	font-style: normal;
-	font-weight: 700;
-	src: url("/fonts/HKNova/HKNova-Bold.woff2") format("woff2");
-	font-display: swap;
-}
-
-/* Extra-Bold - 800 */
-@font-face {
-	font-family: "HK Nova";
-	font-style: normal;
-	font-weight: 800;
-	src: url("/fonts/HKNova/HKNova-ExtraBold.woff2") format("woff2");
-	font-display: swap;
-}
-
-/* Heavy - 900 */
-/*@font-face {
-	font-family: 'HK Nova';
-	font-style: normal;
-	font-weight: 900;
-	src: url('/fonts/HKNova/HKNova-Heavy.woff2') format('woff2');
-	font-display: swap;
-} */

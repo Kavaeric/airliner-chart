@@ -116,11 +116,11 @@ export default function Home() {
 			<div className={styles.aboveCut}>
 				{/* Header section with data info */}
 				<div className={styles.headerContainer}>
-					<h1>Airliner Chart</h1>
+					<h1 className={"text-h1"}>Airliner Chart</h1>
 				</div>
 
 				<div className={styles.descriptionContainer}>
-					<p><b>Work in progress.</b> By <a href="https://www.shojiushiyama.net/">Shoji Ushiyama</a> / <a href="https://bsky.app/profile/kavaeric.net">Kavaeric</a>. Probably only works on desktop right now.</p>
+					<p><b>Work in progress.</b> By <a href="https://www.shojiushiyama.net/" className="link-augmented">Shoji Ushiyama</a> / <a href="https://bsky.app/profile/kavaeric.net" className="link-augmented">Kavaeric</a>. Probably only works on desktop right now.</p>
 					<p><a href="https://www.youtube.com/watch?v=WBpLrVCRS84">Cheers Elephant &mdash; Airliner</a></p>
 				</div>
 

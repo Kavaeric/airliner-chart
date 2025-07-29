@@ -2,7 +2,7 @@
 import React, { useMemo } from "react";
 
 // [IMPORT] Internal components //
-import { MarkerDiamond } from "./MarkerDiamond";
+import { MarkerDiamond } from "../shape/MarkerDiamond";
 
 /**
  * GridDots Component
