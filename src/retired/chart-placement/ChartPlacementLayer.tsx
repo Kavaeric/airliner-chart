@@ -261,7 +261,7 @@ export default function ChartPlacementLayer({
 			margin,
 			offsetSize
 		), grid };
-	}, [objects, width, height, cellSize, markerBoundingBoxes, xScale, yScale, margin, offsetSize, candidateOffsets]);
+	}, [objects, width, height, cellSize, markerBoundingBoxes, margin, offsetSize, candidateOffsets]);
 
 	// Debug grid overlay - visualizes the occupancy grid
 	// Shows which cells are occupied (dark) vs free (light)
