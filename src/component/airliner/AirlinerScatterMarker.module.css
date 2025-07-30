@@ -8,7 +8,7 @@
 
 /* Short line used as a marker */
 .markerLine {
-	stroke: var(--interactive-diminished);
+	stroke: var(--border-minor);
 	stroke-linecap: butt;
 	shape-rendering: geometricPrecision;
 	opacity: var(--opacity-100);

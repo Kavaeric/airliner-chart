@@ -7,6 +7,7 @@
 		<!-- <link rel="stylesheet" href="branding-font-hkgrotesk.css">
 	<link rel="stylesheet" href="branding-font-hknova.css"> -->
 		<link rel="stylesheet" href="branding.css" />
+		<link rel="stylesheet" href="globals.css" />
 		<link
 			rel="stylesheet"
 			href="https://fonts.googleapis.com/css2?family=Material+Symbols+Sharp:opsz,wght,FILL,GRAD@24,400,0,0"
@@ -15,26 +16,11 @@
 		<style>
 			/* Demo-specific styles */
 
-			* {
-				box-sizing: border-box;
-			}
-
-			body {
-				margin: 0;
-				padding: 0;
-				background-color: var(--surface-minor);
-				color: var(--text-minor);
-				font-family: var(--font-family-sans);
-				font-size: var(--text-size-400);
-				font-weight: var(--font-weight-regular);
-				line-height: var(--text-leading-400);
-				letter-spacing: var(--text-tracking-400);
-			}
-
 			.demo-container {
 				max-width: 1200px;
 				margin: 0 auto;
 				padding: var(--space-100);
+				gap: var(--space-100);
 			}
 
 			.section {
@@ -61,176 +47,6 @@
 				padding: var(--space-100);
 				border: 1px solid var(--border-secondary);
 				background: var(--surface-base);
-			}
-
-			/* Display text styles */
-			.text-display-1 {
-				color: var(--text-major);
-				font-size: var(--text-size-1000);
-				line-height: var(--text-leading-400);
-				font-weight: var(--font-weight-regular);
-				letter-spacing: var(--text-tracking-600);
-				font-family: var(--font-family-display);
-				margin-bottom: var(--space-200);
-			}
-
-			.text-display-2 {
-				color: var(--text-major);
-				font-size: var(--text-size-900);
-				line-height: var(--text-leading-400);
-				font-weight: var(--font-weight-regular);
-				letter-spacing: var(--text-tracking-600);
-				font-family: var(--font-family-display);
-				margin-bottom: var(--space-200);
-			}
-
-			.text-display-3 {
-				color: var(--text-major);
-				font-size: var(--text-size-800);
-				line-height: var(--text-leading-400);
-				font-weight: var(--font-weight-regular);
-				letter-spacing: var(--text-tracking-600);
-				font-family: var(--font-family-display);
-				margin-bottom: var(--space-200);
-			}
-
-			.text-display-4 {
-				color: var(--text-major);
-				font-size: var(--text-size-700);
-				line-height: var(--text-leading-400);
-				font-weight: var(--font-weight-regular);
-				letter-spacing: var(--text-tracking-600);
-				font-family: var(--font-family-display);
-				margin-bottom: var(--space-200);
-			}
-
-			.text-display-5 {
-				color: var(--text-major);
-				font-size: var(--text-size-600);
-				line-height: var(--text-leading-400);
-				font-weight: var(--font-weight-regular);
-				letter-spacing: var(--text-tracking-600);
-				font-family: var(--font-family-display);
-				margin-bottom: var(--space-200);
-			}
-
-			.text-display-6 {
-				color: var(--text-major);
-				font-size: var(--text-size-500);
-				line-height: var(--text-leading-400);
-				font-weight: var(--font-weight-regular);
-				letter-spacing: var(--text-tracking-600);
-				font-family: var(--font-family-display);
-				margin-bottom: var(--space-200);
-			}
-
-			/* Heading text styles */
-			.text-h1 {
-				color: var(--text-major);
-				font-size: var(--text-size-1000);
-				line-height: var(--text-leading-200);
-				font-weight: var(--font-weight-regular);
-				letter-spacing: var(--text-tracking-800);
-				text-transform: uppercase;
-				font-family: var(--font-family-display);
-				margin-top: var(--space-100);
-				margin-bottom: var(--space-600);
-			}
-
-			.text-h2 {
-				color: var(--text-major);
-				font-size: var(--text-size-900);
-				line-height: var(--text-leading-200);
-				font-weight: var(--font-weight-regular);
-				letter-spacing: var(--text-tracking-800);
-				text-transform: uppercase;
-				font-family: var(--font-family-display);
-				margin-top: var(--space-100);
-				margin-bottom: var(--space-500);
-			}
-
-			.text-h3 {
-				color: var(--text-major);
-				font-size: var(--text-size-800);
-				line-height: var(--text-leading-200);
-				font-weight: var(--font-weight-regular);
-				letter-spacing: var(--text-tracking-800);
-				text-transform: uppercase;
-				font-family: var(--font-family-display);
-				margin-top: var(--space-100);
-				margin-bottom: var(--space-400);
-			}
-
-			.text-h4 {
-				color: var(--text-major);
-				font-size: var(--text-size-700);
-				line-height: var(--text-leading-200);
-				font-weight: var(--font-weight-regular);
-				letter-spacing: var(--text-tracking-800);
-				text-transform: uppercase;
-				font-family: var(--font-family-display);
-				margin-top: var(--space-100);
-				margin-bottom: var(--space-300);
-			}
-
-			.text-h5 {
-				color: var(--text-major);
-				font-size: var(--text-size-600);
-				line-height: var(--text-leading-200);
-				font-weight: var(--font-weight-regular);
-				letter-spacing: var(--text-tracking-800);
-				text-transform: uppercase;
-				font-family: var(--font-family-display);
-				margin-top: var(--space-100);
-				margin-bottom: var(--space-200);
-			}
-
-			.text-h6 {
-				color: var(--text-major);
-				font-size: var(--text-size-500);
-				line-height: var(--text-leading-200);
-				font-weight: var(--font-weight-regular);
-				letter-spacing: var(--text-tracking-800);
-				text-transform: uppercase;
-				font-family: var(--font-family-display);
-				margin-top: var(--space-100);
-				margin-bottom: var(--space-100);
-			}
-
-			/* Body text styles */
-			.text-body-major {
-				color: var(--text-major);
-				font-size: var(--text-size-500);
-				line-height: var(--text-leading-400);
-				font-weight: var(--font-weight-regular);
-				letter-spacing: var(--text-tracking-400);
-				margin-bottom: var(--space-200);
-			}
-
-			.text-body-minor {
-				color: var(--text-minor);
-				font-size: var(--text-size-400);
-				line-height: var(--text-leading-400);
-				font-weight: var(--font-weight-regular);
-				letter-spacing: var(--text-tracking-400);
-				margin-bottom: var(--space-200);
-			}
-
-			.text-body-diminished {
-				color: var(--text-diminished);
-				font-size: var(--text-size-300);
-				line-height: var(--text-leading-400);
-				font-weight: var(--font-weight-regular);
-				letter-spacing: var(--text-tracking-400);
-				margin-bottom: var(--space-200);
-			}
-
-			.text-body-major:last-of-type,
-			.text-body-minor:last-of-type,
-			.text-body-diminished:last-of-type,
-			.text-caption:last-of-type,
-			p:last-of-type {
-				margin-bottom: 0;
 			}
 
 			/* Navigation */
@@ -312,228 +128,6 @@
 				max-width: 600px;
 				margin-left: auto;
 				margin-right: auto;
-			}
-
-			a,
-			a.link-major {
-				color: var(--interactive-major);
-				transition: all 0.1s linear;
-			}
-
-			a:hover,
-			a.link-major:hover {
-				color: var(--interactive-major-hover);
-				background-color: var(--highlight-hover-major);
-			}
-
-			a:active,
-			a.link-major:active {
-				color: var(--interactive-major-active);
-				background-color: var(--highlight-active-major);
-			}
-
-			a.link-augmented {
-				color: var(--interactive-augmented);
-			}
-
-			a.link-augmented:hover {
-				color: var(--interactive-augmented-hover);
-				background-color: var(--highlight-hover-augmented);
-			}
-
-			a.link-augmented:active {
-				color: var(--interactive-augmented-active);
-				background-color: var(--highlight-active-augmented);
-			}
-
-			button {
-				border: var(--border-weight-200) solid transparent;
-				font-size: var(--interactive-font-size);
-				font-weight: var(--interactive-font-weight);
-				font-family: var(--interactive-font-family);
-				text-transform: var(--interactive-text-transform);
-				letter-spacing: var(--interactive-text-tracking);
-				cursor: pointer;
-				gap: var(--space-100);
-				transition: all 0.1s linear;
-				text-decoration: none;
-				display: flex;
-				align-items: center;
-				justify-content: center;
-				background: transparent;
-			}
-
-			.btn-flex {
-				display: flex;
-				gap: var(--space-100);
-			}
-
-			.btn-group {
-				display: flex;
-			}
-
-			button:not(.btn-group button),
-			.btn-group {
-				min-height: var(--interactive-min-height);
-			}
-
-			button {
-				padding-left: var(--space-300);
-				padding-right: var(--space-300);
-			}
-			
-			button.btn-icon-left {
-				padding-left: var(--space-150);
-			}
-			
-			button.btn-icon-right {
-				padding-right: var(--space-150);
-			}
-
-			button.btn-icon-only {
-				padding-left: var(--space-150);
-				padding-right: var(--space-150);
-			}
-
-			/* === Augmented buttons === */
-			button.btn-augmented,
-			.btn-group.btn-augmented {
-				background-color: var(--interactive-augmented);
-				color: var(--interactive-augmented-inverse);
-				font-weight: var(--interactive-font-weight-augmented);
-			}
-
-			button.btn-augmented,
-			.btn-group.btn-augmented > button {
-				color: var(--interactive-augmented-inverse);
-				outline: var(--border-weight-200) solid transparent;
-				outline-offset: var(--space-negative-050);
-			}
-
-			button.btn-augmented:hover:not([disabled]),
-			.btn-group.btn-augmented > button:hover:not([disabled]) {
-				background-color: var(--interactive-augmented-hover);
-			}
-
-			button.btn-augmented:active:not([disabled]),
-			.btn-group.btn-augmented > button:active:not([disabled]) {
-				background-color: var(--interactive-augmented-active);
-			}
-
-			button.btn-augmented:focus,
-			.btn-group.btn-augmented > button:focus {
-				outline: var(--border-weight-200) solid var(--interactive-augmented-inverse);
-				outline-offset: var(--space-negative-050);
-			}
-
-			/* === Major buttons === */
-			button.btn-major,
-			.btn-group.btn-major {
-				background-color: var(--interactive-major);
-				font-weight: var(--interactive-font-weight-major);
-			}
-
-			button.btn-major,
-			.btn-group.btn-major > button {
-				color: var(--interactive-major-inverse);
-				outline: var(--border-weight-200) solid transparent;
-				outline-offset: var(--space-negative-050);
-			}
-
-			button.btn-major:hover:not([disabled]),
-			.btn-group.btn-major > button:hover:not([disabled]) {
-				background-color: var(--interactive-major-hover);
-			}
-
-			button.btn-major:active:not([disabled]),
-			.btn-group.btn-major > button:active:not([disabled]) {
-				background-color: var(--interactive-major-active);
-			}
-
-			button.btn-major:focus,
-			.btn-group.btn-major > button:focus {
-				outline: var(--border-weight-200) solid var(--interactive-major-inverse);
-				outline-offset: var(--space-negative-050);
-			}
-
-
-			/* === Minor buttons === */
-			button.btn-minor,
-			.btn-group.btn-minor {
-				box-sizing: border-box;
-				font-weight: var(--interactive-font-weight-minor);
-				border: var(--border-weight-200) solid var(--interactive-minor);
-			}
-
-			button.btn-minor,
-			.btn-group.btn-minor > button {
-				color: var(--interactive-minor);
-				outline: var(--border-weight-200) solid transparent;
-			}
-
-			button.btn-minor {
-				outline-offset: var(--space-negative-075);
-			}
-
-			.btn-group.btn-minor > button {
-				outline-offset: var(--space-negative-050);
-			}
-
-			button.btn-minor:hover:not([disabled]),
-			.btn-group.btn-minor > button:hover:not([disabled]) {
-				background-color: var(--highlight-hover-minor);
-			}
-
-			button.btn-minor:active:not([disabled]),
-			.btn-group.btn-minor > button:active:not([disabled]) {
-				background-color: var(--highlight-active-minor);
-			}
-
-			button.btn-minor:focus,
-			.btn-group.btn-minor > button:focus {
-				outline: var(--border-weight-200) solid var(--interactive-minor);
-			}
-
-
-			/* === Diminished buttons === */
-			button.btn-diminished,
-			.btn-group.btn-diminished {
-				box-sizing: border-box;
-				font-weight: var(--interactive-font-weight-diminished);
-				border: var(--border-weight-200) solid transparent;
-			}
-
-			button.btn-diminished,
-			.btn-group.btn-diminished > button {
-				color: var(--interactive-diminished);
-				outline: var(--border-weight-200) solid transparent;
-			}
-			
-			button.btn-diminished {
-				outline-offset: var(--space-negative-025);
-			}
-
-			button.btn-diminished:hover:not([disabled]),
-			.btn-group.btn-diminished > button:hover:not([disabled]) {
-				background-color: var(--highlight-hover-minor);
-			}
-
-			button.btn-diminished:active:not([disabled]),
-			.btn-group.btn-diminished > button:active:not([disabled]) {
-				background-color: var(--highlight-active-minor);
-			}
-
-			button.btn-diminished:focus,
-			.btn-group.btn-diminished > button:focus {
-				outline: var(--border-weight-200) solid var(--interactive-diminished);
-			}
-
-
-
-			button[disabled] {
-				border-color: transparent;
-				opacity: var(--opacity-disabled);
-				cursor: not-allowed;
 			}
 
 			/* Forms */
@@ -952,7 +546,8 @@
 		<div class="demo-container">
 			<!-- Display Text -->
 			<section class="section">
-				<h2 class="section-title">Display Text (6 sizes)</h2>
+				<h2 class="text-h3">Display Text (6 sizes)</h2>
+				<hr class="frame-minor">
 				<div class="component-demo">
 					<div class="text-display-1">
 						Display 1 - Extra Large Hero Text
@@ -977,7 +572,8 @@
 
 			<!-- Typography Hierarchy -->
 			<section class="section">
-				<h2 class="section-title">Typography Hierarchy</h2>
+				<h2 class="text-h3">Typography Hierarchy</h2>
+				<hr class="frame-minor">
 				<div class="component-demo">
 					<h1 class="text-h1">Heading 1 - Main Page Title</h1>
 					<h2 class="text-h2">Heading 2 - Section Title</h2>
@@ -1015,7 +611,8 @@
 
 			<!-- Breadcrumbs -->
 			<section class="section">
-				<h2 class="section-title">Breadcrumbs</h2>
+				<h2 class="text-h3">Breadcrumbs</h2>
+				<hr class="frame-minor">
 				<nav class="breadcrumbs">
 					<span class="breadcrumb-item">Home</span>
 					<span class="breadcrumb-separator">/</span>
@@ -1025,18 +622,213 @@
 				</nav>
 			</section>
 
+			<!--Frames-->
+			<section class="section">
+				<h2 class="text-h2">Frames</h2>
+				<hr class="frame-minor">
+				<div style="
+					display: grid;
+					grid-template-columns: 2fr 1fr;
+					align-items: start;
+					gap: var(--space-200);
+				">
+					<div class="frame-augmented frame-flex-horizontal">
+						<div class="frame-content frame-content-vertical">
+							<span class="text-label-augmented">Augmented</span>
+						</div>
+						<hr class="frame-augmented">
+						<div class="frame-flex-vertical">
+							<div class="frame-content">
+								<span class="text-label-major">Frame Augmented</span>
+							</div>
+							<hr class="frame-augmented">
+							<div class="frame-content">
+								An augmented rule above and major rule below.
+							</div>
+							<hr class="frame-major">
+							<div class="frame-content">
+								A major rule above and minor rule below.
+							</div>
+							<hr class="frame-minor">
+							<div class="frame-content">
+								A minor rule above and diminished rule below.
+							</div>
+							<hr class="frame-diminished">
+							<div class="frame-content">
+								A diminished rule above.
+							</div>
+						</div>
+					</div>
+
+					<div class="frame-augmented">
+						<div class="frame-content surface-depth-augmented">
+							Augmented surface depth.
+						</div>
+						<hr class="frame-minor">
+						<div class="frame-content surface-depth-major">
+							Major surface depth.
+						</div>
+						<hr class="frame-minor">
+						<div class="frame-content">
+							Baseline surface depth.
+						</div>
+						<hr class="frame-minor">
+						<div class="frame-content surface-depth-minor">
+							Minor surface depth.
+						</div>
+						<hr class="frame-minor">
+						<div class="frame-content surface-depth-diminished">
+							Diminished surface depth.
+						</div>
+					</div>
+
+					<div class="frame-major frame-flex-horizontal">
+						<div class="frame-content frame-content-vertical">
+							<span class="text-label-major">Major</span>
+						</div>
+						<hr class="frame-major">
+						<div class="frame-flex-vertical">
+							<div class="frame-content">
+								<span class="text-label-major">Frame Major</span>
+							</div>
+							<hr class="frame-major">
+							<div class="frame-content">
+								A major rule above and minor rule below.
+							</div>
+							<hr class="frame-minor">
+							<div class="frame-content">
+								A minor rule above and diminished rule below.
+							</div>
+							<hr class="frame-diminished">
+							<div class="frame-content">
+								A diminished rule above.
+							</div>
+						</div>
+					</div>
+
+					<div class="frame-major">
+						<div class="frame-content surface-depth-augmented">
+							Augmented surface depth.
+						</div>
+						<hr class="frame-minor">
+						<div class="frame-content surface-depth-major">
+							Major surface depth.
+						</div>
+						<hr class="frame-minor">
+						<div class="frame-content">
+							Baseline surface depth.
+						</div>
+						<hr class="frame-minor">
+						<div class="frame-content surface-depth-minor">
+							Minor surface depth.
+						</div>
+						<hr class="frame-minor">
+						<div class="frame-content surface-depth-diminished">
+							Diminished surface depth.
+						</div>
+					</div>
+
+					<div class="frame-minor frame-flex-horizontal">
+						<div class="frame-content frame-content-vertical">
+							<span class="text-label-minor">Minor</span>
+						</div>
+						<hr class="frame-minor">
+						<div class="frame-flex-vertical">
+							<div class="frame-content">
+								<span class="text-label-major">Frame Minor</span>
+							</div>
+							<hr class="frame-minor">
+							<div class="frame-content">
+								A minor rule above and diminished rule below.
+							</div>
+							<hr class="frame-diminished">
+							<div class="frame-content">
+								A diminished rule above.
+							</div>
+						</div>
+					</div>
+
+					<div class="frame-minor">
+						<div class="frame-content surface-depth-augmented">
+							Augmented surface depth.
+						</div>
+						<hr class="frame-minor">
+						<div class="frame-content surface-depth-major">
+							Major surface depth.
+						</div>
+						<hr class="frame-minor">
+						<div class="frame-content">
+							Baseline surface depth.
+						</div>
+						<hr class="frame-minor">
+						<div class="frame-content surface-depth-minor">
+							Minor surface depth.
+						</div>
+						<hr class="frame-minor">
+						<div class="frame-content surface-depth-diminished">
+							Diminished surface depth.
+						</div>
+					</div>
+
+					<div class="frame-diminished frame-flex-horizontal">
+						<div class="frame-content frame-content-vertical">
+							<span class="text-label-diminished">Diminished</span>
+						</div>
+						<hr class="frame-diminished">
+						<div class="frame-flex-vertical">
+							<div class="frame-content">
+								<span class="text-label-major">Frame Diminished</span>
+							</div>
+							<hr class="frame-diminished">
+							<div class="frame-content">
+								A diminished rule above.
+							</div>
+							<hr class="frame-diminished">
+							<div class="frame-content">
+								And another for good measure.
+							</div>
+						</div>
+					</div>
+
+					<div class="frame-diminished">
+						<div class="frame-content surface-depth-augmented">
+							Augmented surface depth.
+						</div>
+						<hr class="frame-diminished">
+						<div class="frame-content surface-depth-major">
+							Major surface depth.
+						</div>
+						<hr class="frame-diminished">
+						<div class="frame-content">
+							Baseline surface depth.
+						</div>
+						<hr class="frame-diminished">
+						<div class="frame-content surface-depth-minor">
+							Minor surface depth.
+						</div>
+						<hr class="frame-diminished">
+						<div class="frame-content surface-depth-diminished">
+							Diminished surface depth.
+						</div>
+					</div>
+				</div>
+			</section>
+
 			<!-- Buttons -->
 			<section class="section">
-				<h2 class="section-title">Buttons</h2>
-				<div
-					style="
-						display: grid;
-						grid-template-columns: auto;
-						grid-template-rows: repeat(4, auto);
-						gap: var(--space-100);
-					"
-				>
-					<div class="btn-flex">
+				<h2 class="text-h3">Buttons</h2>
+				<hr class="frame-minor">
+				<div style="display: flex; flex-direction: column; align-items: center;">
+					<div
+						style="
+							display: grid;
+							grid-template-columns: repeat(4, auto);
+							grid-template-rows: repeat(4, auto);
+							gap: var(--space-100);
+							margin-top: var(--space-400);
+							margin-bottom: var(--space-400);
+						"
+					>
 						<button class="btn btn-augmented">Button</button>
 						<button class="btn btn-augmented btn-icon-left">
 							<span class="icon material-symbols-sharp">zoom_in</span>
@@ -1051,8 +843,6 @@
 						<button class="btn btn-augmented btn-icon-only">
 							<span class="icon material-symbols-sharp">settings</span>
 						</button>
-					</div>
-					<div class="btn-flex">
 						<button class="btn btn-major">Button</button>
 						<button class="btn btn-major btn-icon-left">
 							<span class="icon material-symbols-sharp">zoom_in</span>
@@ -1067,8 +857,6 @@
 						<button class="btn btn-major btn-icon-only">
 							<span class="icon material-symbols-sharp">settings</span>
 						</button>
-					</div>
-					<div class="btn-flex">
 						<button class="btn btn-minor">Button</button>
 						<button class="btn btn-minor btn-icon-left">
 							<span class="icon material-symbols-sharp">zoom_in</span>
@@ -1083,8 +871,6 @@
 						<button class="btn btn-minor btn-icon-only">
 							<span class="icon material-symbols-sharp">settings</span>
 						</button>
-					</div>
-					<div class="btn-flex">
 						<button class="btn btn-diminished">Button</button>
 						<button class="btn btn-diminished btn-icon-left">
 							<span class="icon material-symbols-sharp">zoom_in</span>
@@ -1101,172 +887,425 @@
 						</button>
 					</div>
 				</div>
-
-				<div
-					style="
-						display: grid;
-						grid-template-columns: auto;
-						grid-template-rows: repeat(4, auto);
-						gap: var(--space-100);
-					"
-				>
-					<div class="btn-flex">
-						<div class="btn-group btn-augmented">
-							<button class="btn-icon-left">
-								<span class="icon material-symbols-sharp"
-									>add</span
-								>
-								Create
-							</button>
-							<button class="btn-icon-only">
-								<span class="icon material-symbols-sharp"
-									>search</span
-								>
-							</button>
-							<button class="btn-icon-only">
-								<span class="icon material-symbols-sharp"
-									>edit</span
-								>
-							</button>
-							<button class="btn-icon-only">
-								<span class="icon material-symbols-sharp"
-									>delete</span
-								>
-							</button>
-							<button class="btn-icon-only">
-								<span class="icon material-symbols-sharp"
-									>content_cut</span
-								>
-							</button>
-							<button class="btn-icon-only">
-								<span class="icon material-symbols-sharp"
-									>content_copy</span
-								>
-							</button>
-							<button class="btn-icon-only" disabled aria-disabled="true">
-								<span class="icon material-symbols-sharp"
-									>content_paste</span
-								>
-							</button>
+				<div style="display: flex; flex-direction: column; align-items: center;">
+					<div style="display: flex; flex-direction: column; align-items: center; gap: var(--space-100);">
+						<div class="btn-flex">
+							<div class="btn-group btn-augmented">
+								<button class="btn-icon-left">
+									<span class="icon material-symbols-sharp"
+										>add</span
+									>
+									Create
+								</button>
+								<button class="btn-icon-only">
+									<span class="icon material-symbols-sharp"
+										>search</span
+									>
+								</button>
+								<button class="btn-icon-only">
+									<span class="icon material-symbols-sharp"
+										>edit</span
+									>
+								</button>
+								<button class="btn-icon-only">
+									<span class="icon material-symbols-sharp"
+										>delete</span
+									>
+								</button>
+								<button class="btn-icon-only">
+									<span class="icon material-symbols-sharp"
+										>content_cut</span
+									>
+								</button>
+								<button class="btn-icon-only">
+									<span class="icon material-symbols-sharp"
+										>content_copy</span
+									>
+								</button>
+								<button class="btn-icon-only" disabled aria-disabled="true">
+									<span class="icon material-symbols-sharp"
+										>content_paste</span
+									>
+								</button>
+							</div>
 						</div>
-					</div>
 
-					<div class="btn-flex">
-						<div class="btn-group btn-major">
-							<button class="btn-icon-left">
-								<span class="icon material-symbols-sharp"
-									>add</span
-								>
-								Create
-							</button>
-							<button class="btn-icon-only">
-								<span class="icon material-symbols-sharp"
-									>search</span
-								>
-							</button>
-							<button class="btn-icon-only">
-								<span class="icon material-symbols-sharp"
-									>edit</span
-								>
-							</button>
-							<button class="btn-icon-only">
-								<span class="icon material-symbols-sharp"
-									>delete</span
-								>
-							</button>
-							<button class="btn-icon-only">
-								<span class="icon material-symbols-sharp"
-									>content_cut</span
-								>
-							</button>
-							<button class="btn-icon-only">
-								<span class="icon material-symbols-sharp"
-									>content_copy</span
-								>
-							</button>
-							<button class="btn-icon-only" disabled aria-disabled="true">
-								<span class="icon material-symbols-sharp"
-									>content_paste</span
-								>
-							</button>
+						<div class="btn-flex">
+							<div class="btn-group btn-major">
+								<button class="btn-icon-left">
+									<span class="icon material-symbols-sharp"
+										>add</span
+									>
+									Create
+								</button>
+								<button class="btn-icon-only">
+									<span class="icon material-symbols-sharp"
+										>search</span
+									>
+								</button>
+								<button class="btn-icon-only">
+									<span class="icon material-symbols-sharp"
+										>edit</span
+									>
+								</button>
+								<button class="btn-icon-only">
+									<span class="icon material-symbols-sharp"
+										>delete</span
+									>
+								</button>
+								<button class="btn-icon-only">
+									<span class="icon material-symbols-sharp"
+										>content_cut</span
+									>
+								</button>
+								<button class="btn-icon-only">
+									<span class="icon material-symbols-sharp"
+										>content_copy</span
+									>
+								</button>
+								<button class="btn-icon-only" disabled aria-disabled="true">
+									<span class="icon material-symbols-sharp"
+										>content_paste</span
+									>
+								</button>
+							</div>
 						</div>
-					</div>
 
-					<div class="btn-flex">
-						<div class="btn-group btn-minor">
-							<button class="btn-icon-left">
-								<span class="material-symbols-sharp">add</span>
-								Create
-							</button>
-							<button class="btn-icon-only">
-								<span class="material-symbols-sharp"
-									>search</span
-								>
-							</button>
-							<button class="btn-icon-only">
-								<span class="material-symbols-sharp">edit</span>
-							</button>
-							<button class="btn-icon-only">
-								<span class="material-symbols-sharp"
-									>delete</span
-								>
-							</button>
-							<button class="btn-icon-only">
-								<span class="material-symbols-sharp"
-									>content_cut</span
-								>
-							</button>
-							<button class="btn-icon-only">
-								<span class="material-symbols-sharp"
-									>content_copy</span
-								>
-							</button>
-							<button class="btn-icon-only" disabled aria-disabled="true">
-								<span class="material-symbols-sharp"
-									>content_paste</span
-								>
-							</button>
+						<div class="btn-flex">
+							<div class="btn-group btn-minor">
+								<button class="btn-icon-left">
+									<span class="material-symbols-sharp">add</span>
+									Create
+								</button>
+								<button class="btn-icon-only">
+									<span class="material-symbols-sharp"
+										>search</span
+									>
+								</button>
+								<button class="btn-icon-only">
+									<span class="material-symbols-sharp">edit</span>
+								</button>
+								<button class="btn-icon-only">
+									<span class="material-symbols-sharp"
+										>delete</span
+									>
+								</button>
+								<button class="btn-icon-only">
+									<span class="material-symbols-sharp"
+										>content_cut</span
+									>
+								</button>
+								<button class="btn-icon-only">
+									<span class="material-symbols-sharp"
+										>content_copy</span
+									>
+								</button>
+								<button class="btn-icon-only" disabled aria-disabled="true">
+									<span class="material-symbols-sharp"
+										>content_paste</span
+									>
+								</button>
+							</div>
 						</div>
-					</div>
 
-					<div class="btn-flex">
-						<div class="btn-group btn-diminished">
-							<button class="btn-icon-left">
-								<span class="material-symbols-sharp">add</span>
-								Create
-							</button>
-							<button class="btn-icon-only">
-								<span class="material-symbols-sharp"
-									>search</span
-								>
-							</button>
-							<button class="btn-icon-only">
-								<span class="material-symbols-sharp">edit</span>
-							</button>
-							<button class="btn-icon-only">
-								<span class="material-symbols-sharp"
-									>delete</span
-								>
-							</button>
-							<button class="btn-icon-only">
-								<span class="material-symbols-sharp"
-									>content_cut</span
-								>
-							</button>
-							<button class="btn-icon-only">
-								<span class="material-symbols-sharp"
-									>content_copy</span
-								>
-							</button>
-							<button class="btn-icon-only" disabled aria-disabled="true">
-								<span class="material-symbols-sharp"
-									>content_paste</span
-								>
-							</button>
+						<div class="btn-flex">
+							<div class="btn-group btn-diminished">
+								<button class="btn-icon-left">
+									<span class="material-symbols-sharp">add</span>
+									Create
+								</button>
+								<button class="btn-icon-only">
+									<span class="material-symbols-sharp"
+										>search</span
+									>
+								</button>
+								<button class="btn-icon-only">
+									<span class="material-symbols-sharp">edit</span>
+								</button>
+								<button class="btn-icon-only">
+									<span class="material-symbols-sharp"
+										>delete</span
+									>
+								</button>
+								<button class="btn-icon-only">
+									<span class="material-symbols-sharp"
+										>content_cut</span
+									>
+								</button>
+								<button class="btn-icon-only">
+									<span class="material-symbols-sharp"
+										>content_copy</span
+									>
+								</button>
+								<button class="btn-icon-only" disabled aria-disabled="true">
+									<span class="material-symbols-sharp"
+										>content_paste</span
+									>
+								</button>
+							</div>
 						</div>
 					</div>
 				</div>
 			</section>
+
+			<!--UI Control-->
+			<section class="section frame-minor" style="display: flex; flex-direction: column; gap: var(--space-400);">
+
+				<h2 class="text-h3">UI Controls</h2>
+
+				<div class="frame-major frame-flex-horizontal">
+					<div class="frame-flex-vertical">
+						<div class="frame-content frame-flex-horizontal surface-depth-major">
+							<span class="text-label-major">Settings</span>
+						</div>
+						<hr class="frame-minor">
+						<label class="input-switch">
+							<input type="checkbox" checked />
+							<span>Enable logging</span>
+						</label>
+						<label class="input-switch">
+							<input type="checkbox" />
+							<span>Sync to cloud</span>
+						</label>
+						<label class="input-switch">
+							<input type="checkbox" checked disabled />
+							<span>Limiter</span>
+						</label>
+						<hr class="frame-diminished">
+						<label class="input-checkbox">
+							<input type="checkbox" />
+							<span>Skip ahead on start</span>
+						</label>
+						<label class="input-checkbox">
+							<input type="checkbox" disabled />
+							<span>Safe mode startup</span>
+						</label>
+					</div>
+					<hr class="frame-minor">
+					<div class="frame-flex-vertical">
+						 <div class="frame-content frame-flex-horizontal surface-depth-major" style="flex-grow: 0;">
+							<span class="text-label-major">Modes</span>
+						 </div>
+						<hr class="frame-minor">
+						<label class="input-radio">
+							<input type="radio" name="panel-mode" checked />
+							<span>Auto mode</span>
+						</label>
+						<label class="input-radio">
+							<input type="radio" name="panel-mode" />
+							<span>Manual mode</span>
+						</label>
+						<hr class="frame-diminished">
+						<label class="input-radio">
+							<input type="radio" name="panel-priority" />
+							<span>Low priority</span>
+						</label>
+						<label class="input-radio">
+							<input type="radio" name="panel-priority" checked />
+							<span>High priority</span>
+						</label>
+						<hr class="frame-minor">
+						<label class="input-switch">
+							<input type="checkbox" />
+							<span>Mode lock</span>
+						</label>
+					</div>
+
+					<hr class="frame-major">
+
+					<div class="frame-flex-vertical">
+						<div class="frame-content frame-flex-horizontal surface-depth-major" style="flex-grow: 0;">
+							<span class="text-label-major">Actions</span>
+						</div>
+						<hr class="frame-minor">
+						<div class="btn-group-vertical">
+							<button class="btn-major btn-icon-left">
+								<span class="material-symbols-sharp">play_arrow</span>
+								Start
+							</button>
+							<button class="btn-diminished btn-icon-left">
+								<span class="material-symbols-sharp">pause</span>
+								Pause
+							</button>
+							<button class="btn-diminished btn-icon-left" disabled>
+								<span class="material-symbols-sharp">stop</span>
+								Stop
+							</button>
+							<button class="btn-diminished btn-icon-left">
+								<span class="material-symbols-sharp">restart_alt</span>
+								Restart
+							</button>
+						</div>
+						<hr class="frame-minor">
+
+						<div class="frame-content" style="align-self: flex-end;">
+							<span class="text-body-diminished">Shoji Ushiyama / Kavaeric</span>
+						</div>
+					</div>
+				</div>
+
+				<div class="frame-flex-horizontal" style="gap: var(--space-200);">
+					<div class="frame-minor frame-flex-vertical">
+						<label class="input-checkbox">
+							<input type="checkbox" />
+							<span>Checkbox</span>
+						</label>
+						<hr class="frame-diminished">
+						<label class="input-checkbox">
+							<input type="checkbox" />
+							<span>Checkbox</span>
+						</label>
+						<hr class="frame-diminished">
+						<label class="input-checkbox">
+							<input type="checkbox" checked />
+							<span>Checkbox</span>
+						</label>
+						<hr class="frame-diminished">
+						<label class="input-checkbox">
+							<input type="checkbox" disabled />
+							<span>Checkbox</span>
+						</label>
+						<hr class="frame-diminished">
+						<label class="input-checkbox">
+							<input type="checkbox" disabled checked />
+							<span>Checkbox</span>
+						</label>
+					</div>
+
+					<div class="frame-minor frame-flex-vertical">
+						<label class="input-radio">
+							<input type="radio" name="demo-radio-1" />
+							<span>Radio</span>
+						</label>
+						<hr class="frame-diminished">
+						<label class="input-radio">
+							<input type="radio" name="demo-radio-1" />
+							<span>Radio</span>
+						</label>
+							<hr class="frame-diminished">
+						<label class="input-radio">
+							<input type="radio" name="demo-radio-1" checked />
+							<span>Radio</span>
+						</label>
+						<hr class="frame-minor">
+						<label class="input-radio">
+							<input type="radio" name="demo-radio-2" disabled />
+							<span>Radio</span>
+						</label>
+						<hr class="frame-diminished">
+						<label class="input-radio">
+							<input type="radio" name="demo-radio-2" disabled checked />
+							<span>Radio</span>
+						</label>
+					</div>
+
+					<div class="frame-minor frame-flex-vertical">
+						<label class="input-switch">
+							<input type="checkbox" />
+							<span>Switch</span>
+						</label>
+						<hr class="frame-diminished">
+						<label class="input-switch">
+							<input type="checkbox" />
+							<span>Switch</span>
+						</label>
+						<hr class="frame-diminished">
+						<label class="input-switch">
+							<input type="checkbox" checked />
+							<span>Switch</span>
+						</label>
+						<hr class="frame-diminished">
+						<label class="input-switch">
+							<input type="checkbox" disabled />
+							<span>Switch</span>
+						</label>
+						<hr class="frame-diminished">
+						<label class="input-switch">
+							<input type="checkbox" disabled checked />
+							<span>Switch</span>
+						</label>
+					</div>
+				</div>
+				
+				<div class="frame-flex-horizontal" style="gap: var(--space-200);">
+					<div class="frame-minor frame-flex-vertical">
+						<div class="frame-content frame-flex-vertical">
+							<label class="input-checkbox">
+								<input type="checkbox" />
+								<span>Checkbox</span>
+							</label>
+							<label class="input-checkbox">
+								<input type="checkbox" />
+								<span>Checkbox</span>
+							</label>
+							<label class="input-checkbox">
+								<input type="checkbox" checked />
+								<span>Checkbox</span>
+							</label>
+							<label class="input-checkbox">
+								<input type="checkbox" disabled />
+								<span>Checkbox</span>
+							</label>
+							<label class="input-checkbox">
+								<input type="checkbox" disabled checked />
+								<span>Checkbox</span>
+							</label>
+						</div>
+					</div>
+
+					<div class="frame-minor frame-flex-vertical">
+						<div class="frame-content frame-flex-vertical">
+							<label class="input-radio">
+								<input type="radio" name="demo-radio-3" />
+								<span>Radio</span>
+							</label>
+							<label class="input-radio">
+								<input type="radio" name="demo-radio-3" />
+								<span>Radio</span>
+							</label>
+							<label class="input-radio">
+								<input type="radio" name="demo-radio-3" checked />
+								<span>Radio</span>
+							</label>
+							<label class="input-radio">
+								<input type="radio" name="demo-radio-4" disabled />
+								<span>Radio</span>
+							</label>
+							<label class="input-radio">
+								<input type="radio" name="demo-radio-4" disabled checked />
+								<span>Radio</span>
+							</label>
+						</div>
+					</div>
+
+					<div class="frame-minor frame-flex-vertical">
+						<div class="frame-content frame-flex-vertical">
+							<label class="input-switch">
+								<input type="checkbox" />
+								<span>Switch</span>
+							</label>
+							<label class="input-switch">
+								<input type="checkbox" />
+								<span>Switch</span>
+							</label>
+							<label class="input-switch">
+								<input type="checkbox" checked />
+								<span>Switch</span>
+							</label>
+							<label class="input-switch">
+								<input type="checkbox" disabled />
+								<span>Switch</span>
+							</label>
+							<label class="input-switch">
+								<input type="checkbox" disabled checked />
+								<span>Switch</span>
+							</label>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			</section>	
 
 			<!-- Form Elements -->
 			<section class="section">
@@ -1352,7 +1391,8 @@
 
 			<!-- Cards -->
 			<section class="section">
-				<h2 class="section-title">Cards</h2>
+				<h2 class="text-h3">Cards</h2>
+				<hr class="frame-minor">
 				<div class="component-grid">
 					<div class="card">
 						<h3 class="card-title">Card Title</h3>

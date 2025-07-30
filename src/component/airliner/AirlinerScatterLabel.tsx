@@ -2,16 +2,12 @@
 import { Text } from "@visx/text";
 import React from "react";
 
-// [IMPORT] CSS styling //
-import labelStyles from "./AirlinerScatterLabel.module.css";
-
 // [IMPORT] Types //
 import { AirlinerLabel } from "@/lib/data/airliner-types";
 
 interface AirlinerScatterLabelProps {
 	airlinerID: string;
 	airlinerLabel: AirlinerLabel;
-	plotFormat: any;
 	classNames?: string;
 	debug?: boolean;
 }
@@ -31,19 +27,12 @@ const AirlinerScatterLabel = React.forwardRef<SVGGElement, AirlinerScatterLabelP
 	({
 		airlinerID,
 		airlinerLabel,
-		plotFormat,
 		classNames = "",
 		debug = false
 	}, ref) => {
 
 		const labelVerticalAnchor = "middle";
 		const labelTextAnchor = "middle";
-
-		const interruptionWeight = 8;
-		const interruptionOpacity = debug ? 0 : 0.8;
-		const interruptionColor = "#dddedf";
-		const interruptionMiterLimit = 1.5;
-		const interruptionLinejoin = "round";
 
 		const dx = 0;
 		const dy = 0;
@@ -56,16 +45,9 @@ const AirlinerScatterLabel = React.forwardRef<SVGGElement, AirlinerScatterLabelP
 					y={airlinerLabel.labelCoordinates?.y || airlinerLabel.labelAnchor.y}
 					dx={dx}
 					dy={dy}
-					className={`${labelStyles.airlinerLabel} ${classNames}`}
 					verticalAnchor={labelVerticalAnchor}
 					textAnchor={labelTextAnchor}
-					fontSize={plotFormat.textSize}
-					fill="none"
-					stroke={interruptionColor}
-					strokeWidth={interruptionWeight}
-					strokeMiterlimit={interruptionMiterLimit}
-					strokeLinejoin={interruptionLinejoin}
-					opacity={interruptionOpacity}
+					className={"airlinerLabelInterrupt"}
 				>
 					{airlinerLabel.labelText}
 				</Text>
@@ -76,10 +58,9 @@ const AirlinerScatterLabel = React.forwardRef<SVGGElement, AirlinerScatterLabelP
 					y={airlinerLabel.labelCoordinates?.y || airlinerLabel.labelAnchor.y}
 					dx={dx}
 					dy={dy}
-					className={`${labelStyles.airlinerLabel} ${classNames}`}
 					verticalAnchor={labelVerticalAnchor}
 					textAnchor={labelTextAnchor}
-					fontSize={plotFormat.textSize}
+					className={"airlinerLabel"}
 				>
 					{airlinerLabel.labelText}
 				</Text>

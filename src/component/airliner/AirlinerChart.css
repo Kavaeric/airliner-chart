@@ -1,18 +1,7 @@
 /* AirlinerChart.module.css */
 
 .chartControls {
-	display: flex;
-	flex-direction: row;
 	justify-content: flex-end;
-	align-items: center;
-	border-bottom: var(--border-weight-100) solid var(--border-minor);
-}
-
-.chartControls .btn-group {
-	display: flex;
-	flex-direction: row;
-	border-left: var(--border-weight-100) solid var(--border-minor);
-	border-right: var(--border-weight-100) solid var(--border-minor);
 }
 
 /* ChartContainer Component
@@ -32,75 +21,52 @@
 	position: relative;
 	grid-template-areas:
 		"yBrush yAxis chartArea"
-		"empty1 empty2 xAxis"
-		"empty3 empty4 xBrush";
+		"empty1 empty1 xAxis"
+		"empty1 empty1 xBrush";
 
 	/* Explicit minmax values are needed to ensure the SVG chart can shrink
 	   because SVG sure is weird like that */
 	grid-template-rows:
 		minmax(0, auto)
 		minmax(0, var(--space-800))
-		minmax(0, var(--space-600));
+		minmax(0, var(--interactive-min-size));
 	grid-template-columns:
-		minmax(0, var(--space-600))
+		minmax(0, var(--interactive-min-size))
 		minmax(0, var(--space-800))
 		minmax(0, auto);
 	
 	width: 100%;
 	height: 100%;
 	min-height: 0; /* Allows flex child to shrink */
-	border-bottom: var(--border-weight-100) solid var(--border-minor);
-}
-
-.empty1,
-.empty2,
-.empty3,
-.empty4,
-.yAxis,
-.xAxis,
-.yAxisBrush,
-.xAxisBrush {
-	color-scheme: dark;
 }
 
 .empty1 {
-	grid-area: empty1 ;
-}
-
-.empty2 {
-	grid-area: empty2;
-}
-
-.empty3 {
-	grid-area: empty3;
-}
-
-.empty4 {
-	grid-area: empty4;
+	grid-area: empty1;
+	border-right: var(--border-weight-100) solid var(--border-minor);
+	border-top: var(--border-weight-100) solid var(--border-minor);
 }
 
 .chartArea {
 	position: relative; /* For proper layering */
+	background-color: var(--surface-major);
 	z-index: 1; /* Ensure chart appears above axis labels */
 	grid-area: chartArea;
 	width: 100%;
 	height: 100%;
 	min-height: 0; /* Critical: allows grid item to shrink */
 	overflow: hidden; /* Prevent content from expanding beyond bounds */
-	color-scheme: light;
-	background-color: var(--surface-minor);
 }
 
 /* Y-axis grid area */
 .yAxis {
 	grid-area: yAxis;
-	border-bottom: var(--border-weight-100) solid var(--border-minor);
+	border-right: var(--border-weight-100) solid var(--border-minor);
 }
 
 /* X-axis grid area */
 .xAxis {
 	grid-area: xAxis;
-	border-left: var(--border-weight-100) solid var(--border-minor);
+	border-top: var(--border-weight-100) solid var(--border-minor);
 }
 
 /* Chart Axes Styling (inlined from ChartAxes.module.css) */
@@ -161,12 +127,10 @@
 
 .xAxisBrush {
 	grid-area: xBrush;
-	border-left: var(--border-weight-100) solid var(--border-minor);
 }
 
 .yAxisBrush {
 	grid-area: yBrush;
-	border-bottom: var(--border-weight-100) solid var(--border-minor);
 }
 
 .xAxisBrush .airlinerBrushControl {
@@ -208,16 +172,12 @@
 /* ===== Airliner Brush Control Area Styling ===== */
 
 /* --- Brush Backgrounds --- */
-.xAxisBrush:hover .airlinerBrushBackground,
-.yAxisBrush:hover .airlinerBrushBackground {
-	fill: var(--highlight-hover-diminished);
-}
 
 .airlinerBrushControl .airlinerBrushBackground {
 	fill: var(--surface-minor) !important;
 }
 .airlinerBrushControl:hover .airlinerBrushBackground {
-	fill: var(--interactive-major) !important;
+	fill: var(--surface-diminished) !important;
 }
 
 /* --- Brush Borders --- */
@@ -274,4 +234,27 @@
 }
 .airlinerBrushControl:hover .airlinerBrushRangeKM {
 	stroke: var(--interactive-augmented-active);
+}
+
+
+/* ===== Label styling ===== */
+text.airlinerLabelInterrupt tspan,
+text.airlinerLabel tspan {
+	font-family: var(--font-family-display);
+	font-size: var(--text-size-400);
+	font-weight: var(--font-weight-regular);
+	letter-spacing: var(--text-tracking-800);
+}
+
+text.airlinerLabel tspan {
+	fill: var(--text-minor);
+}
+
+text.airlinerLabelInterrupt tspan {
+	fill: none;
+	stroke: var(--surface-major);
+	stroke-width: var(--space-100);
+	stroke-miterlimit: 1.5;
+	stroke-linejoin: round;
+	opacity: var(--opacity-50);
 }

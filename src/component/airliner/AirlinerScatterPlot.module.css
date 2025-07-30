@@ -1,34 +1,30 @@
 /* AirlinerScatterPlot.module.css */
 
 .gridLine line {
-	stroke: var(--border-minor);
+	stroke: var(--border-diminished);
 	stroke-width: var(--border-weight-100);
 	shape-rendering: geometricPrecision;
-	opacity: var(--opacity-50);
 }
 
 .gridIntersectionDot {
-	fill: var(--border-minor);
+	fill: var(--border-diminished);
 	shape-rendering: geometricPrecision;
 	pointer-events: none;
 }
-
-.pointMarkerConnectingLineBackground {
+.pointMarkerConnectingLineMinor {
 	stroke: var(--surface-diminished);
 	stroke-linecap: butt;
 	shape-rendering: geometricPrecision;
 	opacity: var(--opacity-50);
 }
 
-.pointMarkerConnectingLineMinor {
-	stroke: var(--border-minor);
-	stroke-linecap: butt;
-	shape-rendering: geometricPrecision;
-	opacity: var(--opacity-20);
-}
-
 .pointMarkerConnectingLineMajor {
 	stroke: var(--interactive-augmented);
 	stroke-linecap: butt;
 	shape-rendering: geometricPrecision;
+}
+
+.pointMarkerLeader {
+	stroke: var(--border-major);
+	stroke-width: 1;
 }

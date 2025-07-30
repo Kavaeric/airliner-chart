@@ -133,6 +133,7 @@ export default function AirlinerChart({ data }: AirlinerChartProps) {
 	// ChartScalesContext provides D3 scales for axes and plotting
 	// ChartDataContext provides the airliner data array
 	return (
+		<>
 		<ChartDataContext.Provider value={chartData}>
 			<ResponsiveChartViewport
 				data={chartData}
@@ -153,42 +154,44 @@ export default function AirlinerChart({ data }: AirlinerChartProps) {
 				constraints={viewportConstraints}
 				viewportRef={viewportRef}
 			>
-				<div className="chartControls">
-					<div className="btn-group">
-						<button className="btn-diminished btn-icon-only" onClick={() => viewportRef.current.view.move(0, 1000)}>
-							<span className="material-symbols-sharp">keyboard_double_arrow_up</span>
-						</button>
-						<button className="btn-diminished btn-icon-only" onClick={() => viewportRef.current.view.move(0, -1000)}>
-							<span className="material-symbols-sharp">keyboard_double_arrow_down</span>
-						</button>
-						<button className="btn-diminished btn-icon-only" onClick={() => viewportRef.current.view.move(-50, 0)}>
-							<span className="material-symbols-sharp">keyboard_double_arrow_left</span>
-						</button>
-						<button className="btn-diminished btn-icon-only" onClick={() => viewportRef.current.view.move(50, 0)}>
-							<span className="material-symbols-sharp">keyboard_double_arrow_right</span>
-						</button>
-					</div>
-					<div className="btn-group">
-						<button className="btn-diminished btn-icon-only" onClick={() => viewportRef.current.view.zoom(1.1)}>
-							<span className="material-symbols-sharp">zoom_in</span>
-						</button>
-						<button className="btn-diminished btn-icon-only" onClick={() => viewportRef.current.view.zoom(0.9)}>
-							<span className="material-symbols-sharp">zoom_out</span>
-						</button>
-					</div>
-					<div className="btn-group">
-						<button className="btn-diminished btn-icon-left" onClick={() => viewportRef.current.view.reset()}>
-							<span className="material-symbols-sharp">zoom_out_map</span>
-							Reset zoom
-						</button>
-					</div>
-					<div className="btn-group">
-						<button className="btn-diminished btn-icon-only" onClick={() => setDebugMode(!debugMode)}>
-							<span className="material-symbols-sharp">bug_report</span>
-							Debug mode
-						</button>
-					</div>
+				<div className="chartControls frame-flex-horizontal">
+					<hr className="frame-minor" />
+					<button className="btn-diminished btn-icon-only" onClick={() => viewportRef.current.view.move(0, 1000)}>
+						<span className="material-symbols-sharp">keyboard_double_arrow_up</span>
+					</button>
+					<button className="btn-diminished btn-icon-only" onClick={() => viewportRef.current.view.move(0, -1000)}>
+						<span className="material-symbols-sharp">keyboard_double_arrow_down</span>
+					</button>
+					<button className="btn-diminished btn-icon-only" onClick={() => viewportRef.current.view.move(-50, 0)}>
+						<span className="material-symbols-sharp">keyboard_double_arrow_left</span>
+					</button>
+					<button className="btn-diminished btn-icon-only" onClick={() => viewportRef.current.view.move(50, 0)}>
+						<span className="material-symbols-sharp">keyboard_double_arrow_right</span>
+					</button>
+					<hr className="frame-minor" />
+					<button className="btn-diminished btn-icon-only" onClick={() => viewportRef.current.view.zoom(1.1)}>
+						<span className="material-symbols-sharp">zoom_in</span>
+					</button>
+					<button className="btn-diminished btn-icon-only" onClick={() => viewportRef.current.view.zoom(0.9)}>
+						<span className="material-symbols-sharp">zoom_out</span>
+					</button>
+					<hr className="frame-minor" />
+					<button className="btn-diminished" onClick={() => viewportRef.current.view.reset()}>
+						<span className="material-symbols-sharp">zoom_out_map</span>
+						Reset zoom
+					</button>
+					<hr className="frame-minor" />
+					<label className="input-switch">
+						<input
+							type="checkbox"
+							checked={debugMode}
+							onChange={() => setDebugMode(!debugMode)}
+						/>
+						Debug
+					</label>
 				</div>
+				
+				<hr className="frame-minor" />
 				<div className="chartContainer">
 					{/* Chart area (top-right) */}
 					<ResponsiveSVG
@@ -255,5 +258,7 @@ export default function AirlinerChart({ data }: AirlinerChartProps) {
 				</div>
 			</ResponsiveChartViewport>
 		</ChartDataContext.Provider>
+		<hr className="frame-minor" style={{ margin: "0" }} />
+		</>
 	);
 }

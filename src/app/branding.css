@@ -57,6 +57,7 @@
 	--opacity-20: 0.2;
 	--opacity-10: 0.1;
 	--opacity-05: 0.05;
+	--opacity-02: 0.02;
 	--opacity-00: 0;
 
 	/* === Size primitives === */
@@ -109,6 +110,7 @@
 	--text-tracking-400: 0em;
 	--text-tracking-600: 0.02em;
 	--text-tracking-800: 0.04em;
+	--text-tracking-1200: 0.08em;
 
 	/* Font family primitives */
 	--font-family-sans: "HK Grotesk Pro", sans-serif;
@@ -125,6 +127,23 @@
 	--surface-minor: light-dark(var(--grey-900), var(--grey-100));
 	--surface-diminished: light-dark(var(--grey-800), var(--grey-200));
 
+	--surface-depth-augmented: light-dark(
+		rgba(var(--grey-1000-rgb), var(--opacity-40)),
+		rgba(var(--grey-1000-rgb), var(--opacity-05))
+	);
+	--surface-depth-major: light-dark(
+		rgba(var(--grey-1000-rgb), var(--opacity-20)),
+		rgba(var(--grey-1000-rgb), var(--opacity-02))
+	);
+	--surface-depth-minor: light-dark(
+		rgba(var(--grey-000-rgb), var(--opacity-02)),
+		rgba(var(--grey-000-rgb), var(--opacity-10))
+	);
+	--surface-depth-diminished: light-dark(
+		rgba(var(--grey-000-rgb), var(--opacity-05)),
+		rgba(var(--grey-000-rgb), var(--opacity-20))
+	);
+
 	--text-augmented: light-dark(var(--red-treble-500), var(--red-bass-600));
 	--text-major: light-dark(var(--grey-100), var(--grey-950));
 	--text-minor: light-dark(var(--grey-300), var(--grey-800));
@@ -135,7 +154,7 @@
 	--interactive-font-size: var(--text-size-400);
 	--interactive-text-transform: uppercase;
 	--interactive-text-tracking: var(--text-tracking-800);
-	--interactive-min-height: var(--size-48);
+	--interactive-min-size: var(--size-48);
 
 	--interactive-augmented: light-dark(
 		var(--red-treble-500),
@@ -205,7 +224,7 @@
 	);
 
 	--border-augmented: light-dark(var(--red-treble-500), var(--red-bass-600));
-	--border-major: light-dark(var(--grey-600), var(--grey-400));
+	--border-major: light-dark(var(--grey-600), var(--grey-500));
 	--border-minor: light-dark(var(--grey-700), var(--grey-300));
 	--border-diminished: light-dark(var(--grey-800), var(--grey-200));
 	--border-focus: light-dark(none, none);
@@ -294,13 +313,6 @@
 	--card-title-margin-bottom: var(--size-8);
 
 	--card-content-margin-bottom: var(--size-16);
-
-	/* Table tokens */
-	--table-cell-padding: var(--size-12);
-	--table-border-width: 1px;
-
-	--table-header-font-weight: var(--font-weight-semibold);
-	--table-header-background: var(--surface-sunken);
 
 	/* Modal tokens */
 	--modal-padding: var(--size-24);

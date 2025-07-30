@@ -1,8 +1,5 @@
 "use client";
 
-// [IMPORT] Context //
-import { useChartScales } from "@/context/ChartScalesContext";
-
 // [IMPORT] CSS styling //
 import plotStyles from "./AirlinerScatterPlot.module.css";
 
@@ -40,16 +37,6 @@ export default function AirlinerScatterLine({
 
 	return (
 		<g>
-			{/* Background line */}
-			<line
-				x1={airlinerMarkers.lines.x1}
-				x2={airlinerMarkers.lines.x3}
-				y1={y}
-				y2={y}
-				className={plotStyles.pointMarkerConnectingLineBackground}
-				strokeWidth={Math.max(plotFormat.markerLineMinorWidth, plotFormat.markerLineMajorWidth)}
-			/>
-
 			{/* Line connecting largest class value to largest limit value */}
 			{minorLineValid && (
 				<line

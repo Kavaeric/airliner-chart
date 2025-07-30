@@ -245,8 +245,7 @@ export default function AirlinerScatterPlot() {
 							height: label.labelDimensions.height 
 						}}
 						minLength={12}
-						strokeWidth={1}
-						opacity={0.5}
+						className={plotStyles.pointMarkerLeader}
 						debug={debugMode}
 					/>
 				);
@@ -264,7 +263,6 @@ export default function AirlinerScatterPlot() {
 								airlinerID={id}
 								airlinerLabel={label}
 								classNames={`ghost-label-${id}`}
-								plotFormat={plotFormat}
 								ref={handleLabelRef(id)}
 							/>
 						);
@@ -282,7 +280,6 @@ export default function AirlinerScatterPlot() {
 						key={airliner.airlinerID}
 						airlinerID={airliner.airlinerID}
 						airlinerLabel={label}
-						plotFormat={plotFormat}
 						classNames={`label-${airliner.airlinerID}`}
 						debug={debugMode}
 					/>

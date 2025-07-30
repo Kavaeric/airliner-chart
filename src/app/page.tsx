@@ -16,7 +16,7 @@ import { loadAirlinerData } from "@/lib/data/airliner-data-processor";
 import { AirlinerData } from "@/lib/data/airliner-types";
 
 // [IMPORT] CSS styling //
-import styles from "./page.module.css";
+import "./page.css";
 
 /**
  * Main Home Component - Airliner Data Visualization
@@ -40,6 +40,9 @@ export default function Home() {
 	
 	// Track any errors that occur during data loading
 	const [error, setError] = useState<string | null>(null);
+
+	// State for theme selection
+	const [theme, setTheme] = useState<"default" | "light" | "dark" | "system">("default");
 
 	// ===== DATA LOADING =====
 	
@@ -76,15 +79,15 @@ export default function Home() {
 	// Show loading state while data is being fetched
 	if (loading) {
 		return (
-			<div className={styles.mainContainer}>
-				<div className={styles.aboveCut}>
-					<div className={styles.headerContainer}>
+			<div className="mainContainer">
+				<div className="aboveCut">
+					<div className="headerContainer">
 						<h1>Airliner Chart</h1>
 					</div>
-					<div className={styles.descriptionContainer}>
+					<div className="descriptionContainer">
 						<p>Loading data...</p>
 					</div>
-					<div className={styles.chartContainer}>
+					<div className="chartContainer">
 						
 					</div>
 				</div>
@@ -95,13 +98,13 @@ export default function Home() {
 	// Show error state if data loading failed
 	if (error) {
 		return (
-			<div className={styles.mainContainer}>
-				<div className={styles.aboveCut}>
-					<div className={styles.headerContainer}>
+			<div className="mainContainer">
+				<div className="aboveCut">
+					<div className="headerContainer">
 						<h1>Airliner Chart</h1>
 						<p>Error: {error}</p>
 					</div>
-					<div className={styles.chartContainer}>
+					<div className="chartContainer">
 						<p>Error loading chart</p>
 					</div>
 				</div>
@@ -112,17 +115,20 @@ export default function Home() {
 	// ===== MAIN RENDER =====
 	// ChartDataContext.Provider makes airliner data available to all child components via context.
 	return (
-		<div className={styles.mainContainer}>
-			<div className={styles.aboveCut}>
-				{/* Header section with data info */}
-				<div className={styles.headerContainer}>
-					<h1 className={"text-h1"}>Airliner Chart</h1>
+		<div className="mainContainer">
+			<div className="aboveCut">
+				<div className="frame-flex-horizontal">
+					<div className="frame-content frame-flex-vertical headerTitle">
+						<h1 className="text-h1">Airliner Chart</h1>
+					</div>
+					<hr className="frame-minor" />
+					<div className="frame-content headerDescription">
+						<p><b>Work in progress.</b>
+						By <a href="https://www.shojiushiyama.net/" className="link-augmented">Shoji Ushiyama</a> / <a href="https://bsky.app/profile/kavaeric.net" className="link-augmented">Kavaeric</a>.</p>
+						<p>Probably only works on desktop right now.</p>
+					</div>
 				</div>
-
-				<div className={styles.descriptionContainer}>
-					<p><b>Work in progress.</b> By <a href="https://www.shojiushiyama.net/" className="link-augmented">Shoji Ushiyama</a> / <a href="https://bsky.app/profile/kavaeric.net" className="link-augmented">Kavaeric</a>. Probably only works on desktop right now.</p>
-					<p><a href="https://www.youtube.com/watch?v=WBpLrVCRS84">Cheers Elephant &mdash; Airliner</a></p>
-				</div>
+				<hr className="frame-major" />
 
 				{/* Chart component handles all the complex visualization logic */}
 				<DebugProvider initialDebugMode={false}>
@@ -130,9 +136,9 @@ export default function Home() {
 				</DebugProvider>
 			</div>
 
-			<div className={styles.belowCut}>
+			<div className="belowCut">
 
-				<table className={styles.dataTable}>
+				<table className="dataTable">
 					<thead>
 						<tr>
 							<th>Manufacturer</th>
