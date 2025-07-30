@@ -3,9 +3,6 @@
 // [IMPORT] React //
 import React, { useMemo, useRef, useCallback, useEffect } from "react";
 
-// [IMPORT] Third-party libraries //
-import { GridRows, GridColumns } from "@visx/grid";
-
 // [IMPORT] Internal components //
 import AirlinerScatterMarker from './AirlinerScatterMarker';
 import AirlinerScatterLine from './AirlinerScatterLine';
@@ -21,15 +18,14 @@ import { useDebugMode } from "@/context/DebugModeContext";
 import { useAirlinerViewModel } from "@/lib/data/use-airliner-view-model";
 import { useResponsiveSVG } from "@/context/ResponsiveSVG";
 import { useResponsiveChartViewport } from "@/context/ResponsiveChartViewport";
+import { useAirlinerSelection } from "@/context/AirlinerSelectionContext";
 
 // [IMPORT] Utilities //
 import type { AirlinerModel } from "@/lib/data/airliner-types";
 
 // [IMPORT] CSS styling //
-import plotStyles from "./AirlinerScatterPlot.module.css";
-import labelStyles from "./AirlinerScatterLabel.module.css";
-import responsiveStyles from "@/component/ResponsiveSVG.module.css";
 import { RectCentre } from "../shape/RectCentre";
+import MarkerBevelLine from "../shape/MarkerBevelLine";
 
 /**
  * AirlinerScatterPlot
@@ -44,6 +40,7 @@ export default function AirlinerScatterPlot() {
 	const { dataScale, viewportScale, view, drag } = useResponsiveChartViewport();
 	const data = useChartData() as AirlinerModel[];
 	const { debugMode } = useDebugMode();
+	const { clearSelection, hoveredAirlinerID, selectedAirlinerID } = useAirlinerSelection();
 
 	// Hide/consolidate labels in clusters larger than this
 	const labelClusterThreshold = 3;
@@ -57,6 +54,66 @@ export default function AirlinerScatterPlot() {
 		plotFormat,				// Formatting options for the plot
 		airlinerLabelClusters,	// Cluster detection results
 	} = useAirlinerViewModel(data, viewportScale.x, viewportScale.y, width, height, debugMode);
+
+	// === Grid Line Calculation ===
+	// Calculate grid lines for hovered/selected airliner
+	const activeAirlinerAxisLines = useMemo(() => {
+		const activeAirlinerID = selectedAirlinerID || hoveredAirlinerID;
+		if (!activeAirlinerID) return null;
+
+		const airliner = airlinerEntries.get(activeAirlinerID);
+		if (!airliner?.markerSeries) return null;
+
+		// Determine if this is hover or selection state
+		const isSelected = selectedAirlinerID === activeAirlinerID;
+		const isHovered = hoveredAirlinerID === activeAirlinerID && !isSelected;
+
+		const lines: Array<{
+			x1: number;
+			y1: number;
+			x2: number;
+			y2: number;
+			type: 'vertical' | 'horizontal';
+			state: 'hovered' | 'selected';
+		}> = [];
+
+		// Get all passenger class markers (pax3Class, pax2Class, pax1Class)
+		const paxClassMarkers = airliner.markerSeries.markers.filter((marker: import("@/lib/data/airliner-types").AirlinerMarker) =>
+			marker.markerClass === 'pax3Class' ||
+			marker.markerClass === 'pax2Class' ||
+			marker.markerClass === 'pax1Class'
+		);
+
+		// Draw vertical lines from each marker to X axis (bottom chart edge)
+		paxClassMarkers.forEach((marker: import("@/lib/data/airliner-types").AirlinerMarker) => {
+			lines.push({
+				x1: marker.markerCoordinates.x,
+				y1: marker.markerCoordinates.y,
+				x2: marker.markerCoordinates.x,
+				y2: height, // Bottom chart edge
+				type: 'vertical',
+				state: isSelected ? 'selected' : 'hovered'
+			});
+		});
+
+		// Draw horizontal line from leftmost marker to Y axis (left chart edge)
+		if (paxClassMarkers.length > 0) {
+			const leftmostMarker = paxClassMarkers.reduce((leftmost: import("@/lib/data/airliner-types").AirlinerMarker, current: import("@/lib/data/airliner-types").AirlinerMarker) =>
+				current.markerCoordinates.x < leftmost.markerCoordinates.x ? current : leftmost
+			);
+
+			lines.push({
+				x1: 0, // Left chart edge
+				y1: leftmostMarker.markerCoordinates.y,
+				x2: leftmostMarker.markerCoordinates.x,
+				y2: leftmostMarker.markerCoordinates.y,
+				type: 'horizontal',
+				state: isSelected ? 'selected' : 'hovered'
+			});
+		}
+
+		return lines;
+	}, [hoveredAirlinerID, selectedAirlinerID, airlinerEntries, height]);
 
 	// === Batch label measurement logic ===
 	// ghostLabelIDs is an array of airliner IDs that have not yet been measured
@@ -103,7 +160,7 @@ export default function AirlinerScatterPlot() {
 	// If chart has no size or no data, show loading state.
 	if (width === 0 || height === 0 || data.length === 0) {
 		return (
-			<div className={plotStyles.chartArea}>
+			<div className="chartArea">
 				<p>Loading chart...</p>
 			</div>
 		);
@@ -120,10 +177,26 @@ export default function AirlinerScatterPlot() {
 				height={height}
 				numTicks={10}
 				radius={4}
-				className={plotStyles.gridIntersectionDot}
+				className="gridIntersectionDot"
 			/>
+
+			{/* Airliner grid lines - drawn from markers to chart edges */}
+			{activeAirlinerAxisLines && (
+				<g className="airlinerGridLines">
+					{activeAirlinerAxisLines.map((line, index) => (
+						<line
+							key={`grid-line-${index}`}
+							x1={line.x1}
+							y1={line.y1}
+							x2={line.x2}
+							y2={line.y2}
+							className={`airlinerGridLine airlinerGridLine${line.type.charAt(0).toUpperCase() + line.type.slice(1)} airlinerGridLine${line.state.charAt(0).toUpperCase() + line.state.slice(1)}`}
+						/>
+					))}
+				</g>
+			)}
 			
-			{/* Chart area draggable area */}
+			{/* Chart area draggable area with selection clearing */}
 			<rect
 				x={0}
 				y={0}
@@ -141,7 +214,21 @@ export default function AirlinerScatterPlot() {
 					if (drag.isDragging) drag.end();
 				}}
 				onWheel={drag.wheelZoom('both')}
-				style={{ cursor: 'grab', touchAction: 'none'  }}
+				onClick={(event) => {
+					// Clear selection when clicking on empty chart area
+					// Only if not clicking on an interactive element
+					if (event.target === event.currentTarget) {
+						clearSelection();
+					}
+				}}
+				onKeyDown={(event) => {
+					// Clear selection on Escape key
+					if (event.key === 'Escape') {
+						clearSelection();
+					}
+				}}
+				style={{ cursor: 'grab', touchAction: 'none' }}
+				tabIndex={0} // Make focusable for keyboard events
 			/>
 
 			{/* Chart bands */}
@@ -156,6 +243,7 @@ export default function AirlinerScatterPlot() {
 						fill="none"
 						stroke="rgba(17, 158, 106, 0.2)"
 						strokeWidth={1}
+						pointerEvents="none"
 					/>
 					<text
 						x={band.left + 4}
@@ -182,6 +270,7 @@ export default function AirlinerScatterPlot() {
 							fill="rgba(214, 40, 135, 0.2)"
 							stroke="rgba(214, 40, 135, 0.4)"
 							strokeWidth={1}
+							pointerEvents="none"
 						/>
 					))}
 				</g>
@@ -204,6 +293,7 @@ export default function AirlinerScatterPlot() {
 				airliner.markerSeries ? (
 					<AirlinerScatterMarker
 						key={airliner.airlinerID}
+						airlinerID={airliner.airlinerID}
 						airlinerMarkers={airliner.markerSeries}
 						markerSize={plotFormat.markerSize}
 					/>
@@ -245,7 +335,7 @@ export default function AirlinerScatterPlot() {
 							height: label.labelDimensions.height 
 						}}
 						minLength={12}
-						className={plotStyles.pointMarkerLeader}
+						className="markerLeader"
 						debug={debugMode}
 					/>
 				);

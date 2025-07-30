@@ -74,43 +74,6 @@ export default function Home() {
 		loadData();
 	}, []); // Empty dependency array means this effect runs only once on mount
 
-	// ===== RENDER STATES =====
-	
-	// Show loading state while data is being fetched
-	if (loading) {
-		return (
-			<div className="mainContainer">
-				<div className="aboveCut">
-					<div className="headerContainer">
-						<h1>Airliner Chart</h1>
-					</div>
-					<div className="descriptionContainer">
-						<p>Loading data...</p>
-					</div>
-					<div className="chartContainer">
-						
-					</div>
-				</div>
-			</div>
-		);
-	}
-
-	// Show error state if data loading failed
-	if (error) {
-		return (
-			<div className="mainContainer">
-				<div className="aboveCut">
-					<div className="headerContainer">
-						<h1>Airliner Chart</h1>
-						<p>Error: {error}</p>
-					</div>
-					<div className="chartContainer">
-						<p>Error loading chart</p>
-					</div>
-				</div>
-			</div>
-		);
-	}
 
 	// ===== MAIN RENDER =====
 	// ChartDataContext.Provider makes airliner data available to all child components via context.
@@ -123,16 +86,26 @@ export default function Home() {
 					</div>
 					<hr className="frame-minor" />
 					<div className="frame-content headerDescription">
-						<p><b>Work in progress.</b>
-						By <a href="https://www.shojiushiyama.net/" className="link-augmented">Shoji Ushiyama</a> / <a href="https://bsky.app/profile/kavaeric.net" className="link-augmented">Kavaeric</a>.</p>
-						<p>Probably only works on desktop right now.</p>
+						{error ? (
+							<p>Error: {error}</p>
+						) : (
+							<>
+								<p><b>Work in progress. </b>
+								By <a href="https://www.shojiushiyama.net/" className="link-augmented">Shoji Ushiyama</a> / <a href="https://bsky.app/profile/kavaeric.net" className="link-augmented">Kavaeric</a>.</p>
+								<p>Probably only works on desktop right now.</p>
+							</>
+						)}
 					</div>
 				</div>
 				<hr className="frame-major" />
 
 				{/* Chart component handles all the complex visualization logic */}
 				<DebugProvider initialDebugMode={false}>
-					<AirlinerChart data={data} />
+					{loading ? (
+						<p>Loading chart...</p>
+					) : (
+						<AirlinerChart data={data} />
+					)}
 				</DebugProvider>
 			</div>
 

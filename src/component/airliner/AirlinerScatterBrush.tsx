@@ -5,6 +5,7 @@ import React from "react";
 import { useChartData } from "@/component/airliner/AirlinerChart";
 import { useResponsiveChartViewport } from "@/context/ResponsiveChartViewport";
 import { useResponsiveSVG } from "@/context/ResponsiveSVG";
+import { useAirlinerSelection } from "@/context/AirlinerSelectionContext";
 
 // [IMPORT] Types/interfaces //
 import { plotAirlinerMarkerSeries } from "@/lib/data/plot-airliner-markers";
@@ -12,6 +13,7 @@ import { RectCentre } from "@/component/shape/RectCentre";
 
 // [IMPORT] CSS styling //
 import brushStyles from "@/component/chart/ChartBrush.module.css";
+import MarkerBevelLine from "../shape/MarkerBevelLine";
 
 /**
  * AirlinerScatterBrush Component
@@ -30,18 +32,24 @@ export default function AirlinerScatterBrush({ className, axisMode = "x" }: Airl
 	const { dataScale, viewportScale } = useResponsiveChartViewport();
 	const { width, height } = useResponsiveSVG();
 	const data = useChartData();
+	const { selectedAirlinerID } = useAirlinerSelection();
 
 	// Scatter plot logic
 	const markerSizeMajor = 4;
 	const markerSizeMinor = 4;
 
 	// Memoised data processing - direct range calculation without overlap detection
-	const { paxClassRanges, paxLimitCoordinates } = React.useMemo(() => {
+	const { paxClassRanges, paxLimitCoordinates, selectedAirlinerRange } = React.useMemo((): {
+		paxClassRanges: Array<{ x1: number; x2: number }>;
+		paxLimitCoordinates: number[];
+		selectedAirlinerRange: { x1: number; x2: number } | null;
+	} => {
 
-		if (axisMode !== "x") return { paxClassRanges: [], paxLimitCoordinates: [] };
+		if (axisMode !== "x") return { paxClassRanges: [], paxLimitCoordinates: [], selectedAirlinerRange: null };
 
 		const paxClassRanges: Array<{ x1: number; x2: number }> = [];
 		const paxLimitCoordinates: number[] = [];
+		let selectedAirlinerRange: { x1: number; x2: number } | null = null;
 
 		data.forEach(airliner => {
 			const markerSeries = plotAirlinerMarkerSeries(
@@ -67,6 +75,11 @@ export default function AirlinerScatterBrush({ className, axisMode = "x" }: Airl
 
 				// Add range immediately (simplified approach)
 				paxClassRanges.push({ x1, x2 });
+
+				// Check if this is the selected airliner
+				if (airliner.airlinerID === selectedAirlinerID) {
+					selectedAirlinerRange = { x1, x2 };
+				}
 			}
 
 			// Extract pax limit markers (paxLimit, paxExit)
@@ -80,15 +93,16 @@ export default function AirlinerScatterBrush({ className, axisMode = "x" }: Airl
 			});
 		});
 
-		return { paxClassRanges, paxLimitCoordinates };
-	}, [data, dataScale.x, axisMode, markerSizeMajor]);
+		return { paxClassRanges, paxLimitCoordinates, selectedAirlinerRange };
+	}, [data, dataScale.x, axisMode, markerSizeMajor, selectedAirlinerID]);
 
 	// For y-axis: rangeKM is the only data we need to show
-	const { rangeCoordinates } = React.useMemo(() => {
+	const { rangeCoordinates, selectedAirlinerY } = React.useMemo(() => {
 
-		if (axisMode !== "y") return { rangeCoordinates: [] };
+		if (axisMode !== "y") return { rangeCoordinates: [], selectedAirlinerY: null };
 		
 		const rangeCoordinates: number[] = [];
+		let selectedAirlinerY: number | null = null;
 
 		data.forEach(airliner => {
 			const markerSeries = plotAirlinerMarkerSeries(
@@ -111,11 +125,16 @@ export default function AirlinerScatterBrush({ className, axisMode = "x" }: Airl
 
 			if (airlinerMarker) {
 				rangeCoordinates.push(airlinerMarker.markerCoordinates.y);
+				
+				// Check if this is the selected airliner
+				if (airliner.airlinerID === selectedAirlinerID) {
+					selectedAirlinerY = airlinerMarker.markerCoordinates.y;
+				}
 			}
 		});
 
-		return { rangeCoordinates };
-	}, [data, dataScale.y, markerSizeMajor]);
+		return { rangeCoordinates, selectedAirlinerY };
+	}, [data, dataScale.y, markerSizeMajor, selectedAirlinerID]);
 
 	return (
 		<g className={className}>
@@ -173,6 +192,18 @@ export default function AirlinerScatterBrush({ className, axisMode = "x" }: Airl
 				/>
 			))}
 
+			{/* Selected airliner highlight - white box showing extents of class passenger capacity */}
+			{axisMode === "x" && selectedAirlinerRange && (
+				<MarkerBevelLine
+					x1={selectedAirlinerRange.x1}
+					y1={3 * height / 4}
+					x2={selectedAirlinerRange.x2}
+					y2={3 * height / 4}
+					weight={height / 6}
+					className="selectedAirlinerXHighlight"
+				/>
+			)}
+
 			{axisMode === "y" && rangeCoordinates.map((y, index) => (
 				<line
 					key={`range-${index}`}
@@ -183,6 +214,17 @@ export default function AirlinerScatterBrush({ className, axisMode = "x" }: Airl
 					className="airlinerBrushRangeKM"
 				/>
 			))}
+
+			{/* Selected airliner highlight for Y-axis - white line showing range */}
+			{axisMode === "y" && selectedAirlinerY !== null && (
+				<line
+					x1={0}
+					y1={selectedAirlinerY}
+					x2={width / 2}
+					y2={selectedAirlinerY}
+					className="selectedAirlinerYHighlight"
+				/>
+			)}
 		</g>
 	);
 } 

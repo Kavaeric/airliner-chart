@@ -141,7 +141,7 @@
 	cursor: ns-resize;
 }
 
-/* AirlinerScatterBrush Component Styling */
+/* ===== Airliner Brush Control Area Styling ===== */
 /* Background styling for brush areas */
 .airlinerBrushBackground {
 	transition: fill 0.1s linear;
@@ -151,25 +151,22 @@
 
 /* Limit line styling for passenger capacity limits */
 .airlinerBrushLimitLine {
-	stroke: var(--text-minor);
+	stroke: var(--interactive-diminished);
 	stroke-width: 1;
 	opacity: 1;
 }
 
 /* Passenger class range styling */
 .airlinerBrushPaxClassRange {
-	fill: var(--text-minor);
+	fill: var(--interactive-diminished);
 	opacity: 1;
 }
 
 .airlinerBrushRangeKM {
-	stroke: var(--text-minor);
+	stroke: var(--interactive-diminished);
 	stroke-width: 1;
 	opacity: 1;
 }
-
-
-/* ===== Airliner Brush Control Area Styling ===== */
 
 /* --- Brush Backgrounds --- */
 
@@ -201,6 +198,29 @@
 	width: var(--space-100);
 	transform: translateX(var(--space-negative-100));
 }
+
+/**
+ * Fade-in animation for selected airliner highlight on X axis.
+ * Used for visual emphasis when selection changes.
+ */
+ @keyframes airliner-fade-in {
+	0% {
+		opacity: 0;
+	}
+	100% {
+		opacity: var(--opacity-100);
+	}
+}
+
+.xAxisBrush .selectedAirlinerXHighlight {
+	fill: var(--interactive-minor);
+	animation: flash-twice 0.5s ease-in-out;
+}
+
+.yAxisBrush .selectedAirlinerYHighlight {
+	animation: flash-twice 0.5s ease-in-out;
+}
+
 .airlinerBrushControl .brushBorder {
 	fill: var(--interactive-augmented);
 	opacity: var(--opacity-100);
@@ -226,7 +246,12 @@
 	fill: var(--interactive-augmented-active);
 }
 
-/* --- Range KM Line --- */
+.airlinerBrushControl .selectedAirlinerXHighlight {
+	fill: var(--interactive-major);
+	opacity: var(--opacity-100);
+}
+
+/* --- Range Line --- */
 .airlinerBrushControl .airlinerBrushRangeKM {
 	stroke: var(--interactive-augmented);
 	stroke-width: var(--border-weight-100);
@@ -236,21 +261,95 @@
 	stroke: var(--interactive-augmented-active);
 }
 
+.airlinerBrushControl .selectedAirlinerYHighlight {
+	stroke: var(--interactive-major);
+	stroke-width: 2;
+	opacity: var(--opacity-100);
+}
+
+/* ===== AirlinerScatterPlot Component Styling ===== */
+
+/* Grid styling */
+.gridLine line {
+	stroke: var(--border-diminished);
+	stroke-width: var(--border-weight-100);
+	shape-rendering: geometricPrecision;
+}
+
+.gridIntersectionDot {
+	fill: var(--border-diminished);
+	shape-rendering: geometricPrecision;
+	pointer-events: none;
+}
+
+/* Connecting line styling */
+.markerConnectingLineMinor {
+	stroke: var(--surface-diminished);
+	stroke-linecap: butt;
+	shape-rendering: geometricPrecision;
+	opacity: var(--opacity-50);
+}
+
+.markerConnectingLineMajor {
+	fill: var(--interactive-augmented);
+	shape-rendering: geometricPrecision;
+	stroke-width: 1;
+	stroke: rgba(0, 0, 0, 0.2);
+	transition: all 0.1s ease-in-out;
+	cursor: pointer;
+}
+
+.markerLeader {
+	stroke: var(--border-major);
+	stroke-width: 1;
+}
+
+/* ===== AirlinerScatterMarker Component Styling ===== */
+
+/* Diamond marker style */
+.markerDiamond {
+	fill: var(--interactive-augmented);
+	shape-rendering: geometricPrecision;
+	opacity: 1;
+	transition: all 0.1s ease-in-out;
+	pointer-events: none;
+}
+
+/* Short line used as a marker */
+.markerLine {
+	stroke: var(--border-minor);
+	stroke-linecap: butt;
+	shape-rendering: geometricPrecision;
+	opacity: var(--opacity-100);
+	stroke-width: var(--border-weight-200);
+}
+
+.markerLine.hoveredAirliner {
+	stroke: var(--interactive-diminished);
+}
+
+.markerLine.selectedAirliner {
+	stroke: var(--interactive-minor);
+}
+
+/* ===== AirlinerScatterLabel Component Styling ===== */
 
 /* ===== Label styling ===== */
-text.airlinerLabelInterrupt tspan,
-text.airlinerLabel tspan {
+.airlinerLabelInterrupt ,
+.airlinerLabel {
 	font-family: var(--font-family-display);
 	font-size: var(--text-size-400);
 	font-weight: var(--font-weight-regular);
 	letter-spacing: var(--text-tracking-800);
+	cursor: pointer;
+	transition: all 0.1s ease-in-out;
 }
 
-text.airlinerLabel tspan {
+.airlinerLabel {
 	fill: var(--text-minor);
 }
 
-text.airlinerLabelInterrupt tspan {
+.airlinerLabelInterrupt {
 	fill: none;
 	stroke: var(--surface-major);
 	stroke-width: var(--space-100);
@@ -258,3 +357,98 @@ text.airlinerLabelInterrupt tspan {
 	stroke-linejoin: round;
 	opacity: var(--opacity-50);
 }
+
+.airlinerLabel.hoveredAirliner {
+	fill: var(--text-major);
+}
+
+
+/* ===== Interactive State ===== */
+
+.markerConnectingLineMajor.hoveredAirliner {
+	fill: var(--interactive-augmented-hover);
+}
+
+.markerConnectingLineMajor.selectedAirliner {
+	fill: var(--interactive-major);
+}
+
+.markerDiamond.hoveredAirliner {
+	fill: var(--interactive-major);
+	stroke: var(--interactive-augmented-hover);
+}
+
+.markerDiamond.selectedAirliner {
+	fill: var(--surface-major);
+	stroke: var(--interactive-major);
+	stroke-width: 1;
+}
+
+
+/* ===== Active Airliner Grid Lines ===== */
+
+.airlinerGridLine {
+	stroke-width: var(--border-weight-100);
+	pointer-events: none;
+}
+  
+  /* Type-specific styles */
+  .airlinerGridLineVertical {
+	/* Vertical line specific styles */
+  }
+  
+  .airlinerGridLineHorizontal {
+	/* Horizontal line specific styles */
+  }
+  
+  .airlinerGridLineHovered {
+	stroke: var(--highlight-hover-minor);
+  }
+  
+  .airlinerGridLineSelected {
+	stroke: var(--highlight-active-minor);
+  }
+
+
+/* ===== Active Airliner Y-Axis Styling ===== */
+
+.activeAirlinerYAxisLine {
+	transition: all 0.1s ease-in-out;
+	stroke: var(--border-minor);
+	stroke-width: var(--border-weight-100);
+}
+
+.activeAirlinerYAxisTextbox {
+	transition: opacity 0.1s linear;
+	fill: var(--surface-minor);
+	stroke-width: var(--border-weight-100);
+	stroke: var(--border-major);
+	opacity: 0;
+}
+
+.activeAirlinerYAxisTextbox.selectedAirliner {
+	opacity: 1;
+}
+
+.activeAirlinerYAxisLine.hoveredAirliner {
+	stroke: var(--interactive-minor);
+}
+
+.activeAirlinerYAxisText {
+	transition: opacity 0.1s linear;
+	fill: var(--text-major);
+	opacity: 0;
+
+	font-family: var(--font-family-display);
+	font-size: var(--text-size-400);
+	font-weight: var(--font-weight-medium);
+	letter-spacing: var(--text-tracking-800);
+	text-transform: uppercase;
+	transform: translateX(var(--space-negative-050));
+}
+
+.activeAirlinerYAxisText.selectedAirliner {
+	opacity: 1;
+}
+
+

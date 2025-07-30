@@ -747,10 +747,67 @@ hr {
 
 
 /* ===== Table styles ===== */
+
 table {
 	border-collapse: collapse;
 }
 
-thead {
-	background-color: var(--background-augmented);
+thead tr th {
+	background-color: var(--surface-depth-augmented);
+	border-top: var(--border-weight-100) solid var(--border-minor);
+	border-bottom: var(--border-weight-100) solid var(--border-minor);
+	padding: var(--space-150) var(--space-200);
+
+	font-family: var(--font-family-display);
+	font-size: var(--text-size-350);
+	line-height: var(--text-leading-200);
+	font-weight: var(--font-weight-regular);
+	letter-spacing: var(--text-tracking-800);
+	text-transform: uppercase;
+	color: var(--text-minor);
+
+	@media (prefers-color-scheme: light) {
+		font-weight: var(--font-weight-medium);
+	}
+}
+
+table tbody td {
+	padding: var(--space-100) var(--space-200);
+}
+
+table tbody tr {
+	border-top: var(--border-weight-100) solid var(--border-diminished);
+	border-bottom: var(--border-weight-100) solid var(--border-diminished);
+	transition: all 0.1s ease-in-out;
+}
+
+table tbody tr:hover,
+table tbody tr:focus-within {
+	background-color: var(--surface-depth-major);
+}
+
+/* ===== Animation styles ===== */
+@keyframes flash-twice {
+	0% {
+		opacity: 1;
+	}
+	20% {
+		opacity: 0.5;
+	}
+	30% {
+		opacity: 1;
+	}
+	50% {
+		opacity: 0.5;
+	}
+	60% {
+		opacity: 1;
+	}
+	100% {
+		opacity: 1;
+	}
+}
+
+.flash-twice {
+	animation: flash-twice 0.7s cubic-bezier(0.4, 0, 0.2, 1) 1;
 }

@@ -69,6 +69,7 @@
 	--size-8: 8px;
 	--size-10: 10px;
 	--size-12: 12px;
+	--size-14: 14px;
 	--size-16: 16px;
 	--size-20: 20px;
 	--size-24: 24px;
@@ -238,6 +239,7 @@
 	--text-size-100: var(--size-8);
 	--text-size-200: var(--size-10);
 	--text-size-300: var(--size-12);
+	--text-size-350: var(--size-14);
 	--text-size-400: var(--size-16);
 	--text-size-500: var(--size-20);
 	--text-size-600: var(--size-24);

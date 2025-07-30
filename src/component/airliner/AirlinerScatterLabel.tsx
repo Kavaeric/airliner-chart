@@ -5,6 +5,12 @@ import React from "react";
 // [IMPORT] Types //
 import { AirlinerLabel } from "@/lib/data/airliner-types";
 
+// [IMPORT] Context hooks //
+import { useAirlinerSelection } from "@/context/AirlinerSelectionContext";
+
+// [IMPORT] CSS styling //
+// Styles moved to AirlinerChart.css
+
 interface AirlinerScatterLabelProps {
 	airlinerID: string;
 	airlinerLabel: AirlinerLabel;
@@ -31,6 +37,37 @@ const AirlinerScatterLabel = React.forwardRef<SVGGElement, AirlinerScatterLabelP
 		debug = false
 	}, ref) => {
 
+		// === Selection State Management ===
+		// Access airliner selection context for hover and selection states
+		const { 
+			selectedAirlinerID, 
+			hoveredAirlinerID, 
+			setSelectedAirliner, 
+			setHoveredAirliner 
+		} = useAirlinerSelection();
+
+		// === Interaction State Calculation ===
+		// Determine if this airliner is currently hovered or selected
+		const isHovered = hoveredAirlinerID === airlinerID;
+		const isSelected = selectedAirlinerID === airlinerID;
+
+		// === Event Handlers ===
+		// Handle mouse enter for hover state
+		const handleMouseEnter = () => {
+			setHoveredAirliner(airlinerID);
+		};
+
+		// Handle mouse leave to clear hover state
+		const handleMouseLeave = () => {
+			setHoveredAirliner(null);
+		};
+
+		// Handle click for selection state
+		const handleClick = () => {
+			// Toggle selection: if already selected, deselect; otherwise select
+			setSelectedAirliner(isSelected ? null : airlinerID);
+		};
+
 		const labelVerticalAnchor = "middle";
 		const labelTextAnchor = "middle";
 
@@ -38,7 +75,13 @@ const AirlinerScatterLabel = React.forwardRef<SVGGElement, AirlinerScatterLabelP
 		const dy = 0;
 
 		return (
-			<g ref={ref}>
+			<g 
+				ref={ref}
+				onMouseEnter={handleMouseEnter}
+				onMouseLeave={handleMouseLeave}
+				onClick={handleClick}
+				style={{ cursor: 'pointer' }}
+			>
 				{/* This is the only way I can think of to have an outline that's on the outside */}
 				<Text
 					x={airlinerLabel.labelCoordinates?.x || airlinerLabel.labelAnchor.x}
@@ -47,7 +90,9 @@ const AirlinerScatterLabel = React.forwardRef<SVGGElement, AirlinerScatterLabelP
 					dy={dy}
 					verticalAnchor={labelVerticalAnchor}
 					textAnchor={labelTextAnchor}
-					className={"airlinerLabelInterrupt"}
+					className={`airlinerLabelInterrupt ${
+						isSelected ? 'selectedAirliner' : ''
+					} ${isHovered ? 'hoveredAirliner' : ''}`}
 				>
 					{airlinerLabel.labelText}
 				</Text>
@@ -60,7 +105,9 @@ const AirlinerScatterLabel = React.forwardRef<SVGGElement, AirlinerScatterLabelP
 					dy={dy}
 					verticalAnchor={labelVerticalAnchor}
 					textAnchor={labelTextAnchor}
-					className={"airlinerLabel"}
+					className={`airlinerLabel ${
+						isSelected ? 'selectedAirliner' : ''
+					} ${isHovered ? 'hoveredAirliner' : ''}`}
 				>
 					{airlinerLabel.labelText}
 				</Text>
