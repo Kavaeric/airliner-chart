@@ -92,7 +92,7 @@ export default function Home() {
 							<>
 								<p><b>Work in progress. </b>
 								By <a href="https://www.shojiushiyama.net/" className="link-augmented">Shoji Ushiyama</a> / <a href="https://bsky.app/profile/kavaeric.net" className="link-augmented">Kavaeric</a>.</p>
-								<p>Probably only works on desktop right now.</p>
+								<p>Mobile support coming soon?</p>
 							</>
 						)}
 					</div>
