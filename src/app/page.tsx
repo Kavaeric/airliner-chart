@@ -142,6 +142,9 @@ export default function Home() {
 					</tbody>
 				</table>
 			</div>
+			<div className="frame-content">
+				<p><a href="/branding-demo.html" className="link-augmented">Secret link to DS demo</a></p>
+			</div>
 		</div>
 	);
 }
