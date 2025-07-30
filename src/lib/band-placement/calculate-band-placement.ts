@@ -811,6 +811,10 @@ export function calculateBandPlacement(config: BandPlacementConfig): {
 	let pass = 0;
 	let indicesToTry: number[][] = [[]];
 
+	// Pre-initialise the indices to try for this and the next pass
+	indicesToTry[pass] = [];
+	indicesToTry[pass + 1] = [];
+
 	// --- 1. Cluster detection (for future complex placement) ---
 	const clusteredIndices: number[] = [];
 	const clusteredIds: string[] = [];
@@ -892,16 +896,17 @@ export function calculateBandPlacement(config: BandPlacementConfig): {
 			}
 		} else {
 			// If not placed, add to next pass
-			if (!indicesToTry[pass + 1]) indicesToTry[pass + 1] = [];
 			indicesToTry[pass + 1].push(idx);
 		}
 	}
 
 	// Increment pass count
 	pass++;
+	// Pre-initialise the indices to try for the next pass
+	indicesToTry[pass + 1] = [];
 
 	// If there are no candidate indices for this pass, return current placements and logs
-	if (indicesToTry[pass].length === 0) {
+	if (!indicesToTry[pass] || indicesToTry[pass].length === 0) {
 		return {
 			placements,
 			failed: new Map(placementObjects.map(obj => [obj.id, obj])),
@@ -968,17 +973,20 @@ export function calculateBandPlacement(config: BandPlacementConfig): {
 			}
 		} else {
 			// If not placed, add to next pass
-			if (!indicesToTry[pass + 1]) indicesToTry[pass + 1] = [];
 			indicesToTry[pass + 1].push(idx);
 		}
 	}
 
 	// Increment pass count
 	pass++;
+	// Pre-initialise the indices to try for the next pass
+	indicesToTry[pass + 1] = [];
 
 	// --- Compile failed objects from remaining unplaced candidates ---
 	// Use the remaining indices to try for this pass to compile the failed objects
-	const failed: Map<string, PlacementObject> = new Map(indicesToTry[pass].map(idx => [placementObjects[idx].id, placementObjects[idx]]));
+	// Safety check: ensure indicesToTry[pass] exists before accessing it
+	const currentPassIndices = indicesToTry[pass] || [];
+	const failed: Map<string, PlacementObject> = new Map(currentPassIndices.map(idx => [placementObjects[idx].id, placementObjects[idx]]));
 
 	// console.log("placements", placements);
 	// console.log("failed", failed);

@@ -1,6 +1,10 @@
 /* AirlinerChart.module.css */
 
-/* ChartContainer Component (inlined from ChartContainer.module.css)
+.chartControls {
+	justify-content: flex-end;
+}
+
+/* ChartContainer Component
  * 
  * A container for the chart, which handles the layout of the chart and its components.
  * 3x3 grid layout for chart components:
@@ -17,53 +21,34 @@
 	position: relative;
 	grid-template-areas:
 		"yBrush yAxis chartArea"
-		"empty1 empty2 xAxis"
-		"empty3 empty4 xBrush";
+		"empty1 empty1 xAxis"
+		"empty1 empty1 xBrush";
 
 	/* Explicit minmax values are needed to ensure the SVG chart can shrink
 	   because SVG sure is weird like that */
 	grid-template-rows:
 		minmax(0, auto)
-		minmax(0, var(--space-3xl))
-		minmax(0, var(--space-2xl));
+		minmax(0, var(--space-800))
+		minmax(0, var(--interactive-min-size));
 	grid-template-columns:
-		minmax(0, var(--space-2xl))
-		minmax(0, var(--space-3xl))
+		minmax(0, var(--interactive-min-size))
+		minmax(0, var(--space-800))
 		minmax(0, auto);
 	
 	width: 100%;
 	height: 100%;
 	min-height: 0; /* Allows flex child to shrink */
-	padding-top: var(--space-med);
-	border-bottom: 2px solid var(--text-major);
-	background: linear-gradient(to bottom, rgba(0, 0, 0, 0.02) 0%, transparent 10%, transparent 100%);
-}
-
-.empty1,
-.empty2,
-.empty3,
-.empty4 {
-	background-color: var(--text-major);
 }
 
 .empty1 {
-	grid-area: empty1 ;
-}
-
-.empty2 {
-	grid-area: empty2;
-}
-
-.empty3 {
-	grid-area: empty3;
-}
-
-.empty4 {
-	grid-area: empty4;
+	grid-area: empty1;
+	border-right: var(--border-weight-100) solid var(--border-minor);
+	border-top: var(--border-weight-100) solid var(--border-minor);
 }
 
 .chartArea {
 	position: relative; /* For proper layering */
+	background-color: var(--surface-major);
 	z-index: 1; /* Ensure chart appears above axis labels */
 	grid-area: chartArea;
 	width: 100%;
@@ -75,20 +60,20 @@
 /* Y-axis grid area */
 .yAxis {
 	grid-area: yAxis;
-	border-bottom: 1px solid var(--text-minor);
+	border-right: var(--border-weight-100) solid var(--border-minor);
 }
 
 /* X-axis grid area */
 .xAxis {
 	grid-area: xAxis;
-	border-left: 1px solid var(--text-minor);
+	border-top: var(--border-weight-100) solid var(--border-minor);
 }
 
 /* Chart Axes Styling (inlined from ChartAxes.module.css) */
 
 /* Base axis styling */
 .xAxis, .yAxis {
-	background-color: var(--text-major);
+	/* Nothing yet */
 }
 
 .axisLine {
@@ -97,23 +82,23 @@
 
 .axisLabelX,
 .axisLabelY {
-	fill: var(--background);
-	font-family: var(--font-display);
-	font-size: var(--font-size-md);
+	fill: var(--text-minor);
+	font-family: var(--font-family-display);
+	font-size: var(--text-size-400);
 	font-weight: var(--font-weight-regular);
-	letter-spacing: var(--letter-spacing-wide);
+	letter-spacing: var(--text-tracking-800);
 	text-transform: uppercase;
 }
 
 .axisLabelX {
 	dominant-baseline: baseline;
-	transform: translateY(calc(var(--space-md) * -1));
+	transform: translateY(var(--space-negative-200));
 }
 
 .axisLabelY {
 	dominant-baseline: hanging;
 	writing-mode: sideways-lr;
-	transform: translateX(var(--space-xs));
+	transform: translateX(var(--space-100));
 }
 
 .xAxis .tick line,
@@ -124,10 +109,11 @@
 /* Axes tick labels */
 .xAxis .tick text,
 .yAxis .tick text {
-	fill: var(--background);
-	font-family: var(--font-display);
+	fill: var(--text-minor);
+	font-family: var(--font-family-display);
 	font-weight: var(--font-weight-regular);
-	font-size: var(--font-size-sm);
+	font-size: var(--text-size-300);
+	letter-spacing: var(--text-tracking-400);
 }
 
 .xAxis .tick text {
@@ -141,95 +127,328 @@
 
 .xAxisBrush {
 	grid-area: xBrush;
-	border-left: 1px solid var(--text-minor);
 }
 
 .yAxisBrush {
 	grid-area: yBrush;
-	border-bottom: 1px solid var(--text-minor);
 }
 
-/* AirlinerScatterBrush Component Styling */
+.xAxisBrush .airlinerBrushControl {
+	cursor: ew-resize;
+}
 
+.yAxisBrush .airlinerBrushControl {
+	cursor: ns-resize;
+}
+
+/* ===== Airliner Brush Control Area Styling ===== */
 /* Background styling for brush areas */
 .airlinerBrushBackground {
-	fill: var(--text-major);
+	transition: fill 0.1s linear;
+	fill: transparent;
 	opacity: 1;
-}
-
-.xAxisBrush .brushBorder,
-.yAxisBrush .brushBorder {
-	fill: none;
-	transition: height 0.2s ease-in-out, width 0.2s ease-in-out, x 0.2s ease-in-out, y 0.2s ease-in-out;
 }
 
 /* Limit line styling for passenger capacity limits */
 .airlinerBrushLimitLine {
-	stroke: var(--text-minor);
+	stroke: var(--interactive-diminished);
 	stroke-width: 1;
 	opacity: 1;
 }
 
 /* Passenger class range styling */
 .airlinerBrushPaxClassRange {
-	fill: var(--text-minor);
+	fill: var(--interactive-diminished);
 	opacity: 1;
 }
 
 .airlinerBrushRangeKM {
-	stroke: var(--text-minor);
+	stroke: var(--interactive-diminished);
 	stroke-width: 1;
 	opacity: 1;
 }
 
-/* Variant: Inside Brush Control Area */
+/* --- Brush Backgrounds --- */
+
 .airlinerBrushControl .airlinerBrushBackground {
-	fill: var(--text-major);
-	transition: fill 0.1s ease-in-out;
+	fill: var(--surface-minor) !important;
+}
+.airlinerBrushControl:hover .airlinerBrushBackground {
+	fill: var(--surface-diminished) !important;
+}
+
+/* --- Brush Borders --- */
+.xAxisBrush .brushBorder,
+.yAxisBrush .brushBorder {
+	fill: var(--border-minor);
+}
+.xAxisBrush .brushBorder {
+	transition: height 0.1s linear, opacity 0.1s linear;
+	height: var(--border-weight-100);
+}
+.yAxisBrush .brushBorder {
+	transition: width 0.1s linear, transform 0.1s linear, opacity 0.1s linear;
+	transform: translateX(var(--space-negative-025)); /* SVG positioning works in mysterious ways */
+	width: var(--border-weight-100);
+}
+.xAxisBrush:hover .brushBorder {
+	height: var(--space-100);
+}
+.yAxisBrush:hover .brushBorder {
+	width: var(--space-100);
+	transform: translateX(var(--space-negative-100));
+}
+
+/**
+ * Fade-in animation for selected airliner highlight on X axis.
+ * Used for visual emphasis when selection changes.
+ */
+ @keyframes airliner-fade-in {
+	0% {
+		opacity: 0;
+	}
+	100% {
+		opacity: var(--opacity-100);
+	}
+}
+
+.xAxisBrush .selectedAirlinerXHighlight {
+	fill: var(--interactive-minor);
+	animation: flash-twice 0.5s ease-in-out;
+}
+
+.yAxisBrush .selectedAirlinerYHighlight {
+	animation: flash-twice 0.5s ease-in-out;
 }
 
 .airlinerBrushControl .brushBorder {
-	fill: var(--brand-primary-bass);
+	fill: var(--interactive-augmented);
+	opacity: var(--opacity-100);
+}
+.airlinerBrushControl:hover .brushBorder {
+	fill: var(--interactive-augmented-active);
+	opacity: var(--opacity-100);
 }
 
+/* --- Limit Lines --- */
 .airlinerBrushControl .airlinerBrushLimitLine {
-	stroke: var(--brand-primary-bass);
-	stroke-width: 1;
-	opacity: 1;
+	stroke: var(--interactive-augmented);
+	stroke-width: var(--border-weight-100);
+	opacity: var(--opacity-100);
 }
 
+/* --- Passenger Class Range --- */
 .airlinerBrushControl .airlinerBrushPaxClassRange {
-	fill: var(--brand-primary-bass);
-	opacity: .5;
+	fill: var(--interactive-augmented);
+	opacity: var(--opacity-50);
+}
+.airlinerBrushControl:hover .airlinerBrushPaxClassRange {
+	fill: var(--interactive-augmented-active);
 }
 
+.airlinerBrushControl .selectedAirlinerXHighlight {
+	fill: var(--interactive-major);
+	opacity: var(--opacity-100);
+}
+
+/* --- Range Line --- */
 .airlinerBrushControl .airlinerBrushRangeKM {
-	stroke: var(--brand-primary-bass);
+	stroke: var(--interactive-augmented);
+	stroke-width: var(--border-weight-100);
+	opacity: var(--opacity-100);
+}
+.airlinerBrushControl:hover .airlinerBrushRangeKM {
+	stroke: var(--interactive-augmented-active);
+}
+
+.airlinerBrushControl .selectedAirlinerYHighlight {
+	stroke: var(--interactive-major);
+	stroke-width: 2;
+	opacity: var(--opacity-100);
+}
+
+/* ===== AirlinerScatterPlot Component Styling ===== */
+
+/* Grid styling */
+.gridLine line {
+	stroke: var(--border-diminished);
+	stroke-width: var(--border-weight-100);
+	shape-rendering: geometricPrecision;
+}
+
+.gridIntersectionDot {
+	fill: var(--border-diminished);
+	shape-rendering: geometricPrecision;
+	pointer-events: none;
+}
+
+/* Connecting line styling */
+.markerConnectingLineMinor {
+	stroke: var(--surface-diminished);
+	stroke-linecap: butt;
+	shape-rendering: geometricPrecision;
+	opacity: var(--opacity-50);
+}
+
+.markerConnectingLineMajor {
+	fill: var(--interactive-augmented);
+	shape-rendering: geometricPrecision;
 	stroke-width: 1;
+	stroke: rgba(0, 0, 0, 0.2);
+	transition: all 0.1s ease-in-out;
+	cursor: pointer;
+}
+
+.markerLeader {
+	stroke: var(--border-major);
+	stroke-width: 1;
+}
+
+/* ===== AirlinerScatterMarker Component Styling ===== */
+
+/* Diamond marker style */
+.markerDiamond {
+	fill: var(--interactive-augmented);
+	shape-rendering: geometricPrecision;
+	opacity: 1;
+	transition: all 0.1s ease-in-out;
+	pointer-events: none;
+}
+
+/* Short line used as a marker */
+.markerLine {
+	stroke: var(--border-minor);
+	stroke-linecap: butt;
+	shape-rendering: geometricPrecision;
+	opacity: var(--opacity-100);
+	stroke-width: var(--border-weight-200);
+}
+
+.markerLine.hoveredAirliner {
+	stroke: var(--interactive-diminished);
+}
+
+.markerLine.selectedAirliner {
+	stroke: var(--interactive-minor);
+}
+
+/* ===== AirlinerScatterLabel Component Styling ===== */
+
+/* ===== Label styling ===== */
+.airlinerLabelInterrupt ,
+.airlinerLabel {
+	font-family: var(--font-family-display);
+	font-size: var(--text-size-400);
+	font-weight: var(--font-weight-regular);
+	letter-spacing: var(--text-tracking-800);
+	cursor: pointer;
+	transition: all 0.1s ease-in-out;
+}
+
+.airlinerLabel {
+	fill: var(--text-minor);
+}
+
+.airlinerLabelInterrupt {
+	fill: none;
+	stroke: var(--surface-major);
+	stroke-width: var(--space-100);
+	stroke-miterlimit: 1.5;
+	stroke-linejoin: round;
+	opacity: var(--opacity-50);
+}
+
+.airlinerLabel.hoveredAirliner {
+	fill: var(--text-major);
+}
+
+
+/* ===== Interactive State ===== */
+
+.markerConnectingLineMajor.hoveredAirliner {
+	fill: var(--interactive-augmented-hover);
+}
+
+.markerConnectingLineMajor.selectedAirliner {
+	fill: var(--interactive-major);
+}
+
+.markerDiamond.hoveredAirliner {
+	fill: var(--interactive-major);
+	stroke: var(--interactive-augmented-hover);
+}
+
+.markerDiamond.selectedAirliner {
+	fill: var(--surface-major);
+	stroke: var(--interactive-major);
+	stroke-width: 1;
+}
+
+
+/* ===== Active Airliner Grid Lines ===== */
+
+.airlinerGridLine {
+	stroke-width: var(--border-weight-100);
+	pointer-events: none;
+}
+  
+  /* Type-specific styles */
+  .airlinerGridLineVertical {
+	/* Vertical line specific styles */
+  }
+  
+  .airlinerGridLineHorizontal {
+	/* Horizontal line specific styles */
+  }
+  
+  .airlinerGridLineHovered {
+	stroke: var(--highlight-hover-minor);
+  }
+  
+  .airlinerGridLineSelected {
+	stroke: var(--highlight-active-minor);
+  }
+
+
+/* ===== Active Airliner Y-Axis Styling ===== */
+
+.activeAirlinerYAxisLine {
+	transition: all 0.1s ease-in-out;
+	stroke: var(--border-minor);
+	stroke-width: var(--border-weight-100);
+}
+
+.activeAirlinerYAxisTextbox {
+	transition: opacity 0.1s linear;
+	fill: var(--surface-minor);
+	stroke-width: var(--border-weight-100);
+	stroke: var(--border-major);
+	opacity: 0;
+}
+
+.activeAirlinerYAxisTextbox.selectedAirliner {
 	opacity: 1;
 }
 
-.airlinerBrushControl:hover .airlinerBrushBackground {
-	fill: var(--background);
+.activeAirlinerYAxisLine.hoveredAirliner {
+	stroke: var(--interactive-minor);
 }
 
-.xAxisBrush .airlinerBrushControl:hover .brushBorder {
-	height: 8px;
+.activeAirlinerYAxisText {
+	transition: opacity 0.1s linear;
+	fill: var(--text-major);
+	opacity: 0;
+
+	font-family: var(--font-family-display);
+	font-size: var(--text-size-400);
+	font-weight: var(--font-weight-medium);
+	letter-spacing: var(--text-tracking-800);
+	text-transform: uppercase;
+	transform: translateX(var(--space-negative-050));
 }
 
-.yAxisBrush .airlinerBrushControl:hover .brushBorder {
-	width: 8px;
-	x: calc(var(--space-2xl) - 8px);
+.activeAirlinerYAxisText.selectedAirliner {
+	opacity: 1;
 }
 
-.airlinerBrushControl:hover .airlinerBrushLimitLine {
-	stroke: var(--brand-primary-treble);
-}
 
-.airlinerBrushControl:hover .airlinerBrushPaxClassRange {
-	fill: var(--brand-primary-treble);
-}
-
-.airlinerBrushControl:hover .airlinerBrushRangeKM {
-	stroke: var(--brand-primary-treble);
-}

@@ -2,6 +2,8 @@
 import type { Metadata } from "next";
 
 // [IMPORT] CSS styling //
+import "./branding-font-hkgrotesk.css";
+import "./branding-font-hknova.css";
 import "./branding.css";
 import "./globals.css";
 import appStyles from "./App.module.css";
@@ -18,6 +20,9 @@ export default function RootLayout({
 }>) {
 	return (
 		<html lang="en">
+			<head>
+				<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Sharp:opsz,wght,FILL,GRAD@24,200,0,0" />
+			</head>
 			<body>
 				<div className={appStyles.wrapper}>
 					{children}

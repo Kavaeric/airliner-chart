@@ -1,0 +1,34 @@
+.mainContainer {
+	display: flex;
+	flex-direction: column;
+	padding: 0;
+	margin: 0;
+}
+
+.aboveCut {
+	display: flex;
+	flex-direction: column;
+	width: 100vw;
+	height: 100vh; 
+}
+
+.belowCut {
+	padding: var(--space-400);
+	display: flex;
+	flex-direction: column;
+}
+
+.headerTitle {
+	flex-grow: 0;
+	padding: var(--space-200) var(--space-400);
+	background-color: var(--surface-depth-major);
+}
+
+.headerDescription {
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	padding: var(--space-200) var(--space-400);
+	background-color: var(--surface-depth-major);
+}
+

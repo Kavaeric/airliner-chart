@@ -77,7 +77,7 @@ export function useAirlinerViewModel(
 
 	// Plot visual config
 	const plotFormat = useMemo(() => ({
-		markerSize: 8,
+		markerSize: 6,
 		markerLineMajorWidth: 8,
 		markerLineMinorWidth: 8,
 		labelFontSize: 16,
@@ -126,8 +126,18 @@ export function useAirlinerViewModel(
 	const plotElements = useMemo(() => {
 		const newElements = new Map();
 		data.forEach(airliner => {
-			const newMarkers = plotAirlinerMarkerSeries(airliner.airlinerID, airliner.airlinerData, xScaleView, yScaleView, plotFormat.markerSize);
-			const newLabelAnchor = plotLabelAnchor(airliner.airlinerID, newMarkers);
+			const newMarkers = plotAirlinerMarkerSeries(
+				airliner.airlinerID,
+				airliner.airlinerData,
+				xScaleView,
+				yScaleView,
+				Math.max(plotFormat.markerSize, plotFormat.markerLineMajorWidth)
+			);
+
+			const newLabelAnchor = plotLabelAnchor(
+				airliner.airlinerID,
+				newMarkers
+			);
 			newElements.set(airliner.airlinerID, {
 				markerSeries: newMarkers,
 				labelAnchor: newLabelAnchor

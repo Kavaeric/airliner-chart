@@ -1,0 +1,1792 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>Branding Demo - Design System Testing</title>
+		<!-- <link rel="stylesheet" href="branding-font-hkgrotesk.css">
+		<link rel="stylesheet" href="branding-font-hknova.css"> -->
+		<link rel="stylesheet" href="branding-font-hkgrotesk.css" />
+		<link rel="stylesheet" href="branding-font-hknova.css" />
+		<link rel="stylesheet" href="branding.css" />
+		<link rel="stylesheet" href="globals.css" />
+		<link
+			rel="stylesheet"
+			href="https://fonts.googleapis.com/css2?family=Material+Symbols+Sharp:opsz,wght,FILL,GRAD@24,400,0,0"
+		/>
+
+		<style>
+			/* Demo-specific styles */
+
+			.demo-container {
+				max-width: 1200px;
+				margin: 0 auto;
+				padding: var(--space-100);
+				gap: var(--space-100);
+			}
+
+			.section {
+				margin-bottom: var(--space-600);
+				padding: var(--space-400);
+				border: 1px solid var(--border-minor);
+			}
+
+			.section-title {
+				font-size: var(--text-h4);
+				font-weight: var(--font-weight-semibold);
+				margin-bottom: var(--space-200);
+				color: var(--text-major);
+			}
+
+			.component-grid {
+				display: grid;
+				grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+				gap: var(--size-16);
+				margin-bottom: var(--size-24);
+			}
+
+			.component-demo {
+				padding: var(--space-100);
+				border: 1px solid var(--border-secondary);
+				background: var(--surface-base);
+			}
+
+			/* Navigation */
+			.nav-header {
+				background: var(--surface-elevated);
+				border-bottom: 1px solid var(--border-primary);
+				padding: var(--size-16) 0;
+				position: sticky;
+				top: 0;
+				z-index: 100;
+			}
+
+			.nav-container {
+				display: flex;
+				align-items: center;
+				justify-content: space-between;
+				max-width: 1200px;
+				margin: 0 auto;
+				padding: 0 var(--size-16);
+			}
+
+			.nav-logo {
+				font-size: var(--text-h5);
+				font-weight: var(--font-weight-bold);
+				color: var(--text-primary);
+			}
+
+			.nav-menu {
+				display: flex;
+				gap: var(--size-24);
+				list-style: none;
+				margin: 0;
+				padding: 0;
+			}
+
+			.nav-menu a {
+				color: var(--text-secondary);
+				text-decoration: none;
+				padding: var(--size-8) var(--size-12);
+				transition: all 0.2s ease;
+			}
+
+			.nav-menu a:hover {
+				background: var(--interactive-hover);
+				color: var(--text-primary);
+			}
+
+			.nav-search {
+				position: relative;
+			}
+
+			.nav-search input {
+				padding: var(--size-8) var(--size-32) var(--size-8)
+					var(--size-12);
+				border: 1px solid var(--border-secondary);
+				background: var(--surface-base);
+				color: var(--text-primary);
+			}
+
+			/* Hero Section */
+			.hero {
+				background: var(--surface-sunken);
+				padding: var(--size-80) var(--size-16);
+				text-align: center;
+				margin-bottom: var(--size-64);
+			}
+
+			.hero h1 {
+				font-size: var(--text-h1);
+				font-weight: var(--font-weight-bold);
+				margin-bottom: var(--size-16);
+				color: var(--text-primary);
+			}
+
+			.hero p {
+				font-size: var(--text-body-large);
+				color: var(--text-secondary);
+				margin-bottom: var(--size-32);
+				max-width: 600px;
+				margin-left: auto;
+				margin-right: auto;
+			}
+
+			/* Forms */
+			.form-group {
+				margin-bottom: var(--size-16);
+			}
+
+			.form-label {
+				display: block;
+				margin-bottom: var(--size-4);
+				font-weight: var(--font-weight-medium);
+				color: var(--text-primary);
+			}
+
+			.form-input,
+			.form-select,
+			.form-textarea {
+				width: 100%;
+				padding: var(--size-12);
+				border: 1px solid var(--border-secondary);
+				background: var(--surface-base);
+				color: var(--text-primary);
+				font-size: var(--text-sm);
+			}
+
+			.form-input:focus,
+			.form-select:focus,
+			.form-textarea:focus {
+				outline: none;
+				border-color: var(--border-focus);
+			}
+
+			/* Cards */
+			.card {
+				background: var(--surface-elevated);
+				border: 1px solid var(--border-secondary);
+				padding: var(--size-20);
+				transition: all 0.2s ease;
+			}
+			
+			.card-title {
+				font-size: var(--text-h5);
+				font-weight: var(--font-weight-semibold);
+				margin-bottom: var(--size-8);
+				color: var(--text-primary);
+			}
+
+			.card-content {
+				color: var(--text-secondary);
+				margin-bottom: var(--size-16);
+			}
+
+			/* Tables */
+			.table {
+				width: 100%;
+				border-collapse: collapse;
+				background: var(--surface-base);
+				overflow: hidden;
+			}
+
+			.table th,
+			.table td {
+				padding: var(--size-12);
+				text-align: left;
+				border-bottom: 1px solid var(--border-secondary);
+			}
+
+			.table th {
+				background: var(--surface-sunken);
+				font-weight: var(--font-weight-semibold);
+				color: var(--text-primary);
+			}
+
+			.table td {
+				color: var(--text-secondary);
+			}
+
+			/* Badges */
+			.badge {
+				padding: var(--badge-padding-y) var(--badge-padding-x);
+				font-size: var(--badge-font-size);
+				font-weight: var(--badge-font-weight);
+				display: inline-block;
+			}
+
+			.badge-success {
+				background: var(--status-success-bg);
+				color: var(--status-success-text);
+			}
+
+			.badge-warning {
+				background: var(--status-warning-bg);
+				color: var(--status-warning-text);
+			}
+
+			.badge-error {
+				background: var(--status-error-bg);
+				color: var(--status-error-text);
+			}
+
+			/* Modal */
+			.modal-overlay {
+				position: fixed;
+				top: 0;
+				left: 0;
+				right: 0;
+				bottom: 0;
+				background: var(--surface-overlay);
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				z-index: 1000;
+			}
+
+			.modal {
+				background: var(--surface-elevated);
+				padding: var(--size-24);
+				max-width: 500px;
+				width: 90%;
+				max-height: 80vh;
+				overflow-y: auto;
+			}
+
+			/* Alerts */
+			.alert {
+				padding: var(--size-12) var(--size-16);
+				margin-bottom: var(--size-16);
+				border-left: 4px solid;
+			}
+
+			.alert-success {
+				background: var(--status-success-bg);
+				border-left-color: var(--status-success);
+				color: var(--status-success-text);
+			}
+
+			.alert-warning {
+				background: var(--status-warning-bg);
+				border-left-color: var(--status-warning);
+				color: var(--status-warning-text);
+			}
+
+			.alert-error {
+				background: var(--status-error-bg);
+				border-left-color: var(--status-error);
+				color: var(--status-error-text);
+			}
+
+			.alert-info {
+				background: var(--status-info-bg);
+				border-left-color: var(--status-info);
+				color: var(--status-info-text);
+			}
+
+			/* Tabs */
+			.tabs {
+				border-bottom: 1px solid var(--border-secondary);
+				margin-bottom: var(--size-16);
+			}
+
+			.tab-list {
+				display: flex;
+				list-style: none;
+				margin: 0;
+				padding: 0;
+			}
+
+			.tab-item {
+				margin-right: var(--size-8);
+			}
+
+			.tab-button {
+				padding: var(--size-12) var(--size-16);
+				border: none;
+				background: none;
+				color: var(--text-secondary);
+				cursor: pointer;
+				border-bottom: 2px solid transparent;
+				transition: all 0.2s ease;
+			}
+
+			.tab-button.active {
+				color: var(--text-primary);
+				border-bottom-color: var(--interactive-primary);
+			}
+
+			/* Accordion */
+			.accordion-item {
+				border: 1px solid var(--border-secondary);
+				margin-bottom: var(--size-8);
+			}
+
+			.accordion-header {
+				padding: var(--size-16);
+				background: var(--surface-base);
+				cursor: pointer;
+				border: none;
+				width: 100%;
+				text-align: left;
+				font-weight: var(--font-weight-medium);
+				color: var(--text-primary);
+			}
+
+			.accordion-content {
+				padding: var(--size-16);
+				border-top: 1px solid var(--border-secondary);
+				background: var(--surface-sunken);
+				color: var(--text-secondary);
+			}
+
+			/* Breadcrumbs */
+			.breadcrumbs {
+				display: flex;
+				align-items: center;
+				gap: var(--size-8);
+				margin-bottom: var(--size-24);
+			}
+
+			.breadcrumb-item {
+				color: var(--text-secondary);
+			}
+
+			.breadcrumb-item:last-child {
+				color: var(--text-primary);
+				font-weight: var(--font-weight-medium);
+			}
+
+			.breadcrumb-separator {
+				color: var(--text-tertiary);
+			}
+
+			/* Pagination */
+			.pagination {
+				display: flex;
+				align-items: center;
+				gap: var(--size-4);
+				justify-content: center;
+			}
+
+			.pagination-button {
+				padding: var(--size-8) var(--size-12);
+				border: 1px solid var(--border-secondary);
+				background: var(--surface-base);
+				color: var(--text-secondary);
+				cursor: pointer;
+				transition: all 0.2s ease;
+			}
+
+			.pagination-button.active {
+				background: var(--interactive-primary);
+				color: var(--text-inverse);
+				border-color: var(--interactive-primary);
+			}
+
+			/* Loading states */
+			.loading-spinner {
+				width: var(--size-24);
+				height: var(--size-24);
+				border: 2px solid var(--border-secondary);
+				border-top: 2px solid var(--interactive-primary);
+				animation: spin 1s linear infinite;
+			}
+
+			@keyframes spin {
+				0% {
+					transform: rotate(0deg);
+				}
+				100% {
+					transform: rotate(360deg);
+				}
+			}
+
+			.loading-skeleton {
+				background: var(--surface-sunken);
+				animation: pulse 1.5s ease-in-out infinite;
+			}
+
+			@keyframes pulse {
+				0%,
+				100% {
+					opacity: 1;
+				}
+				50% {
+					opacity: 0.5;
+				}
+			}
+
+			/* Empty states */
+			.empty-state {
+				text-align: center;
+				padding: var(--size-48);
+				color: var(--text-tertiary);
+			}
+
+			.empty-state-icon {
+				font-size: var(--size-48);
+				margin-bottom: var(--size-16);
+				opacity: 0.5;
+			}
+
+			/* Footer */
+			.footer {
+				background: var(--surface-sunken);
+				border-top: 1px solid var(--border-primary);
+				padding: var(--size-48) var(--size-16);
+				margin-top: var(--size-80);
+			}
+
+			.footer-content {
+				max-width: 1200px;
+				margin: 0 auto;
+				display: grid;
+				grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+				gap: var(--size-32);
+			}
+
+			.footer-section h3 {
+				font-size: var(--text-h5);
+				font-weight: var(--font-weight-semibold);
+				margin-bottom: var(--size-16);
+				color: var(--text-primary);
+			}
+
+			.footer-section a {
+				display: block;
+				color: var(--text-secondary);
+				text-decoration: none;
+				margin-bottom: var(--size-8);
+				transition: color 0.2s ease;
+			}
+
+			.footer-section a:hover {
+				color: var(--text-primary);
+			}
+
+			.social-icons {
+				display: flex;
+				gap: var(--size-12);
+			}
+
+			.social-icon {
+				width: var(--size-32);
+				height: var(--size-32);
+				background: var(--surface-base);
+				border: 1px solid var(--border-secondary);
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				color: var(--text-secondary);
+				transition: all 0.2s ease;
+			}
+
+			.social-icon:hover {
+				background: var(--interactive-hover);
+				color: var(--text-primary);
+			}
+
+			/* Chart placeholder */
+			.chart-placeholder {
+				background: var(--surface-sunken);
+				border: 1px solid var(--border-secondary);
+				height: var(--size-200);
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				color: var(--text-tertiary);
+				font-style: italic;
+			}
+
+			/* Responsive */
+			@media (max-width: 768px) {
+				.nav-menu {
+					display: none;
+				}
+
+				.component-grid {
+					grid-template-columns: 1fr;
+				}
+
+				.button-group {
+					flex-direction: column;
+					align-items: stretch;
+				}
+			}
+		</style>
+	</head>
+	<body>
+		<!-- Navigation -->
+		<!--nav class="nav-header">
+			<div class="nav-container">
+				<div class="nav-logo">Branding Demo</div>
+				<ul class="nav-menu">
+					<li><a href="#components">Components</a></li>
+					<li><a href="#typography">Typography</a></li>
+					<li><a href="#patterns">Patterns</a></li>
+				</ul>
+				<div class="nav-search">
+					<input type="search" placeholder="Search components..." />
+				</div>
+			</div>
+		</nav-->
+
+		<!-- Hero Section -->
+		<!--section class="hero">
+			<h1>Branding Design System</h1>
+			<p>Demonstration page for design system tokens and components.</p>
+			<div class="button-group">
+				<button class="btn btn-augmented">Get Started</button>
+				<button class="btn btn-minor">View Documentation</button>
+			</div>
+		</section-->
+
+		<div class="demo-container">
+			<!-- Display Text -->
+			<section class="section">
+				<h2 class="text-h3">Display Text</h2>
+				<hr class="frame-minor">
+				<div class="component-demo">
+					<div class="text-display-1">
+						Display 1 - Extra Large Hero Text
+					</div>
+					<div class="text-display-2">
+						Display 2 - Large Hero Text
+					</div>
+					<div class="text-display-3">
+						Display 3 - Medium Hero Text
+					</div>
+					<div class="text-display-4">
+						Display 4 - Small Hero Text
+					</div>
+					<div class="text-display-5">
+						Display 5 - Extra Small Hero Text
+					</div>
+					<div class="text-display-6">
+						Display 6 - Micro Hero Text
+					</div>
+				</div>
+			</section>
+
+			<!-- Typography Hierarchy -->
+			<section class="section">
+				<h2 class="text-h3">Typography Hierarchy</h2>
+				<hr class="frame-minor">
+				<div class="component-demo">
+					<h1 class="text-h1">Heading 1 - Main Page Title</h1>
+					<h2 class="text-h2">Heading 2 - Section Title</h2>
+					<h3 class="text-h3">Heading 3 - Subsection Title</h3>
+					<h4 class="text-h4">Heading 4 - Card Title</h4>
+					<h5 class="text-h5">Heading 5 - Small Title</h5>
+					<h6 class="text-h6">Heading 6 - Micro Title</h6>
+					<p class="text-body-major">
+						Body major - Use for larger content sections, like
+						articles or long-form text.
+					</p>
+					<p>
+						Body text (minor) - This is the standard paragraph text
+						used throughout the application for general content and
+						descriptions.
+					</p>
+					<p>
+						Inline
+						<a class="link-augmented" href="javascript:void(0)"
+							>augmented link</a
+						>
+					</p>
+					<p>
+						Inline
+						<a class="link-major" href="javascript:void(0)"
+							>major link</a
+						>
+					</p>
+					<p class="text-body-diminished">
+						Body diminished - Smaller body text for secondary
+						information and captions.
+					</p>
+				</div>
+			</section>
+
+			<!--Frames-->
+			<section class="section">
+				<h2 class="text-h2">Frames</h2>
+				<hr class="frame-minor">
+				<div style="
+					display: grid;
+					grid-template-columns: 2fr 1fr;
+					align-items: start;
+					gap: var(--space-200);
+				">
+					<div class="frame-augmented frame-flex-horizontal">
+						<div class="frame-content frame-content-vertical">
+							<span class="text-label-augmented">Augmented</span>
+						</div>
+						<hr class="frame-augmented">
+						<div class="frame-flex-vertical">
+							<div class="frame-content">
+								<span class="text-label-major">Frame Augmented</span>
+							</div>
+							<hr class="frame-augmented">
+							<div class="frame-content">
+								An augmented rule above and major rule below.
+							</div>
+							<hr class="frame-major">
+							<div class="frame-content">
+								A major rule above and minor rule below.
+							</div>
+							<hr class="frame-minor">
+							<div class="frame-content">
+								A minor rule above and diminished rule below.
+							</div>
+							<hr class="frame-diminished">
+							<div class="frame-content">
+								A diminished rule above.
+							</div>
+						</div>
+					</div>
+
+					<div class="frame-augmented">
+						<div class="frame-content surface-depth-augmented">
+							Augmented surface depth.
+						</div>
+						<hr class="frame-minor">
+						<div class="frame-content surface-depth-major">
+							Major surface depth.
+						</div>
+						<hr class="frame-minor">
+						<div class="frame-content">
+							Baseline surface depth.
+						</div>
+						<hr class="frame-minor">
+						<div class="frame-content surface-depth-minor">
+							Minor surface depth.
+						</div>
+						<hr class="frame-minor">
+						<div class="frame-content surface-depth-diminished">
+							Diminished surface depth.
+						</div>
+					</div>
+
+					<div class="frame-major frame-flex-horizontal">
+						<div class="frame-content frame-content-vertical">
+							<span class="text-label-major">Major</span>
+						</div>
+						<hr class="frame-major">
+						<div class="frame-flex-vertical">
+							<div class="frame-content">
+								<span class="text-label-major">Frame Major</span>
+							</div>
+							<hr class="frame-major">
+							<div class="frame-content">
+								A major rule above and minor rule below.
+							</div>
+							<hr class="frame-minor">
+							<div class="frame-content">
+								A minor rule above and diminished rule below.
+							</div>
+							<hr class="frame-diminished">
+							<div class="frame-content">
+								A diminished rule above.
+							</div>
+						</div>
+					</div>
+
+					<div class="frame-major">
+						<div class="frame-content surface-depth-augmented">
+							Augmented surface depth.
+						</div>
+						<hr class="frame-minor">
+						<div class="frame-content surface-depth-major">
+							Major surface depth.
+						</div>
+						<hr class="frame-minor">
+						<div class="frame-content">
+							Baseline surface depth.
+						</div>
+						<hr class="frame-minor">
+						<div class="frame-content surface-depth-minor">
+							Minor surface depth.
+						</div>
+						<hr class="frame-minor">
+						<div class="frame-content surface-depth-diminished">
+							Diminished surface depth.
+						</div>
+					</div>
+
+					<div class="frame-minor frame-flex-horizontal">
+						<div class="frame-content frame-content-vertical">
+							<span class="text-label-minor">Minor</span>
+						</div>
+						<hr class="frame-minor">
+						<div class="frame-flex-vertical">
+							<div class="frame-content">
+								<span class="text-label-major">Frame Minor</span>
+							</div>
+							<hr class="frame-minor">
+							<div class="frame-content">
+								A minor rule above and diminished rule below.
+							</div>
+							<hr class="frame-diminished">
+							<div class="frame-content">
+								A diminished rule above.
+							</div>
+						</div>
+					</div>
+
+					<div class="frame-minor">
+						<div class="frame-content surface-depth-augmented">
+							Augmented surface depth.
+						</div>
+						<hr class="frame-minor">
+						<div class="frame-content surface-depth-major">
+							Major surface depth.
+						</div>
+						<hr class="frame-minor">
+						<div class="frame-content">
+							Baseline surface depth.
+						</div>
+						<hr class="frame-minor">
+						<div class="frame-content surface-depth-minor">
+							Minor surface depth.
+						</div>
+						<hr class="frame-minor">
+						<div class="frame-content surface-depth-diminished">
+							Diminished surface depth.
+						</div>
+					</div>
+
+					<div class="frame-diminished frame-flex-horizontal">
+						<div class="frame-content frame-content-vertical">
+							<span class="text-label-diminished">Diminished</span>
+						</div>
+						<hr class="frame-diminished">
+						<div class="frame-flex-vertical">
+							<div class="frame-content">
+								<span class="text-label-major">Frame Diminished</span>
+							</div>
+							<hr class="frame-diminished">
+							<div class="frame-content">
+								A diminished rule above.
+							</div>
+							<hr class="frame-diminished">
+							<div class="frame-content">
+								And another for good measure.
+							</div>
+						</div>
+					</div>
+
+					<div class="frame-diminished">
+						<div class="frame-content surface-depth-augmented">
+							Augmented surface depth.
+						</div>
+						<hr class="frame-diminished">
+						<div class="frame-content surface-depth-major">
+							Major surface depth.
+						</div>
+						<hr class="frame-diminished">
+						<div class="frame-content">
+							Baseline surface depth.
+						</div>
+						<hr class="frame-diminished">
+						<div class="frame-content surface-depth-minor">
+							Minor surface depth.
+						</div>
+						<hr class="frame-diminished">
+						<div class="frame-content surface-depth-diminished">
+							Diminished surface depth.
+						</div>
+					</div>
+				</div>
+			</section>
+
+			<!-- Buttons -->
+			<section class="section">
+				<h2 class="text-h3">Buttons</h2>
+				<hr class="frame-minor">
+				<div style="display: flex; flex-direction: column; align-items: center;">
+					<div
+						style="
+							display: grid;
+							grid-template-columns: repeat(4, auto);
+							grid-template-rows: repeat(4, auto);
+							gap: var(--space-100);
+							margin-top: var(--space-400);
+							margin-bottom: var(--space-400);
+						"
+					>
+						<button class="btn btn-augmented">Button</button>
+						<button class="btn btn-augmented btn-icon-left">
+							<span class="icon material-symbols-sharp">zoom_in</span>
+							Button
+						</button>
+						<button class="btn btn-augmented btn-icon-right">
+							Button
+							<span class="icon material-symbols-sharp"
+								>chevron_right</span
+							>
+						</button>
+						<button class="btn btn-augmented btn-icon-only">
+							<span class="icon material-symbols-sharp">settings</span>
+						</button>
+						<button class="btn btn-major">Button</button>
+						<button class="btn btn-major btn-icon-left">
+							<span class="icon material-symbols-sharp">zoom_in</span>
+							Button
+						</button>
+						<button class="btn btn-major btn-icon-right">
+							Button
+							<span class="icon material-symbols-sharp"
+								>chevron_right</span
+							>
+						</button>
+						<button class="btn btn-major btn-icon-only">
+							<span class="icon material-symbols-sharp">settings</span>
+						</button>
+						<button class="btn btn-minor">Button</button>
+						<button class="btn btn-minor btn-icon-left">
+							<span class="icon material-symbols-sharp">zoom_in</span>
+							Button
+						</button>
+						<button class="btn btn-minor btn-icon-right">
+							Button
+							<span class="icon material-symbols-sharp"
+								>chevron_right</span
+							>
+						</button>
+						<button class="btn btn-minor btn-icon-only">
+							<span class="icon material-symbols-sharp">settings</span>
+						</button>
+						<button class="btn btn-diminished">Button</button>
+						<button class="btn btn-diminished btn-icon-left">
+							<span class="icon material-symbols-sharp">zoom_in</span>
+							Button
+						</button>
+						<button class="btn btn-diminished btn-icon-right">
+							Button
+							<span class="icon material-symbols-sharp"
+								>chevron_right</span
+							>
+						</button>
+						<button class="btn btn-diminished btn-icon-only">
+							<span class="icon material-symbols-sharp">settings</span>
+						</button>
+					</div>
+				</div>
+				<div style="display: flex; flex-direction: column; align-items: center;">
+					<div style="display: flex; flex-direction: column; align-items: center; gap: var(--space-100);">
+						<div class="btn-flex">
+							<div class="btn-group btn-augmented">
+								<button class="btn-icon-left">
+									<span class="icon material-symbols-sharp"
+										>add</span
+									>
+									Create
+								</button>
+								<button class="btn-icon-only">
+									<span class="icon material-symbols-sharp"
+										>search</span
+									>
+								</button>
+								<button class="btn-icon-only">
+									<span class="icon material-symbols-sharp"
+										>edit</span
+									>
+								</button>
+								<button class="btn-icon-only">
+									<span class="icon material-symbols-sharp"
+										>delete</span
+									>
+								</button>
+								<button class="btn-icon-only">
+									<span class="icon material-symbols-sharp"
+										>content_cut</span
+									>
+								</button>
+								<button class="btn-icon-only">
+									<span class="icon material-symbols-sharp"
+										>content_copy</span
+									>
+								</button>
+								<button class="btn-icon-only" disabled aria-disabled="true">
+									<span class="icon material-symbols-sharp"
+										>content_paste</span
+									>
+								</button>
+							</div>
+						</div>
+
+						<div class="btn-flex">
+							<div class="btn-group btn-major">
+								<button class="btn-icon-left">
+									<span class="icon material-symbols-sharp"
+										>add</span
+									>
+									Create
+								</button>
+								<button class="btn-icon-only">
+									<span class="icon material-symbols-sharp"
+										>search</span
+									>
+								</button>
+								<button class="btn-icon-only">
+									<span class="icon material-symbols-sharp"
+										>edit</span
+									>
+								</button>
+								<button class="btn-icon-only">
+									<span class="icon material-symbols-sharp"
+										>delete</span
+									>
+								</button>
+								<button class="btn-icon-only">
+									<span class="icon material-symbols-sharp"
+										>content_cut</span
+									>
+								</button>
+								<button class="btn-icon-only">
+									<span class="icon material-symbols-sharp"
+										>content_copy</span
+									>
+								</button>
+								<button class="btn-icon-only" disabled aria-disabled="true">
+									<span class="icon material-symbols-sharp"
+										>content_paste</span
+									>
+								</button>
+							</div>
+						</div>
+
+						<div class="btn-flex">
+							<div class="btn-group btn-minor">
+								<button class="btn-icon-left">
+									<span class="material-symbols-sharp">add</span>
+									Create
+								</button>
+								<button class="btn-icon-only">
+									<span class="material-symbols-sharp"
+										>search</span
+									>
+								</button>
+								<button class="btn-icon-only">
+									<span class="material-symbols-sharp">edit</span>
+								</button>
+								<button class="btn-icon-only">
+									<span class="material-symbols-sharp"
+										>delete</span
+									>
+								</button>
+								<button class="btn-icon-only">
+									<span class="material-symbols-sharp"
+										>content_cut</span
+									>
+								</button>
+								<button class="btn-icon-only">
+									<span class="material-symbols-sharp"
+										>content_copy</span
+									>
+								</button>
+								<button class="btn-icon-only" disabled aria-disabled="true">
+									<span class="material-symbols-sharp"
+										>content_paste</span
+									>
+								</button>
+							</div>
+						</div>
+
+						<div class="btn-flex">
+							<div class="btn-group btn-diminished">
+								<button class="btn-icon-left">
+									<span class="material-symbols-sharp">add</span>
+									Create
+								</button>
+								<button class="btn-icon-only">
+									<span class="material-symbols-sharp"
+										>search</span
+									>
+								</button>
+								<button class="btn-icon-only">
+									<span class="material-symbols-sharp">edit</span>
+								</button>
+								<button class="btn-icon-only">
+									<span class="material-symbols-sharp"
+										>delete</span
+									>
+								</button>
+								<button class="btn-icon-only">
+									<span class="material-symbols-sharp"
+										>content_cut</span
+									>
+								</button>
+								<button class="btn-icon-only">
+									<span class="material-symbols-sharp"
+										>content_copy</span
+									>
+								</button>
+								<button class="btn-icon-only" disabled aria-disabled="true">
+									<span class="material-symbols-sharp"
+										>content_paste</span
+									>
+								</button>
+							</div>
+						</div>
+					</div>
+				</div>
+			</section>
+
+			<!--UI Control-->
+			<section class="section frame-minor" style="display: flex; flex-direction: column; gap: var(--space-400);">
+
+				<h2 class="text-h3">UI Controls</h2>
+
+				<div class="frame-major frame-flex-horizontal">
+					<div class="frame-flex-vertical">
+						<div class="frame-content frame-flex-horizontal surface-depth-major">
+							<span class="text-label-major">Settings</span>
+						</div>
+						<hr class="frame-minor">
+						<label class="input-switch">
+							<input type="checkbox" checked />
+							<span>Enable logging</span>
+						</label>
+						<label class="input-switch">
+							<input type="checkbox" />
+							<span>Sync to cloud</span>
+						</label>
+						<label class="input-switch">
+							<input type="checkbox" checked disabled />
+							<span>Limiter</span>
+						</label>
+						<hr class="frame-diminished">
+						<label class="input-checkbox">
+							<input type="checkbox" />
+							<span>Skip ahead on start</span>
+						</label>
+						<label class="input-checkbox">
+							<input type="checkbox" disabled />
+							<span>Safe mode startup</span>
+						</label>
+					</div>
+					<hr class="frame-minor">
+					<div class="frame-flex-vertical">
+						 <div class="frame-content frame-flex-horizontal surface-depth-major" style="flex-grow: 0;">
+							<span class="text-label-major">Modes</span>
+						 </div>
+						<hr class="frame-minor">
+						<label class="input-radio">
+							<input type="radio" name="panel-mode" checked />
+							<span>Auto mode</span>
+						</label>
+						<label class="input-radio">
+							<input type="radio" name="panel-mode" />
+							<span>Manual mode</span>
+						</label>
+						<hr class="frame-diminished">
+						<label class="input-radio">
+							<input type="radio" name="panel-priority" />
+							<span>Low priority</span>
+						</label>
+						<label class="input-radio">
+							<input type="radio" name="panel-priority" checked />
+							<span>High priority</span>
+						</label>
+						<hr class="frame-minor">
+						<label class="input-switch">
+							<input type="checkbox" />
+							<span>Mode lock</span>
+						</label>
+					</div>
+
+					<hr class="frame-major">
+
+					<div class="frame-flex-vertical">
+						<div class="frame-content frame-flex-horizontal surface-depth-major" style="flex-grow: 0;">
+							<span class="text-label-major">Actions</span>
+						</div>
+						<hr class="frame-minor">
+						<div class="btn-group-vertical">
+							<button class="btn-major btn-icon-left">
+								<span class="material-symbols-sharp">play_arrow</span>
+								Start
+							</button>
+							<button class="btn-diminished btn-icon-left">
+								<span class="material-symbols-sharp">pause</span>
+								Pause
+							</button>
+							<button class="btn-diminished btn-icon-left" disabled>
+								<span class="material-symbols-sharp">stop</span>
+								Stop
+							</button>
+							<button class="btn-diminished btn-icon-left">
+								<span class="material-symbols-sharp">restart_alt</span>
+								Restart
+							</button>
+						</div>
+						<hr class="frame-minor">
+
+						<div class="frame-content" style="align-self: flex-end;">
+							<span class="text-body-diminished">Shoji Ushiyama / Kavaeric</span>
+						</div>
+					</div>
+				</div>
+
+				<div class="frame-flex-horizontal" style="gap: var(--space-200);">
+					<div class="frame-minor frame-flex-vertical">
+						<label class="input-checkbox">
+							<input type="checkbox" />
+							<span>Checkbox</span>
+						</label>
+						<hr class="frame-diminished">
+						<label class="input-checkbox">
+							<input type="checkbox" />
+							<span>Checkbox</span>
+						</label>
+						<hr class="frame-diminished">
+						<label class="input-checkbox">
+							<input type="checkbox" checked />
+							<span>Checkbox</span>
+						</label>
+						<hr class="frame-diminished">
+						<label class="input-checkbox">
+							<input type="checkbox" disabled />
+							<span>Checkbox</span>
+						</label>
+						<hr class="frame-diminished">
+						<label class="input-checkbox">
+							<input type="checkbox" disabled checked />
+							<span>Checkbox</span>
+						</label>
+					</div>
+
+					<div class="frame-minor frame-flex-vertical">
+						<label class="input-radio">
+							<input type="radio" name="demo-radio-1" />
+							<span>Radio</span>
+						</label>
+						<hr class="frame-diminished">
+						<label class="input-radio">
+							<input type="radio" name="demo-radio-1" />
+							<span>Radio</span>
+						</label>
+							<hr class="frame-diminished">
+						<label class="input-radio">
+							<input type="radio" name="demo-radio-1" checked />
+							<span>Radio</span>
+						</label>
+						<hr class="frame-minor">
+						<label class="input-radio">
+							<input type="radio" name="demo-radio-2" disabled />
+							<span>Radio</span>
+						</label>
+						<hr class="frame-diminished">
+						<label class="input-radio">
+							<input type="radio" name="demo-radio-2" disabled checked />
+							<span>Radio</span>
+						</label>
+					</div>
+
+					<div class="frame-minor frame-flex-vertical">
+						<label class="input-switch">
+							<input type="checkbox" />
+							<span>Switch</span>
+						</label>
+						<hr class="frame-diminished">
+						<label class="input-switch">
+							<input type="checkbox" />
+							<span>Switch</span>
+						</label>
+						<hr class="frame-diminished">
+						<label class="input-switch">
+							<input type="checkbox" checked />
+							<span>Switch</span>
+						</label>
+						<hr class="frame-diminished">
+						<label class="input-switch">
+							<input type="checkbox" disabled />
+							<span>Switch</span>
+						</label>
+						<hr class="frame-diminished">
+						<label class="input-switch">
+							<input type="checkbox" disabled checked />
+							<span>Switch</span>
+						</label>
+					</div>
+				</div>
+				
+				<div class="frame-flex-horizontal" style="gap: var(--space-200);">
+					<div class="frame-minor frame-flex-vertical">
+						<div class="frame-content frame-flex-vertical">
+							<label class="input-checkbox">
+								<input type="checkbox" />
+								<span>Checkbox</span>
+							</label>
+							<label class="input-checkbox">
+								<input type="checkbox" />
+								<span>Checkbox</span>
+							</label>
+							<label class="input-checkbox">
+								<input type="checkbox" checked />
+								<span>Checkbox</span>
+							</label>
+							<label class="input-checkbox">
+								<input type="checkbox" disabled />
+								<span>Checkbox</span>
+							</label>
+							<label class="input-checkbox">
+								<input type="checkbox" disabled checked />
+								<span>Checkbox</span>
+							</label>
+						</div>
+					</div>
+
+					<div class="frame-minor frame-flex-vertical">
+						<div class="frame-content frame-flex-vertical">
+							<label class="input-radio">
+								<input type="radio" name="demo-radio-3" />
+								<span>Radio</span>
+							</label>
+							<label class="input-radio">
+								<input type="radio" name="demo-radio-3" />
+								<span>Radio</span>
+							</label>
+							<label class="input-radio">
+								<input type="radio" name="demo-radio-3" checked />
+								<span>Radio</span>
+							</label>
+							<label class="input-radio">
+								<input type="radio" name="demo-radio-4" disabled />
+								<span>Radio</span>
+							</label>
+							<label class="input-radio">
+								<input type="radio" name="demo-radio-4" disabled checked />
+								<span>Radio</span>
+							</label>
+						</div>
+					</div>
+
+					<div class="frame-minor frame-flex-vertical">
+						<div class="frame-content frame-flex-vertical">
+							<label class="input-switch">
+								<input type="checkbox" />
+								<span>Switch</span>
+							</label>
+							<label class="input-switch">
+								<input type="checkbox" />
+								<span>Switch</span>
+							</label>
+							<label class="input-switch">
+								<input type="checkbox" checked />
+								<span>Switch</span>
+							</label>
+							<label class="input-switch">
+								<input type="checkbox" disabled />
+								<span>Switch</span>
+							</label>
+							<label class="input-switch">
+								<input type="checkbox" disabled checked />
+								<span>Switch</span>
+							</label>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			</section>	
+
+			<section class="section frame-augmented">
+				<p class="text-body-major" style="text-align: center;">
+					Move current indev stuff above this cut
+				</p>
+			</section>
+
+			<!-- Breadcrumbs -->
+			<section class="section">
+				<h2 class="text-h3">Breadcrumbs</h2>
+				<hr class="frame-minor">
+				<nav class="breadcrumbs">
+					<span class="breadcrumb-item">Home</span>
+					<span class="breadcrumb-separator">/</span>
+					<span class="breadcrumb-item">Components</span>
+					<span class="breadcrumb-separator">/</span>
+					<span class="breadcrumb-item">Branding Demo</span>
+				</nav>
+			</section>
+
+			<!-- Form Elements -->
+			<section class="section">
+				<h2 class="section-title">Form Elements</h2>
+				<div class="component-grid">
+					<div class="component-demo">
+						<div class="form-group">
+							<label class="form-label">Text Input</label>
+							<input
+								type="text"
+								class="form-input"
+								placeholder="Enter text..."
+							/>
+						</div>
+						<div class="form-group">
+							<label class="form-label">Email Input</label>
+							<input
+								type="email"
+								class="form-input"
+								placeholder="Enter email..."
+							/>
+						</div>
+						<div class="form-group">
+							<label class="form-label">Password Input</label>
+							<input
+								type="password"
+								class="form-input"
+								placeholder="Enter password..."
+							/>
+						</div>
+					</div>
+					<div class="component-demo">
+						<div class="form-group">
+							<label class="form-label">Select Dropdown</label>
+							<select class="form-select">
+								<option>Choose an option</option>
+								<option>Option 1</option>
+								<option>Option 2</option>
+								<option>Option 3</option>
+							</select>
+						</div>
+						<div class="form-group">
+							<label class="form-label">Textarea</label>
+							<textarea
+								class="form-textarea"
+								rows="4"
+								placeholder="Enter description..."
+							></textarea>
+						</div>
+					</div>
+					<div class="component-demo">
+						<div class="form-group">
+							<label class="checkbox-label">
+								<input type="checkbox" class="checkbox" />
+								<span>Checkbox Option 1</span>
+							</label>
+							<label class="checkbox-label">
+								<input type="checkbox" class="checkbox" />
+								<span>Checkbox Option 2</span>
+							</label>
+						</div>
+						<div class="form-group">
+							<label class="radio-label">
+								<input
+									type="radio"
+									name="radio-group"
+									class="radio"
+								/>
+								<span>Radio Option 1</span>
+							</label>
+							<label class="radio-label">
+								<input
+									type="radio"
+									name="radio-group"
+									class="radio"
+								/>
+								<span>Radio Option 2</span>
+							</label>
+						</div>
+					</div>
+				</div>
+			</section>
+
+			<!-- Cards -->
+			<section class="section">
+				<h2 class="text-h3">Cards</h2>
+				<hr class="frame-minor">
+				<div class="component-grid">
+					<div class="card">
+						<h3 class="card-title">Card Title</h3>
+						<p class="card-content">
+							This is a basic card component with title and
+							content. Cards are used to group related
+							information.
+						</p>
+						<div class="button-group">
+							<button class="btn btn-major btn-small">
+								Action
+							</button>
+							<button class="btn btn-minor btn-small">
+								Cancel
+							</button>
+						</div>
+					</div>
+					<div class="card">
+						<h3 class="card-title">Interactive Card</h3>
+						<p class="card-content">
+							This card demonstrates hover effects and interactive
+							states for better user experience.
+						</p>
+						<div class="button-group">
+							<button class="btn btn-diminished btn-small">
+								Learn More
+							</button>
+						</div>
+					</div>
+					<div class="card">
+						<h3 class="card-title">Feature Card</h3>
+						<p class="card-content">
+							Cards can be used to showcase features, products, or
+							any grouped content with consistent styling.
+						</p>
+						<div class="button-group">
+							<button class="btn btn-major btn-small">
+								Get Started
+							</button>
+						</div>
+					</div>
+				</div>
+			</section>
+
+			<!-- Tables -->
+			<section class="section">
+				<h2 class="section-title">Tables</h2>
+				<div class="component-demo">
+					<table class="table">
+						<thead>
+							<tr>
+								<th>Name</th>
+								<th>Email</th>
+								<th>Role</th>
+								<th>Status</th>
+							</tr>
+						</thead>
+						<tbody>
+							<tr>
+								<td>John Doe</td>
+								<td>john@example.com</td>
+								<td>Admin</td>
+								<td>
+									<span class="badge badge-success"
+										>Active</span
+									>
+								</td>
+							</tr>
+							<tr>
+								<td>Jane Smith</td>
+								<td>jane@example.com</td>
+								<td>User</td>
+								<td>
+									<span class="badge badge-warning"
+										>Pending</span
+									>
+								</td>
+							</tr>
+							<tr>
+								<td>Bob Johnson</td>
+								<td>bob@example.com</td>
+								<td>Editor</td>
+								<td>
+									<span class="badge badge-error"
+										>Inactive</span
+									>
+								</td>
+							</tr>
+						</tbody>
+					</table>
+				</div>
+			</section>
+
+			<!-- Alerts -->
+			<section class="section">
+				<h2 class="section-title">Alerts & Notifications</h2>
+				<div class="component-demo">
+					<div class="alert alert-success">
+						<strong>Success!</strong> Your changes have been saved
+						successfully.
+					</div>
+					<div class="alert alert-warning">
+						<strong>Warning!</strong> Please review your input
+						before proceeding.
+					</div>
+					<div class="alert alert-error">
+						<strong>Error!</strong> Something went wrong. Please try
+						again.
+					</div>
+					<div class="alert alert-info">
+						<strong>Info:</strong> This is an informational message
+						for the user.
+					</div>
+				</div>
+			</section>
+
+			<!-- Tabs -->
+			<section class="section">
+				<h2 class="section-title">Tabs</h2>
+				<div class="component-demo">
+					<div class="tabs">
+						<ul class="tab-list">
+							<li class="tab-item">
+								<button class="tab-button active">
+									Overview
+								</button>
+							</li>
+							<li class="tab-item">
+								<button class="tab-button">Details</button>
+							</li>
+							<li class="tab-item">
+								<button class="tab-button">Settings</button>
+							</li>
+						</ul>
+					</div>
+					<div class="tab-content">
+						<p>
+							This is the content for the Overview tab. Tabs help
+							organize content into logical sections.
+						</p>
+					</div>
+				</div>
+			</section>
+
+			<!-- Accordion -->
+			<section class="section">
+				<h2 class="section-title">Accordion</h2>
+				<div class="component-demo">
+					<div class="accordion-item">
+						<button class="accordion-header">
+							Section 1 - Basic Information
+						</button>
+						<div class="accordion-content">
+							<p>
+								This is the content for section 1. Accordions
+								help organize content vertically while saving
+								space.
+							</p>
+						</div>
+					</div>
+					<div class="accordion-item">
+						<button class="accordion-header">
+							Section 2 - Advanced Settings
+						</button>
+						<div class="accordion-content">
+							<p>
+								This is the content for section 2. Users can
+								expand and collapse sections as needed.
+							</p>
+						</div>
+					</div>
+					<div class="accordion-item">
+						<button class="accordion-header">
+							Section 3 - Additional Options
+						</button>
+						<div class="accordion-content">
+							<p>
+								This is the content for section 3. Accordions
+								are great for FAQs and complex forms.
+							</p>
+						</div>
+					</div>
+				</div>
+			</section>
+
+			<!-- Pagination -->
+			<section class="section">
+				<h2 class="section-title">Pagination</h2>
+				<div class="component-demo">
+					<div class="pagination">
+						<button class="pagination-button">Previous</button>
+						<button class="pagination-button">1</button>
+						<button class="pagination-button active">2</button>
+						<button class="pagination-button">3</button>
+						<button class="pagination-button">4</button>
+						<button class="pagination-button">5</button>
+						<button class="pagination-button">Next</button>
+					</div>
+				</div>
+			</section>
+
+			<!-- Loading States -->
+			<section class="section">
+				<h2 class="section-title">Loading States</h2>
+				<div class="component-grid">
+					<div class="component-demo">
+						<h4>Spinner</h4>
+						<div class="loading-spinner"></div>
+					</div>
+					<div class="component-demo">
+						<h4>Skeleton Loading</h4>
+						<div
+							class="loading-skeleton"
+							style="height: 20px; margin-bottom: 8px"
+						></div>
+						<div
+							class="loading-skeleton"
+							style="height: 16px; margin-bottom: 8px; width: 80%"
+						></div>
+						<div
+							class="loading-skeleton"
+							style="height: 16px; width: 60%"
+						></div>
+					</div>
+					<div class="component-demo">
+						<h4>Button Loading</h4>
+						<button class="btn btn-major" disabled>
+							<div
+								class="loading-spinner"
+								style="
+									width: 16px;
+									height: 16px;
+									margin-right: 8px;
+								"
+							></div>
+							Loading...
+						</button>
+					</div>
+				</div>
+			</section>
+
+			<!-- Empty States -->
+			<section class="section">
+				<h2 class="section-title">Empty States</h2>
+				<div class="component-demo">
+					<div class="empty-state">
+						<div class="empty-state-icon">📭</div>
+						<h3>No Messages</h3>
+						<p>
+							You don't have any messages yet. Start a
+							conversation to see messages here.
+						</p>
+						<button class="btn btn-major">Send Message</button>
+					</div>
+				</div>
+			</section>
+
+			<!-- Charts/Data Visualization -->
+			<section class="section">
+				<h2 class="section-title">Charts & Data Visualization</h2>
+				<div class="component-grid">
+					<div class="component-demo">
+						<h4>Bar Chart Placeholder</h4>
+						<div class="chart-placeholder">Bar Chart Component</div>
+					</div>
+					<div class="component-demo">
+						<h4>Line Chart Placeholder</h4>
+						<div class="chart-placeholder">
+							Line Chart Component
+						</div>
+					</div>
+					<div class="component-demo">
+						<h4>Pie Chart Placeholder</h4>
+						<div class="chart-placeholder">Pie Chart Component</div>
+					</div>
+				</div>
+			</section>
+
+			<!-- Modal Demo -->
+			<section class="section">
+				<h2 class="section-title">Modal/Overlay</h2>
+				<div class="component-demo">
+					<button class="btn btn-major" onclick="showModal()">
+						Open Modal
+					</button>
+				</div>
+			</section>
+		</div>
+
+		<!-- Footer -->
+		<footer class="footer">
+			<div class="footer-content">
+				<div class="footer-section">
+					<h3>Product</h3>
+					<a href="#">Features</a>
+					<a href="#">Pricing</a>
+					<a href="#">Documentation</a>
+					<a href="#">API Reference</a>
+				</div>
+				<div class="footer-section">
+					<h3>Company</h3>
+					<a href="#">About</a>
+					<a href="#">Blog</a>
+					<a href="#">Careers</a>
+					<a href="#">Contact</a>
+				</div>
+				<div class="footer-section">
+					<h3>Support</h3>
+					<a href="#">Help Center</a>
+					<a href="#">Community</a>
+					<a href="#">Status</a>
+					<a href="#">Security</a>
+				</div>
+				<div class="footer-section">
+					<h3>Follow Us</h3>
+					<div class="social-icons">
+						<a href="#" class="social-icon">📘</a>
+						<a href="#" class="social-icon">🐦</a>
+						<a href="#" class="social-icon">📷</a>
+						<a href="#" class="social-icon">💼</a>
+					</div>
+				</div>
+			</div>
+		</footer>
+
+		<!-- Modal -->
+		<div id="modal" class="modal-overlay" style="display: none">
+			<div class="modal">
+				<h3>Modal Title</h3>
+				<p>
+					This is a modal dialog that appears over the main content.
+					It can contain forms, confirmations, or any other content.
+				</p>
+				<div class="button-group">
+					<button class="btn btn-major">Confirm</button>
+					<button class="btn btn-minor" onclick="hideModal()">
+						Cancel
+					</button>
+				</div>
+			</div>
+		</div>
+
+		<script>
+			function showModal() {
+				document.getElementById("modal").style.display = "flex";
+			}
+
+			function hideModal() {
+				document.getElementById("modal").style.display = "none";
+			}
+
+			// Close modal when clicking outside
+			document
+				.getElementById("modal")
+				.addEventListener("click", function (e) {
+					if (e.target === this) {
+						hideModal();
+					}
+				});
+
+			// Tab functionality
+			document.querySelectorAll(".tab-button").forEach((button) => {
+				button.addEventListener("click", function () {
+					document
+						.querySelectorAll(".tab-button")
+						.forEach((btn) => btn.classList.remove("active"));
+					this.classList.add("active");
+				});
+			});
+
+			// Accordion functionality
+			document.querySelectorAll(".accordion-header").forEach((header) => {
+				header.addEventListener("click", function () {
+					const content = this.nextElementSibling;
+					const isOpen = content.style.display === "block";
+
+					// Close all accordion items
+					document
+						.querySelectorAll(".accordion-content")
+						.forEach((item) => {
+							item.style.display = "none";
+						});
+
+					// Open clicked item if it was closed
+					if (!isOpen) {
+						content.style.display = "block";
+					}
+				});
+			});
+		</script>
+	</body>
+</html>

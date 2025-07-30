@@ -1,13 +1,16 @@
 "use client";
 
-// [IMPORT] Context //
-import { useChartScales } from "@/context/ChartScalesContext";
+// [IMPORT] Components //
+import MarkerBevelLine from "../shape/MarkerBevelLine";
 
 // [IMPORT] CSS styling //
-import plotStyles from "./AirlinerScatterPlot.module.css";
+// Styles moved to AirlinerChart.css
 
 // [IMPORT] Types //
 import type { AirlinerMarkerSeries } from "@/lib/data/airliner-types";
+
+// [IMPORT] Context hooks //
+import { useAirlinerSelection } from "@/context/AirlinerSelectionContext";
 
 interface AirlinerScatterLineProps {
 	airlinerID: string;
@@ -18,10 +21,11 @@ interface AirlinerScatterLineProps {
 /**
  * AirlinerScatterLine Component
  *
- * Renders connecting lines between airliner markers:
+ * Renders connecting lines between airliner markers with interactive hover/selection states:
  * - Line connecting largest class value to largest limit value
  * - Line connecting class values
  * - Highlight line for visual emphasis
+ * - Interactive hover and click handlers for airliner selection
  */
 export default function AirlinerScatterLine({ 
 	airlinerID,
@@ -29,50 +33,72 @@ export default function AirlinerScatterLine({
 	plotFormat
 }: AirlinerScatterLineProps) {
 
+	// === Selection State Management ===
+	// Access airliner selection context for hover and selection states
+	const { 
+		selectedAirlinerID, 
+		hoveredAirlinerID, 
+		setSelectedAirliner, 
+		setHoveredAirliner 
+	} = useAirlinerSelection();
+
+	// === Interaction State Calculation ===
+	// Determine if this airliner is currently hovered or selected
+	const isHovered = hoveredAirlinerID === airlinerID;
+	const isSelected = selectedAirlinerID === airlinerID;
+	const isInteractive = isHovered || isSelected;
+
+	// === Event Handlers ===
+	// Handle mouse enter for hover state
+	const handleMouseEnter = () => {
+		setHoveredAirliner(airlinerID);
+	};
+
+	// Handle mouse leave to clear hover state
+	const handleMouseLeave = () => {
+		setHoveredAirliner(null);
+	};
+
+	// Handle click for selection state
+	const handleClick = () => {
+		// Toggle selection: if already selected, deselect; otherwise select
+		setSelectedAirliner(isSelected ? null : airlinerID);
+	};
+
 	// Get the y coordinate for line rendering
 	const y = airlinerMarkers.lines.y;
-
-	// Check if the major line is valid
-	const majorLineValid = Math.abs(airlinerMarkers.lines.x2 - airlinerMarkers.lines.x1) > 0;
 
 	// Check if the minor line is valid
 	const minorLineValid = Math.abs(airlinerMarkers.lines.x3 - airlinerMarkers.lines.x2) > 0;
 
 	return (
 		<g>
-			{/* Background line */}
-			<line
-				x1={airlinerMarkers.lines.x1}
-				x2={airlinerMarkers.lines.x3}
-				y1={y}
-				y2={y}
-				className={plotStyles.pointMarkerConnectingLineBackground}
-				strokeWidth={Math.max(plotFormat.markerLineMinorWidth, plotFormat.markerLineMajorWidth)}
-			/>
-
 			{/* Line connecting largest class value to largest limit value */}
 			{minorLineValid && (
 				<line
-				x1={airlinerMarkers.lines.x3}
-				x2={airlinerMarkers.lines.x2}
-				y1={y}
-				y2={y}
-				className={plotStyles.pointMarkerConnectingLineMinor}
-				strokeWidth={plotFormat.markerLineMinorWidth}
-			/>
+					x1={airlinerMarkers.lines.x3}
+					x2={airlinerMarkers.lines.x2}
+					y1={y}
+					y2={y}
+					className="markerConnectingLineMinor"
+					strokeWidth={plotFormat.markerLineMinorWidth}
+				/>
 			)}
 
-			{/* Line connecting min and max class values */}
-			{majorLineValid && (
-				<line
+			{/* Interactive major line connecting min and max class values */}
+			<MarkerBevelLine
 				x1={airlinerMarkers.lines.x2}
 				x2={airlinerMarkers.lines.x1}
 				y1={y}
 				y2={y}
-				className={plotStyles.pointMarkerConnectingLineMajor}
-				strokeWidth={plotFormat.markerLineMajorWidth}
+				className={`markerConnectingLineMajor ${
+					isSelected ? 'selectedAirliner' : ''
+				} ${isHovered ? 'hoveredAirliner' : ''}`}
+				weight={plotFormat.markerLineMajorWidth}
+				onMouseEnter={handleMouseEnter}
+				onMouseLeave={handleMouseLeave}
+				onClick={handleClick}
 			/>
-			)}
 		</g>
 	);
 } 

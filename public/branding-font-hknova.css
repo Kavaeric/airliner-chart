@@ -1,0 +1,82 @@
+/* === HK Nova === */
+
+/* Thin - 100 */
+@font-face {
+	font-family: 'HK Nova';
+	font-style: normal;
+	font-weight: 100;
+	src: url('/fonts/HKNova/HKNova-Thin.woff2') format('woff2');
+	font-display: swap;
+}
+
+/* ExtraLight - 200 */
+@font-face {
+	font-family: 'HK Nova';
+	font-style: normal;
+	font-weight: 200;
+	src: url('/fonts/HKNova/HKNova-ExtraLight.woff2') format('woff2');
+	font-display: swap;
+}
+
+/* Light - 300 */
+@font-face {
+	font-family: 'HK Nova';
+	font-style: normal;
+	font-weight: 300;
+	src: url('/fonts/HKNova/HKNova-Light.woff2') format('woff2');
+	font-display: swap;
+}
+
+/* Regular - 400 */
+@font-face {
+	font-family: "HK Nova";
+	font-style: normal;
+	font-weight: 400;
+	src: url("/fonts/HKNova/HKNova-Regular.woff2") format("woff2");
+	font-display: swap;
+}
+
+/* Medium - 500 */
+@font-face {
+	font-family: "HK Nova";
+	font-style: normal;
+	font-weight: 500;
+	src: url("/fonts/HKNova/HKNova-Medium.woff2") format("woff2");
+	font-display: swap;
+}
+
+/* Semi-Bold - 600 */
+@font-face {
+	font-family: "HK Nova";
+	font-style: normal;
+	font-weight: 600;
+	src: url("/fonts/HKNova/HKNova-SemiBold.woff2") format("woff2");
+	font-display: swap;
+}
+
+/* Bold - 700 */
+@font-face {
+	font-family: "HK Nova";
+	font-style: normal;
+	font-weight: 700;
+	src: url("/fonts/HKNova/HKNova-Bold.woff2") format("woff2");
+	font-display: swap;
+}
+
+/* Extra-Bold - 800 */
+@font-face {
+	font-family: "HK Nova";
+	font-style: normal;
+	font-weight: 800;
+	src: url("/fonts/HKNova/HKNova-ExtraBold.woff2") format("woff2");
+	font-display: swap;
+}
+
+/* Heavy - 900 */
+@font-face {
+	font-family: 'HK Nova';
+	font-style: normal;
+	font-weight: 900;
+	src: url('/fonts/HKNova/HKNova-Heavy.woff2') format('woff2');
+	font-display: swap;
+} 

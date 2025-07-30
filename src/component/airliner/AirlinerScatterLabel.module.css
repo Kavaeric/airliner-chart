@@ -1,7 +1,0 @@
-/* AirlinerScatterLabel.module.css */
-
-.airlinerLabel {
-	fill: var(--text-minor);
-	font-family: var(--font-display);
-	font-weight: var(--font-weight-normal);
-}
