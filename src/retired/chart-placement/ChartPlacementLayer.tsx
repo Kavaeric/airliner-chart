@@ -1,8 +1,5 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 
-// [IMPORT] Context providers/hooks //
-import { useChartScales } from "@/context/ChartScalesContext";
-
 // [IMPORT] Placement utilities //
 import { generateStandardOffsetLocations, sortOffsetLocations, generatePlacementCandidates, setGridCellOccupancy } from "@/retired/chart-placement/grid-placement";
 import { PlaceableObject, placeLabelsWithOccupiedGrid, markOccupiedGrid } from "@/retired/chart-placement/chart-placement-grid";
@@ -68,9 +65,6 @@ export default function ChartPlacementLayer({
 	// Refs array to hold references to invisible measurement elements
 	// Each child gets a ref for measuring its actual rendered bounds
 	const measurementRefs = useRef<(SVGGElement | null)[]>([]);
-
-	// Get chart scales from context for coordinate transformations
-	const { xScale, yScale } = useChartScales();
 
 	// Memoise the generated and sorted candidate offsets for placement
 	// This creates a 3-tier concentric grid of placement candidates, sorted by preference
