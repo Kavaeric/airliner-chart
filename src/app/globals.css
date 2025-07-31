@@ -601,8 +601,9 @@ input[type="radio"]:checked::before {
 
 /* Switch */
 .input-switch input[type="checkbox"] {
-	aspect-ratio: 2 / 1;
+	width: var(--space-400);
 	padding: var(--space-025);
+	margin-right: 0;
 }
 
 .input-switch input[type="checkbox"]:checked {

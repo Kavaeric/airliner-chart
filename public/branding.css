@@ -77,6 +77,7 @@
 	--size-32: 32px;
 	--size-36: 36px;
 	--size-40: 40px;
+	--size-44: 44px;
 	--size-48: 48px;
 	--size-60: 60px;
 	--size-64: 64px;
@@ -155,7 +156,7 @@
 	--interactive-font-size: var(--text-size-400);
 	--interactive-text-transform: uppercase;
 	--interactive-text-tracking: var(--text-tracking-800);
-	--interactive-min-size: var(--size-48);
+	--interactive-min-size: var(--size-44);
 
 	--interactive-augmented: light-dark(
 		var(--red-treble-500),

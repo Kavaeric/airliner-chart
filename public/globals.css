@@ -232,10 +232,15 @@ p:last-child {
 
 
 /* ===== Link styles ===== */
+a {
+	outline: var(--border-weight-100) solid transparent;
+	outline-offset: var(--space-025);
+	transition: all 0.1s linear;
+}
+
 a,
 a.link-major {
 	color: var(--interactive-major);
-	transition: all 0.1s linear;
 }
 
 a:hover,
@@ -262,6 +267,13 @@ a.link-augmented:hover {
 a.link-augmented:active {
 	color: var(--interactive-augmented-active);
 	background-color: var(--highlight-active-augmented);
+}
+
+a:focus,
+a.link-major:focus,
+a.link-augmented:focus {
+	outline: var(--border-weight-100) solid var(--interactive-augmented);
+	outline-offset: var(--space-025);
 }
 
 /* ===== Button styles ===== */
@@ -569,7 +581,7 @@ input:disabled {
 .input-checkbox input[type="checkbox"] {
 	margin: 0;
 	margin-left: var(--space-150);
-	margin-right: var(--space-150);
+	margin-right: var(--space-100);
 }
 
 .input-checkbox input[type="checkbox"]::before {
@@ -601,8 +613,9 @@ input[type="radio"]:checked::before {
 
 /* Switch */
 .input-switch input[type="checkbox"] {
-	aspect-ratio: 2 / 1;
+	width: var(--space-400);
 	padding: var(--space-025);
+	margin-right: 0;
 }
 
 .input-switch input[type="checkbox"]:checked {
