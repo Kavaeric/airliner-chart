@@ -28,11 +28,11 @@
 	   because SVG sure is weird like that */
 	grid-template-rows:
 		minmax(0, auto)
-		minmax(0, var(--space-800))
+		minmax(0, var(--space-600))
 		minmax(0, var(--interactive-min-size));
 	grid-template-columns:
 		minmax(0, var(--interactive-min-size))
-		minmax(0, var(--space-800))
+		minmax(0, var(--space-600))
 		minmax(0, auto);
 	
 	width: 100%;
@@ -84,7 +84,7 @@
 .axisLabelY {
 	fill: var(--text-minor);
 	font-family: var(--font-family-display);
-	font-size: var(--text-size-400);
+	font-size: var(--text-size-350);
 	font-weight: var(--font-weight-regular);
 	letter-spacing: var(--text-tracking-800);
 	text-transform: uppercase;
@@ -92,13 +92,13 @@
 
 .axisLabelX {
 	dominant-baseline: baseline;
-	transform: translateY(var(--space-negative-200));
+	transform: translateY(var(--space-negative-150));
 }
 
 .axisLabelY {
 	dominant-baseline: hanging;
 	writing-mode: sideways-lr;
-	transform: translateX(var(--space-100));
+	transform: translateX(var(--space-050));
 }
 
 .xAxis .tick line,
@@ -106,22 +106,24 @@
 	stroke-width: 0;
 }
 
-/* Axes tick labels */
+/* Axis tick number labels */
 .xAxis .tick text,
 .yAxis .tick text {
 	fill: var(--text-minor);
 	font-family: var(--font-family-display);
 	font-weight: var(--font-weight-regular);
-	font-size: var(--text-size-300);
+	font-size: var(--text-size-200);
 	letter-spacing: var(--text-tracking-400);
 }
 
 .xAxis .tick text {
 	text-anchor: middle;
+	transform: translateY(var(--space-negative-050));
 }
 
 .yAxis .tick text {
 	text-anchor: end;
+	transform: translateX(var(--space-050));
 }
 
 
