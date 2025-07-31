@@ -5,55 +5,9 @@
  * and which areas are available for label placement.
  */
 
-import { PlacementBand } from './chart-bands';
+import type { Obstacle, PlacementBand, BandOccupancy, Range } from './band-placement-types';
 
-/**
- * Represents a horizontal range with start, end, and width properties.
- * Used for tracking occupied and available space within bands.
- * Includes top and bottom boundaries for efficient vertical range checks.
- */
-export interface Range {
-	/** Start position of the range */
-	start: number;
-	/** End position of the range */
-	end: number;
-	/** Width of the range (end - start) */
-	width: number;
-	/** Top boundary of the range */
-	top: number;
-	/** Bottom boundary of the range */
-	bottom: number;
-}
 
-/**
- * Represents an obstacle with bounding box coordinates.
- * Used for calculating which areas are occupied within chart bands.
- */
-export interface Obstacle {
-	/** Minimum X coordinate of the obstacle */
-	minX: number;
-	/** Maximum X coordinate of the obstacle */
-	maxX: number;
-	/** Minimum Y coordinate of the obstacle */
-	minY: number;
-	/** Maximum Y coordinate of the obstacle */
-	maxY: number;
-}
-
-/**
- * Represents the occupancy state of a single chart band.
- * Contains both occupied and available ranges within the band.
- */
-export interface BandOccupancy {
-	/** Index of the band */
-	bandIndex: number;
-	/** The placement band */
-	band: PlacementBand;
-	/** Ranges occupied by obstacles within this band */
-	occupiedRanges: Range[];
-	/** Ranges available for label placement within this band */
-	availableRanges: Range[];
-}
 
 /**
  * Determines if an obstacle intersects vertically with a placement band.
@@ -129,7 +83,7 @@ export function consolidateOverlappingRanges(ranges: Range[]): Range[] {
  */
 export function invertOccupiedRangesToAvailable(
 	occupiedRanges: Range[],
-	band: import('./chart-bands').PlacementBand
+	band: PlacementBand
 ): Range[] {
 	const availableRanges: Range[] = [];
 	const left = band.left;

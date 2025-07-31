@@ -1,49 +1,11 @@
+import type { Obstacle, PlacementBand } from './band-placement-types';
+
 /**
  * Chart band placement utilities for creating vertical space bands that avoid obstacles.
  * 
  * This module provides functions for calculating optimal placement bands for chart elements
  * like labels, ensuring they don't overlap with existing chart content (obstacles).
  */
-
-/**
- * A single horizontal band of space on a chart that can be used for element placement.
- * 
- * Bands represent available vertical space between obstacles where chart elements
- * (like labels) can be safely positioned without overlapping existing content.
- */
-export interface PlacementBand {
-	/** Index of the band */
-	index: number;
-	/** Y-coordinate of the top edge of the band */
-	top: number;
-	/** Y-coordinate of the bottom edge of the band */
-	bottom: number;
-	/** Height of the band (bottom - top) */
-	height: number;
-	/** Y-coordinate of the centre point of the band */
-	centre: number;
-	/** X-coordinate of the left edge of the band (horizontal extent) */
-	left: number;
-	/** X-coordinate of the right edge of the band (horizontal extent) */
-	right: number;
-}
-
-/**
- * An obstacle represents an object that occupies space on the chart.
- * 
- * Obstacles are used to determine where bands cannot be placed, ensuring
- * chart elements don't overlap with existing content like markers or labels.
- */
-export interface Obstacle {
-	/** Minimum X coordinate of the obstacle */
-	minX: number;
-	/** Maximum X coordinate of the obstacle */
-	maxX: number;
-	/** Minimum Y coordinate of the obstacle */
-	minY: number;
-	/** Maximum Y coordinate of the obstacle */
-	maxY: number;
-}
 
 /**
  * Creates a single chart band from top and bottom coordinates.

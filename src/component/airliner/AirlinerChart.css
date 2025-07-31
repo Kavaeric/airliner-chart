@@ -362,6 +362,10 @@
 	fill: var(--text-major);
 }
 
+.airlinerLabel.selectedAirliner {
+	fill: var(--text-major);
+}
+
 
 /* ===== Interactive State ===== */
 

@@ -5,16 +5,14 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 
 // [IMPORT] Types/interfaces //
 import type { AirlinerData, AirlinerLabel, AirlinerModel, AirlinerMarkerSeries } from "@/lib/data/airliner-types";
-import type { Obstacle, PlacementBand } from "@/lib/band-placement/chart-bands";
-import type { BandOccupancy } from "@/lib/band-placement/band-occupancy";
-import type { PlacementObject } from "@/lib/band-placement/calculate-band-placement";
+import type { Obstacle, PlacementBand, BandOccupancy, PlacementObject } from "@/lib/band-placement/band-placement-types";
 
 // [IMPORT] Utilities //
 import { plotAirlinerMarkerSeries, plotLabelAnchor } from "@/lib/data/plot-airliner-markers";
 import { calculateChartPlacementBands } from "@/lib/band-placement/chart-bands";
 import { calculateBandOccupancy } from "@/lib/band-placement/band-occupancy";
 import { calculateBandPlacement } from "@/lib/band-placement/calculate-band-placement";
-import { detectClustersWithFlatbush } from "@/lib/band-placement/detect-clusters-with-flatbush";
+import { detectClustersWithFlatbush } from "@/lib/utils/detect-clusters-with-flatbush";
 
 /**
  * @type {AirlinerPlotData}
@@ -204,8 +202,6 @@ export function useAirlinerViewModel(
 			return newLabelPlacement;
 		}
 	}, [airlinerData, plotElements, labelDimensions, airlinerPlotBands, width, height]);
-
-
 
 	/**
 	 * @type {Map<number, labelCluster> | null}
