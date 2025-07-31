@@ -156,28 +156,56 @@ export default function AirlinerChart({ data }: AirlinerChartProps) {
 		>
 			<div className="chartControls frame-flex-horizontal">
 				<hr className="frame-minor" />
-				<button className="btn-diminished btn-icon-only" onClick={() => viewportRef.current.view.move(0, 1000)}>
-					<span className="material-symbols-sharp">keyboard_double_arrow_up</span>
+				<button
+					className="btn-diminished btn-icon-only"
+					onClick={() => viewportRef.current.view.move(0, 1000)}
+					aria-label="Pan up"
+				>
+					<span className="material-symbols-sharp" aria-hidden="true">keyboard_double_arrow_up</span>
 				</button>
-				<button className="btn-diminished btn-icon-only" onClick={() => viewportRef.current.view.move(0, -1000)}>
-					<span className="material-symbols-sharp">keyboard_double_arrow_down</span>
+				<button
+					className="btn-diminished btn-icon-only"
+					onClick={() => viewportRef.current.view.move(0, -1000)}
+					aria-label="Pan down"
+				>
+					<span className="material-symbols-sharp" aria-hidden="true">keyboard_double_arrow_down</span>
 				</button>
-				<button className="btn-diminished btn-icon-only" onClick={() => viewportRef.current.view.move(-50, 0)}>
-					<span className="material-symbols-sharp">keyboard_double_arrow_left</span>
+				<button
+					className="btn-diminished btn-icon-only"
+					onClick={() => viewportRef.current.view.move(-50, 0)}
+					aria-label="Pan left"
+				>
+					<span className="material-symbols-sharp" aria-hidden="true">keyboard_double_arrow_left</span>
 				</button>
-				<button className="btn-diminished btn-icon-only" onClick={() => viewportRef.current.view.move(50, 0)}>
-					<span className="material-symbols-sharp">keyboard_double_arrow_right</span>
+				<button
+					className="btn-diminished btn-icon-only"
+					onClick={() => viewportRef.current.view.move(50, 0)}
+					aria-label="Pan right"
+				>
+					<span className="material-symbols-sharp" aria-hidden="true">keyboard_double_arrow_right</span>
 				</button>
 				<hr className="frame-minor" />
-				<button className="btn-diminished btn-icon-only" onClick={() => viewportRef.current.view.zoom(1.1)}>
-					<span className="material-symbols-sharp">zoom_in</span>
+				<button
+					className="btn-diminished btn-icon-only"
+					onClick={() => viewportRef.current.view.zoom(1.1)}
+					aria-label="Zoom in"
+				>
+					<span className="material-symbols-sharp" aria-hidden="true">zoom_in</span>
 				</button>
-				<button className="btn-diminished btn-icon-only" onClick={() => viewportRef.current.view.zoom(0.9)}>
-					<span className="material-symbols-sharp">zoom_out</span>
+				<button
+					className="btn-diminished btn-icon-only"
+					onClick={() => viewportRef.current.view.zoom(0.9)}
+					aria-label="Zoom out"
+				>
+					<span className="material-symbols-sharp" aria-hidden="true">zoom_out</span>
 				</button>
 				<hr className="frame-minor" />
-				<button className="btn-diminished" onClick={() => viewportRef.current.view.reset()}>
-					<span className="material-symbols-sharp">zoom_out_map</span>
+				<button
+					className="btn-diminished"
+					onClick={() => viewportRef.current.view.reset()}
+					aria-label="Reset zoom"
+				>
+					<span className="material-symbols-sharp" aria-hidden="true">zoom_out_map</span>
 					Reset zoom
 				</button>
 				<hr className="frame-minor" />
@@ -201,7 +229,7 @@ export default function AirlinerChart({ data }: AirlinerChartProps) {
 					}}
 					parentSizeProps={{ debounceTime: 1 }}
 				>
-					{viewportRef.current || data.length > 0
+					{viewportRef.current && data.length > 0
 						? <AirlinerScatterPlot />
 						: <p>Chart loading...</p>}
 				</ResponsiveSVG>
