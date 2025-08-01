@@ -78,6 +78,7 @@ export function useAirlinerViewModel(
 		markerSize: 6,
 		markerLineMajorWidth: 8,
 		markerLineMinorWidth: 8,
+		markerMargin: 8,
 		labelFontSize: 16,
 		labelPadding: 4,
 		labelMargin: 0
@@ -129,7 +130,7 @@ export function useAirlinerViewModel(
 				airliner.airlinerData,
 				xScaleView,
 				yScaleView,
-				Math.max(plotFormat.markerSize, plotFormat.markerLineMajorWidth)
+				Math.max(plotFormat.markerSize, plotFormat.markerLineMajorWidth) + plotFormat.markerMargin
 			);
 
 			const newLabelAnchor = plotLabelAnchor(

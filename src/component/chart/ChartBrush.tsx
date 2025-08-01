@@ -1,5 +1,5 @@
 // [IMPORT] React and core libraries //
-import React, { useRef } from "react";
+import React from "react";
 import { RectClipPath } from "@visx/clip-path";
 
 // [IMPORT] Context providers/hooks //

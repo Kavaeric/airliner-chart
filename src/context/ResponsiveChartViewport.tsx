@@ -23,6 +23,21 @@ interface ViewportState {
 }
 
 /**
+ * @interface MouseCoordinates
+ * Represents mouse coordinates in both screen space and data space
+ */
+interface MouseCoordinates {
+	screen: {
+		x: number;
+		y: number;
+	};
+	data: {
+		x: number;
+		y: number;
+	};
+}
+
+/**
  * @interface DragConfig
  * Configuration for drag gesture handling
  */
@@ -51,6 +66,10 @@ interface DragConfig {
  * @property {Object} viewportScale D3 scales covering the current visible viewport (zoomed/panned).
  *   - `x`: Scale for X axis and plotting visible data.
  *   - `y`: Scale for Y axis and plotting visible data.
+ * @property {Object} mouse Current mouse coordinates and tracking state.
+ *   - `coordinates`: Current mouse position in both screen and data coordinates.
+ *   - `isOverChart`: Whether the mouse is currently over the chart area.
+ *   - `updateCoordinates`: Function to update mouse coordinates from a mouse event.
  * @property {Object} view Viewport manipulation functions.
  *   - `move`: Pan the viewport by a given delta in data units. Positive values move right/up.
  *   - `zoom`: Zoom the viewport by a scale factor, optionally around a data-space center point.
@@ -74,6 +93,11 @@ interface ResponsiveChartViewportType {
 	viewportScale: {
 		x: AxisScale;	// previously xScaleView
 		y: AxisScale;	// previously yScaleView
+	};
+	mouse: {
+		coordinates: MouseCoordinates | null;
+		isOverChart: boolean;
+		updateCoordinates: (event: React.MouseEvent | MouseEvent, element: Element) => void;
 	};
 	view: {
 		move: (x: number, y: number) => void; // previously translateViewport
@@ -399,15 +423,19 @@ export function ResponsiveChartViewport<T>({
 	const [isDragging, setIsDragging] = useState(false);
 	const dragStartViewport = useRef<ViewportState | null>(null);
 
+	// Mouse tracking state
+	const [mouseCoordinates, setMouseCoordinates] = useState<MouseCoordinates | null>(null);
+	const [isMouseOverChart, setIsMouseOverChart] = useState(false);
+
 	// Global wheel event prevention for chart elements
 	useEffect(() => {
 		const handleWheel = (event: WheelEvent) => {
-			// Check if the wheel event is over a chart element
+			// Check if the wheel event is over a chart element with wheel interaction capabilities
 			const target = event.target as Element;
 			if (target) {
-				// Look for chart elements in the event path
+				// Only prevent wheel events on elements that actually have wheel interaction capabilities
+				// Look for chart elements with data-chart-viewport attribute or touch-action: none
 				const chartElement = target.closest('[data-chart-viewport]') || 
-					target.closest('svg') || 
 					target.closest('rect[style*="touch-action: none"]');
 				
 				if (chartElement) {
@@ -435,6 +463,22 @@ export function ResponsiveChartViewport<T>({
 		domain: viewport.y,
 		range: [height, 0],
 	}), [viewport.y[0], viewport.y[1], height]);
+
+	// Mouse coordinate update function
+	const updateMouseCoordinates = useCallback((event: React.MouseEvent | MouseEvent, element: Element) => {
+		const rect = element.getBoundingClientRect();
+		const mouseX = event.clientX - rect.left;
+		const mouseY = event.clientY - rect.top;
+
+		const dataX = xScaleView.invert(mouseX);
+		const dataY = yScaleView.invert(mouseY);
+
+		setMouseCoordinates({
+			screen: { x: mouseX, y: mouseY },
+			data: { x: dataX, y: dataY },
+		});
+		setIsMouseOverChart(true);
+	}, [xScaleView, yScaleView]);
 
 	/**
 	 * @function translateViewport
@@ -829,6 +873,11 @@ export function ResponsiveChartViewport<T>({
 			x: xScaleView,
 			y: yScaleView,
 		},
+		mouse: {
+			coordinates: mouseCoordinates,
+			isOverChart: isMouseOverChart,
+			updateCoordinates: updateMouseCoordinates,
+		},
 		view: {
 			move: translateViewport,
 			zoom: zoomViewport,
@@ -841,7 +890,7 @@ export function ResponsiveChartViewport<T>({
 			bindGestures,
 			isDragging,
 		},
-	}), [width, height, xScale, yScale, xScaleView, yScaleView, translateViewport, zoomViewport, resetViewport, zoomToExtents, bindDragConfigurable, bindWheel, bindGestures, isDragging]);
+	}), [width, height, xScale, yScale, xScaleView, yScaleView, mouseCoordinates, isMouseOverChart, updateMouseCoordinates, translateViewport, zoomViewport, resetViewport, zoomToExtents, bindDragConfigurable, bindWheel, bindGestures, isDragging]);
 
 	// Expose viewport functions via ref if provided
 	useImperativeHandle(viewportRef, () => viewportManager, [viewportManager]);
@@ -867,6 +916,10 @@ export function ResponsiveChartViewport<T>({
  * @property {Object} viewportScale D3 scales covering the current visible viewport (zoomed/panned).
  *   - `x`: Scale for X axis and plotting visible data.
  *   - `y`: Scale for Y axis and plotting visible data.
+ * @property {Object} mouse Current mouse coordinates and tracking state.
+ *   - `coordinates`: Current mouse position in both screen and data coordinates.
+ *   - `isOverChart`: Whether the mouse is currently over the chart area.
+ *   - `updateCoordinates`: Function to update mouse coordinates from a mouse event.
  * @property {Object} view Viewport manipulation functions.
  *   - `move`: Pan the viewport by a given delta in data units. Positive values move right/up.
  *   - `zoom`: Zoom the viewport by a scale factor, optionally around a data-space center point.

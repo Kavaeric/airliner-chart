@@ -510,11 +510,53 @@ export function calculateBandPlacement(config: BandPlacementConfig): {
 	}
 
 	// Pre-sort the indices to try for this pass, to optimise placement order.
-	// The sort order is determined by the first placement mode in the strategy.
+	// Sort by band based on strategy, then by x-coordinate within each band based on strategy
 	const firstMode = strategy.firstPass.modes?.[0];
 	
-	// Temporary: Sort by anchor y-coordinate first (top to bottom)
-	indicesToTry[pass].sort((a, b) => placementObjects[a].anchor.y - placementObjects[b].anchor.y);
+	let sortLeftToRight = true; // default
+	let sortTopToBottom = true; // default
+	
+	// Determine sort directions based on first placement mode
+	if (firstMode) {
+		if (firstMode === 'left' || firstMode === 'top-left' || firstMode === 'bottom-left') {
+			sortLeftToRight = true;
+		} else if (firstMode === 'right' || firstMode === 'top-right' || firstMode === 'bottom-right') {
+			sortLeftToRight = false; // right-to-left
+		}
+		// For other modes (top, bottom, centre), use default left-to-right
+		
+		if (firstMode === 'top-left' || firstMode === 'top' || firstMode === 'top-right') {
+			sortTopToBottom = true; // top-to-bottom
+		} else if (firstMode === 'bottom-left' || firstMode === 'bottom' || firstMode === 'bottom-right') {
+			sortTopToBottom = false; // bottom-to-top
+		}
+		// For other modes (left, right, centre), use default top-to-bottom
+	}
+	
+	indicesToTry[pass].sort((a, b) => {
+		const objA = placementObjects[a];
+		const objB = placementObjects[b];
+		
+		// Find home bands for both objects
+		const homeBandIndexA = findHomeBandIndex(bandArr, objA.anchor.y);
+		const homeBandIndexB = findHomeBandIndex(bandArr, objB.anchor.y);
+		
+		// First sort by band based on strategy
+		if (homeBandIndexA !== homeBandIndexB) {
+			if (sortTopToBottom) {
+				return homeBandIndexA - homeBandIndexB; // top-to-bottom
+			} else {
+				return homeBandIndexB - homeBandIndexA; // bottom-to-top
+			}
+		}
+		
+		// Within the same band, sort by x-coordinate based on strategy
+		if (sortLeftToRight) {
+			return objA.anchor.x - objB.anchor.x; // left-to-right
+		} else {
+			return objB.anchor.x - objA.anchor.x; // right-to-left
+		}
+	});
 
 
 	// Iterate through all candidate indices for simple placement

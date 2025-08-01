@@ -332,6 +332,18 @@
 .markerLeader {
 	stroke: var(--border-major);
 	stroke-width: 1;
+	shape-rendering: geometricPrecision;
+	transition: stroke 0.1s ease-in-out, stroke-width 0.1s ease-in-out;
+	stroke-linecap: butt;
+}
+
+.markerLeader.hoveredAirliner {
+	stroke: var(--interactive-diminished);
+}
+
+.markerLeader.selectedAirliner {
+	stroke: var(--interactive-minor);
+	stroke-width: 2;
 }
 
 /* ===== AirlinerScatterMarker Component Styling ===== */
@@ -368,7 +380,7 @@
 .airlinerLabelInterrupt ,
 .airlinerLabel {
 	font-family: var(--font-family-display);
-	font-size: var(--text-size-400);
+	font-size: var(--text-size-350);
 	font-weight: var(--font-weight-regular);
 	letter-spacing: var(--text-tracking-800);
 	cursor: pointer;
@@ -382,10 +394,10 @@
 .airlinerLabelInterrupt {
 	fill: none;
 	stroke: var(--surface-major);
-	stroke-width: var(--space-100);
+	stroke-width: var(--space-200);
 	stroke-miterlimit: 1.5;
 	stroke-linejoin: round;
-	opacity: var(--opacity-50);
+	opacity: var(--opacity-30);
 }
 
 .airlinerLabel.hoveredAirliner {
@@ -394,6 +406,7 @@
 
 .airlinerLabel.selectedAirliner {
 	fill: var(--text-major);
+	font-weight: var(--font-weight-bold);
 }
 
 
@@ -428,54 +441,66 @@
 .airlinerGridLine {
 	stroke-width: var(--border-weight-100);
 	pointer-events: none;
+	shape-rendering: geometricPrecision;
 }
   
-  /* Type-specific styles */
-  .airlinerGridLineVertical {
-	/* Vertical line specific styles */
-  }
-  
-  .airlinerGridLineHorizontal {
-	/* Horizontal line specific styles */
-  }
-  
-  .airlinerGridLineHovered {
-	stroke: var(--highlight-hover-minor);
-  }
-  
-  .airlinerGridLineSelected {
-	stroke: var(--highlight-active-minor);
-  }
+/* Type-specific styles */
+.airlinerGridLineVertical {
+/* Vertical line specific styles */
+}
+
+.airlinerGridLineHorizontal {
+/* Horizontal line specific styles */
+}
+
+.airlinerGridLineHovered {
+	stroke: var(--highlight-hover-diminished);
+}
+
+.airlinerGridLineSelected {
+	stroke: var(--highlight-active-diminished);
+}
+
+.airlinerSelectionCapacityHighlight {
+	fill: var(--highlight-hover-diminished);
+	opacity: 0.1;
+}
 
 
 /* ===== Active Airliner Y-Axis Styling ===== */
 
-.activeAirlinerYAxisLine {
-	transition: all 0.1s ease-in-out;
+.yAxisReadout {
+	transition: all 0.05s linear;
+}
+
+.yAxisReadoutLine,
+.xAxisReadoutLine {
 	stroke: var(--border-minor);
 	stroke-width: var(--border-weight-100);
 }
 
-.activeAirlinerYAxisTextbox {
-	transition: opacity 0.1s linear;
+.yAxisReadoutBox {
+	transition: all 0.1s linear;
 	fill: var(--surface-minor);
+	stroke: var(--border-minor);
 	stroke-width: var(--border-weight-100);
+}
+
+.yAxisReadoutBox.hoveredAirliner {
 	stroke: var(--border-major);
-	opacity: 0;
 }
 
-.activeAirlinerYAxisTextbox.selectedAirliner {
-	opacity: 1;
+.yAxisReadoutBox.selectedAirliner {
+	fill: var(--interactive-major);
 }
 
-.activeAirlinerYAxisLine.hoveredAirliner {
+.yAxisReadoutLine.hoveredAirliner {
 	stroke: var(--interactive-minor);
 }
 
-.activeAirlinerYAxisText {
-	transition: opacity 0.1s linear;
-	fill: var(--text-major);
-	opacity: 0;
+.yAxisReadoutText {
+	transition: all 0.1s linear;
+	fill: var(--text-minor);
 
 	font-family: var(--font-family-display);
 	font-size: var(--text-size-300);
@@ -485,8 +510,12 @@
 	transform: translateX(var(--space-negative-050));
 }
 
-.activeAirlinerYAxisText.selectedAirliner {
-	opacity: 1;
+.yAxisReadoutText.hoveredAirliner {
+	fill: var(--text-major);
 }
 
+.yAxisReadoutText.selectedAirliner {
+	fill: var(--interactive-major-inverse);
+	font-weight: var(--font-weight-bold);
+}
 

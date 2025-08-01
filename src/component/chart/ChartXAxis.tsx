@@ -23,11 +23,22 @@ interface XAxisProps {
  * This enables robust, race-condition-free axis measurement and layout.
  */
 export default function XAxis({ label }: XAxisProps) {
+	const { viewportScale, mouse } = useResponsiveChartViewport();
 	const { width, height } = useResponsiveSVG();
-	const { viewportScale } = useResponsiveChartViewport();
 	
 	return (
 		<g>
+
+			{/* Range figure line - always renders, follows mouse */}
+			<line
+				x1={mouse.isOverChart && mouse.coordinates ? mouse.coordinates.screen.x : 0}
+				y1={height}
+				x2={mouse.isOverChart && mouse.coordinates ? mouse.coordinates.screen.x : 0}
+				y2={0}
+				className="xAxisReadoutLine"
+			/>
+
+			
 			{/* Render the axis */}
 			<AxisBottom
 				scale={viewportScale.x}

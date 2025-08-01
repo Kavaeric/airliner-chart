@@ -3,14 +3,13 @@
 // [IMPORT] Components //
 import MarkerBevelLine from "../shape/MarkerBevelLine";
 
-// [IMPORT] CSS styling //
-// Styles moved to AirlinerChart.css
 
 // [IMPORT] Types //
 import type { AirlinerMarkerSeries } from "@/lib/data/airliner-types";
 
 // [IMPORT] Context hooks //
 import { useAirlinerSelection } from "@/context/AirlinerSelectionContext";
+import { useDebugMode } from "@/context/DebugModeContext";
 
 interface AirlinerScatterLineProps {
 	airlinerID: string;
@@ -41,6 +40,9 @@ export default function AirlinerScatterLine({
 		setSelectedAirliner, 
 		setHoveredAirliner 
 	} = useAirlinerSelection();
+
+	// === Debug Mode ===
+	const { debugMode } = useDebugMode();
 
 	// === Interaction State Calculation ===
 	// Determine if this airliner is currently hovered or selected
@@ -87,7 +89,7 @@ export default function AirlinerScatterLine({
 				/>
 			)}
 
-			{/* Interactive major line connecting min and max class values */}
+			{/* Major line connecting min and max class values */}
 			<MarkerBevelLine
 				x1={airlinerMarkers.lines.x2}
 				x2={airlinerMarkers.lines.x1}
@@ -97,9 +99,21 @@ export default function AirlinerScatterLine({
 					isSelected ? 'selectedAirliner' : ''
 				} ${isHovered ? 'hoveredAirliner' : ''}`}
 				weight={plotFormat.markerLineMajorWidth}
+			/>
+
+			{/* Invisible line for hover and selection */}
+			<MarkerBevelLine
+				x1={airlinerMarkers.lines.x2}
+				x2={airlinerMarkers.lines.x1}
+				y1={y}
+				y2={y}
+				weight={44}
 				onMouseEnter={handleMouseEnter}
 				onMouseLeave={handleMouseLeave}
 				onClick={handleClick}
+				fill="transparent"
+				stroke={debugMode ? 'green' : 'transparent'}
+				style={{ cursor: 'pointer' }}
 			/>
 		</g>
 	);

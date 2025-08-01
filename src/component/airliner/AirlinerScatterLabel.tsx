@@ -7,6 +7,8 @@ import { AirlinerLabel } from "@/lib/data/airliner-types";
 
 // [IMPORT] Context hooks //
 import { useAirlinerSelection } from "@/context/AirlinerSelectionContext";
+import { useDebugMode } from "@/context/DebugModeContext";
+import { RectCentre } from "../shape/RectCentre";
 
 // [IMPORT] CSS styling //
 // Styles moved to AirlinerChart.css
@@ -45,6 +47,9 @@ const AirlinerScatterLabel = React.forwardRef<SVGGElement, AirlinerScatterLabelP
 			setSelectedAirliner, 
 			setHoveredAirliner 
 		} = useAirlinerSelection();
+
+		// === Debug Mode ===
+		const { debugMode } = useDebugMode();
 
 		// === Interaction State Calculation ===
 		// Determine if this airliner is currently hovered or selected
@@ -108,6 +113,12 @@ const AirlinerScatterLabel = React.forwardRef<SVGGElement, AirlinerScatterLabelP
 					className={`airlinerLabel ${
 						isSelected ? 'selectedAirliner' : ''
 					} ${isHovered ? 'hoveredAirliner' : ''}`}
+					onMouseEnter={handleMouseEnter}
+					onMouseLeave={handleMouseLeave}
+					onClick={handleClick}
+					fill="transparent"
+					stroke={debugMode ? 'green' : 'transparent'}
+					style={{ cursor: 'pointer' }}
 				>
 					{airlinerLabel.labelText}
 				</Text>
