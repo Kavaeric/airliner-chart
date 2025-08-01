@@ -39,7 +39,8 @@ export default function ChartBrush({
 	const brushGesturesBind = drag.bindGestures({ 
 		dragAxis: axisMode, 
 		wheelAxis: axisMode,
-		invertDrag: true // ChartBrush uses inverted drag direction
+		invertDrag: true, // ChartBrush uses inverted drag direction
+		useFullDataScale: true // Use full data range for consistent brush speed regardless of zoom level
 	});
 
 	// Determine the size and position of the brush control rectangle based on the current viewportScale relative to dataScale

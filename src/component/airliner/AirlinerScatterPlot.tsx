@@ -131,14 +131,14 @@ export default function AirlinerScatterPlot() {
 				height={height}
 			/>
 			
-			{/* Chart area draggable area with selection clearing and mouse coordinate tracking */}
+			{/* Chart area draggable area with selection clearing */}
 			<rect
 				x={0}
 				y={0}
 				width={width}
 				height={height}
 				fill="transparent"
-				{...drag.bindGestures({ dragAxis: 'both', wheelAxis: 'both' })}
+				{...drag.bindGestures({ dragAxis: 'both', wheelAxis: 'both', enablePinch: true })}
 				onMouseMove={(event) => {
 					// Update mouse coordinates for the chart area
 					mouse.updateCoordinates(event, event.currentTarget);

@@ -44,7 +44,6 @@ export default function XAxis({ label }: XAxisProps) {
 				scale={viewportScale.x}
 				numTicks={10}
 				tickLength={4}
-
 				axisClassName="axis"
 				axisLineClassName="axisLine"
 				tickClassName="tick"
