@@ -127,10 +127,9 @@ export default function AirlinerChart({ data }: AirlinerChartProps) {
 	}), [xAxisData, chartData]);
 
 
-	// ChartLayoutContext provides layout and tick info to all chart children
-	// ChartScalesContext provides D3 scales for axes and plotting
 	// ChartDataContext provides the airliner data array
 	// AirlinerSelectionProvider provides selection and hover state management
+	// ResponsiveChartViewport provides the viewport and zoom controls
 	return (
 		<>
 		<ChartDataContext.Provider value={chartData}>
@@ -155,6 +154,20 @@ export default function AirlinerChart({ data }: AirlinerChartProps) {
 			viewportRef={viewportRef}
 		>
 			<div className="chartControls frame-flex-horizontal">
+				<div className="frame-flex-horizontal">
+				<label className="input-switch">
+					<input
+						type="checkbox"
+						checked={debugMode}
+						onChange={() => setDebugMode(!debugMode)}
+					/>
+						Debug
+					</label>
+					<hr className="frame-minor" />
+					<div style={{ display: "flex", padding: "var(--space-100)", alignItems: "center" }}>
+						<p className="text-body-diminished">Airliner Chart by <a href="https://www.shojiushiyama.net/">Shoji Ushiyama</a> / <a href="https://www.kavaeric.com">Kavaeric</a>.</p>
+					</div>
+				</div>
 				<hr className="frame-minor" />
 				<button
 					className="btn-diminished btn-icon-only"
@@ -201,22 +214,13 @@ export default function AirlinerChart({ data }: AirlinerChartProps) {
 				</button>
 				<hr className="frame-minor" />
 				<button
-					className="btn-diminished"
+					className="btn-diminished btn-icon-left"
 					onClick={() => viewportRef.current.view.reset()}
 					aria-label="Reset zoom"
 				>
 					<span className="material-symbols-sharp" aria-hidden="true">zoom_out_map</span>
 					Reset zoom
 				</button>
-				<hr className="frame-minor" />
-				<label className="input-switch">
-					<input
-						type="checkbox"
-						checked={debugMode}
-						onChange={() => setDebugMode(!debugMode)}
-					/>
-					Debug
-				</label>
 			</div>
 			
 			<hr className="frame-minor" />

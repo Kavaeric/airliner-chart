@@ -663,10 +663,9 @@ export function calculateBandPlacement(config: BandPlacementConfig): {
 
 	// console.log(`calculateBandPlacement: After ${pass} passes with ${indicesToTry[0].length} objects, ${failed.size} failed, ${placements.size} placed.`);
 
-	// Log placement debug info for label with id '16-A359'
-	if (debugPlacementLogs['16-A359']) {
+	/*if (debugPlacementLogs['16-A359']) {
 		console.log('[calculateBandPlacement] Placement logs for label 16-A359:', debugPlacementLogs['16-A359']);
-	}
+	}*/
 
 	return {
 		placements,

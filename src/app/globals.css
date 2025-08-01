@@ -308,12 +308,14 @@ button {
 }
 
 button.btn-icon-left,
-.btn-group > button:first-of-type {
+.btn-group > button:first-of-type,
+.btn-group > button.btn-icon-left {
 	padding-left: var(--space-150);
 }
 
 button.btn-icon-right,
-.btn-group > button:last-of-type {
+.btn-group > button:last-of-type,
+.btn-group > button.btn-icon-right {
 	padding-right: var(--space-150);
 }
 
