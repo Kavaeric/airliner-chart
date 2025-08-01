@@ -864,7 +864,7 @@ export function ResponsiveChartViewport<T>({
 			// Calculate zoom factor from scale change
 			// Use a more conservative zoom factor calculation
 			const scaleChange = scale - previousPinchScale.current;
-			const zoomFactor = 1 + (scaleChange * 0.5); // More gradual zoom
+			const zoomFactor = 1 + (scaleChange * 1); // More gradual zoom
 			
 			// Convert pinch origin to data coordinates
 			if (event && event.currentTarget) {
