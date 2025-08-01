@@ -784,6 +784,9 @@ export function ResponsiveChartViewport<T>({
 	const bindDragYInvertedBrush = useConfigurableDrag(dragConfigs.yInvertedBrush);
 	const bindDragInvertedBrush = useConfigurableDrag(dragConfigs.bothInvertedBrush);
 
+	// Track previous pinch scale for incremental zooming
+	const previousPinchScale = useRef<number>(1);
+
 	// Create separate gesture handlers for different configurations
 	const bindGesturesWithPinch = useGesture({
 		onDrag: ({ active, movement: [mx, my] }) => {
@@ -846,10 +849,25 @@ export function ResponsiveChartViewport<T>({
 				zoomViewport(zoomFactor, { x: zoomCenterX, y: zoomCenterY }, 'both');
 			}
 		},
-		onPinch: ({ offset: [scale], origin: [originX, originY], event }) => {
-			// Calculate zoom factor from scale
-			// scale > 1 means pinch out (zoom in), scale < 1 means pinch in (zoom out)
-			const zoomFactor = scale > 1 ? 1.1 : 0.9;
+		onPinch: ({ offset: [scale], origin: [originX, originY], event, first, last }) => {
+			// Only handle pinch events when we have a valid scale
+			if (scale === undefined || scale === 0) return;
+			
+			console.log('Pinch event:', { scale, originX, originY, first, last, previousScale: previousPinchScale.current });
+			
+			// Store initial viewport state on first pinch frame
+			if (first) {
+				if (!dragStartViewport.current) {
+					dragStartViewport.current = { ...viewport };
+				}
+				previousPinchScale.current = scale;
+			}
+			
+			// Calculate incremental zoom factor based on scale change
+			const scaleRatio = scale / previousPinchScale.current;
+			const zoomFactor = scaleRatio;
+			
+			console.log('Zoom calculation:', { scaleRatio, zoomFactor });
 			
 			// Convert pinch origin to data coordinates
 			if (event && event.currentTarget) {
@@ -857,8 +875,18 @@ export function ResponsiveChartViewport<T>({
 				const pinchCenterX = xScaleView.invert(originX - rect.left);
 				const pinchCenterY = yScaleView.invert(originY - rect.top);
 				
+				console.log('Pinch center:', { pinchCenterX, pinchCenterY });
+				
 				// Apply zoom with constraints
 				zoomViewport(zoomFactor, { x: pinchCenterX, y: pinchCenterY }, 'both');
+			}
+			
+			// Update previous scale for next frame
+			previousPinchScale.current = scale;
+			
+			// Clear drag start viewport on last pinch frame
+			if (last) {
+				dragStartViewport.current = null;
 			}
 		}
 	}, {
@@ -873,7 +901,9 @@ export function ResponsiveChartViewport<T>({
 		},
 		pinch: {
 			preventDefault: true,
-			eventOptions: { passive: false }
+			eventOptions: { passive: false },
+			scaleBounds: { min: 0.1, max: 10 }, // Limit scale range
+			threshold: 10 // Minimum distance before pinch is recognized
 		}
 	});
 
