@@ -853,8 +853,6 @@ export function ResponsiveChartViewport<T>({
 			// Only handle pinch events when we have a valid scale
 			if (scale === undefined || scale === 0) return;
 			
-			console.log('Pinch event:', { scale, originX, originY, first, last, previousScale: previousPinchScale.current });
-			
 			// Store initial viewport state on first pinch frame
 			if (first) {
 				if (!dragStartViewport.current) {
@@ -863,19 +861,16 @@ export function ResponsiveChartViewport<T>({
 				previousPinchScale.current = scale;
 			}
 			
-			// Calculate incremental zoom factor based on scale change
-			const scaleRatio = scale / previousPinchScale.current;
-			const zoomFactor = scaleRatio;
-			
-			console.log('Zoom calculation:', { scaleRatio, zoomFactor });
+			// Calculate zoom factor from scale change
+			// Use a more conservative zoom factor calculation
+			const scaleChange = scale - previousPinchScale.current;
+			const zoomFactor = 1 + (scaleChange * 0.5); // More gradual zoom
 			
 			// Convert pinch origin to data coordinates
 			if (event && event.currentTarget) {
 				const rect = (event.currentTarget as Element).getBoundingClientRect();
 				const pinchCenterX = xScaleView.invert(originX - rect.left);
 				const pinchCenterY = yScaleView.invert(originY - rect.top);
-				
-				console.log('Pinch center:', { pinchCenterX, pinchCenterY });
 				
 				// Apply zoom with constraints
 				zoomViewport(zoomFactor, { x: pinchCenterX, y: pinchCenterY }, 'both');
@@ -901,9 +896,7 @@ export function ResponsiveChartViewport<T>({
 		},
 		pinch: {
 			preventDefault: true,
-			eventOptions: { passive: false },
-			scaleBounds: { min: 0.1, max: 10 }, // Limit scale range
-			threshold: 10 // Minimum distance before pinch is recognized
+			eventOptions: { passive: false }
 		}
 	});
 
