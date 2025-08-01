@@ -203,17 +203,7 @@ export default function AirlinerScatterPlot() {
 				width={width}
 				height={height}
 				fill="transparent"
-				onMouseDown={(event) => drag.start(event)}
-				onMouseMove={(event) => drag.move(event)}
-				onMouseUp={(event) => drag.end(event)}
-				onTouchStart={(event) => drag.start(event)}
-				onTouchMove={(event) => drag.move(event)}
-				onTouchEnd={(event) => drag.end(event)}
-				onTouchCancel={(event) => drag.end(event)}
-				onMouseLeave={() => {
-					if (drag.isDragging) drag.end();
-				}}
-				onWheel={drag.wheelZoom('both')}
+				{...drag.bindGestures({ dragAxis: 'both', wheelAxis: 'both' })}
 				onClick={(event) => {
 					// Clear selection when clicking on empty chart area
 					// Only if not clicking on an interactive element
@@ -227,8 +217,9 @@ export default function AirlinerScatterPlot() {
 						clearSelection();
 					}
 				}}
-				style={{ cursor: 'grab', touchAction: 'none' }}
+				style={{ cursor: 'move', touchAction: 'none' }}
 				tabIndex={0} // Make focusable for keyboard events
+				data-chart-viewport="true"
 			/>
 
 			{/* Chart bands */}

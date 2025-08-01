@@ -6,9 +6,6 @@ import { RectClipPath } from "@visx/clip-path";
 import { useResponsiveChartViewport } from "@/context/ResponsiveChartViewport";
 import { useResponsiveSVG } from "@/context/ResponsiveSVG";
 
-// [IMPORT] CSS styling //
-import brushStyles from "@/component/chart/ChartBrush.module.css";
-
 /**
  * ChartBrush Component
  *
@@ -38,8 +35,12 @@ export default function ChartBrush({
 	// Get the drag handler from ResponsiveChartViewport
 	const { dataScale, viewportScale, drag } = useResponsiveChartViewport();
 
-	// Set up ref to disable scroll behaviour on scrollable region
-	const wheelHandler = drag.wheelZoom(axisMode);
+	// Use the new @use-gesture/react bind functions
+	const brushGesturesBind = drag.bindGestures({ 
+		dragAxis: axisMode, 
+		wheelAxis: axisMode,
+		invertDrag: true // ChartBrush uses inverted drag direction
+	});
 
 	// Determine the size and position of the brush control rectangle based on the current viewportScale relative to dataScale
 	const brushRect = (() => {
@@ -118,18 +119,12 @@ export default function ChartBrush({
 				y={0}
 				width={width}
 				height={height}
-				onMouseDown={(e) => drag.start(e, axisMode, true)}
-				onMouseMove={(e) => drag.move(e, true)}
-				onMouseUp={(e) => drag.end(e)}
-				onTouchStart={(e) => drag.start(e, axisMode, true)}
-				onTouchMove={(e) => drag.move(e, true)}
-				onTouchEnd={(e) => drag.end(e)}
-				onTouchCancel={(e) => drag.end(e)}
-				onWheel={wheelHandler}
+				{...brushGesturesBind}
 				fill="transparent"
 				style={{ 
 					touchAction: "none",
 				}}
+				data-chart-viewport="true"
 			/>
 		</g>
 	);

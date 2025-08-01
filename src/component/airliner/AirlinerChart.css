@@ -317,6 +317,7 @@
 	stroke-linecap: butt;
 	shape-rendering: geometricPrecision;
 	opacity: var(--opacity-50);
+	transition: all 0.2s ease-in-out;
 }
 
 .markerConnectingLineMajor {
@@ -406,6 +407,10 @@
 	fill: var(--interactive-major);
 }
 
+.markerConnectingLineMinor.selectedAirliner {
+	stroke: var(--highlight-active-minor);
+}
+
 .markerDiamond.hoveredAirliner {
 	fill: var(--interactive-major);
 	stroke: var(--interactive-augmented-hover);
@@ -473,7 +478,7 @@
 	opacity: 0;
 
 	font-family: var(--font-family-display);
-	font-size: var(--text-size-400);
+	font-size: var(--text-size-300);
 	font-weight: var(--font-weight-medium);
 	letter-spacing: var(--text-tracking-800);
 	text-transform: uppercase;

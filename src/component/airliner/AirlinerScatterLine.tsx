@@ -80,7 +80,9 @@ export default function AirlinerScatterLine({
 					x2={airlinerMarkers.lines.x2}
 					y1={y}
 					y2={y}
-					className="markerConnectingLineMinor"
+					className={`markerConnectingLineMinor ${
+						isSelected ? 'selectedAirliner' : ''
+					} ${isHovered ? 'hoveredAirliner' : ''}`}
 					strokeWidth={plotFormat.markerLineMinorWidth}
 				/>
 			)}
