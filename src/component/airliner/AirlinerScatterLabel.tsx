@@ -7,8 +7,6 @@ import { AirlinerLabel } from "@/lib/data/airliner-types";
 
 // [IMPORT] Context hooks //
 import { useAirlinerSelection } from "@/context/AirlinerSelectionContext";
-import { useDebugMode } from "@/context/DebugModeContext";
-import { RectCentre } from "../shape/RectCentre";
 
 // [IMPORT] CSS styling //
 // Styles moved to AirlinerChart.css
@@ -23,13 +21,12 @@ interface AirlinerScatterLabelProps {
 /**
  * AirlinerScatterLabel Component
  * 
- * Renders the label for a single airliner.
- * 
- * @param {string} airlinerID - The ID of the airliner.
- * @param {AirlinerLabel} airlinerLabel - The label for the airliner.
- * @param {any} plotFormat - The plot format.
- * @param {string} classNames - The class names for the label.
- * @param {boolean} debug - Optional debug flag.
+ * Renders the label for a single airliner with visual state based on selection context.
+ *
+ * @param {string} airlinerID - The ID of the airliner
+ * @param {AirlinerLabel} airlinerLabel - The label data for the airliner
+ * @param {string} classNames - Additional CSS class names
+ * @param {boolean} debug - Optional debug flag
  */
 const AirlinerScatterLabel = React.forwardRef<SVGGElement, AirlinerScatterLabelProps>(
 	({
@@ -40,39 +37,16 @@ const AirlinerScatterLabel = React.forwardRef<SVGGElement, AirlinerScatterLabelP
 	}, ref) => {
 
 		// === Selection State Management ===
-		// Access airliner selection context for hover and selection states
-		const { 
-			selectedAirlinerID, 
-			hoveredAirlinerID, 
-			setSelectedAirliner, 
-			setHoveredAirliner 
-		} = useAirlinerSelection();
+		// Access airliner selection context for visual state only
+		// Interaction logic is handled centrally in AirlinerScatterPlot
+		const { selectedAirlinerID, hoveredAirlinerID } = useAirlinerSelection();
 
-		// === Debug Mode ===
-		const { debugMode } = useDebugMode();
-
-		// === Interaction State Calculation ===
-		// Determine if this airliner is currently hovered or selected
+		// === Visual State Calculation ===
+		// Determine visual state based on selection context
 		const isHovered = hoveredAirlinerID === airlinerID;
 		const isSelected = selectedAirlinerID === airlinerID;
 
-		// === Event Handlers ===
-		// Handle mouse enter for hover state
-		const handleMouseEnter = () => {
-			setHoveredAirliner(airlinerID);
-		};
-
-		// Handle mouse leave to clear hover state
-		const handleMouseLeave = () => {
-			setHoveredAirliner(null);
-		};
-
-		// Handle click for selection state
-		const handleClick = () => {
-			// Toggle selection: if already selected, deselect; otherwise select
-			setSelectedAirliner(isSelected ? null : airlinerID);
-		};
-
+		// === Rendering Configuration ===
 		const labelVerticalAnchor = "middle";
 		const labelTextAnchor = "middle";
 
@@ -82,10 +56,7 @@ const AirlinerScatterLabel = React.forwardRef<SVGGElement, AirlinerScatterLabelP
 		return (
 			<g 
 				ref={ref}
-				onMouseEnter={handleMouseEnter}
-				onMouseLeave={handleMouseLeave}
-				onClick={handleClick}
-				style={{ cursor: 'pointer' }}
+				style={{ pointerEvents: 'none' }}
 			>
 				{/* This is the only way I can think of to have an outline that's on the outside */}
 				<Text
@@ -102,7 +73,7 @@ const AirlinerScatterLabel = React.forwardRef<SVGGElement, AirlinerScatterLabelP
 					{airlinerLabel.labelText}
 				</Text>
 
-				{/* Label */}
+				{/* Main label text */}
 				<Text
 					x={airlinerLabel.labelCoordinates?.x || airlinerLabel.labelAnchor.x}
 					y={airlinerLabel.labelCoordinates?.y || airlinerLabel.labelAnchor.y}
@@ -113,12 +84,7 @@ const AirlinerScatterLabel = React.forwardRef<SVGGElement, AirlinerScatterLabelP
 					className={`airlinerLabel ${
 						isSelected ? 'selectedAirliner' : ''
 					} ${isHovered ? 'hoveredAirliner' : ''}`}
-					onMouseEnter={handleMouseEnter}
-					onMouseLeave={handleMouseLeave}
-					onClick={handleClick}
 					fill="transparent"
-					stroke={debugMode ? 'green' : 'transparent'}
-					style={{ cursor: 'pointer' }}
 				>
 					{airlinerLabel.labelText}
 				</Text>
