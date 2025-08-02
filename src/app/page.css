@@ -13,9 +13,9 @@
 }
 
 .belowCut {
-	padding: var(--space-400);
 	display: flex;
 	flex-direction: column;
+	padding: var(--space-400);
 }
 
 .headerTitle {

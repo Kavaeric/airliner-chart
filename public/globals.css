@@ -3,189 +3,191 @@ body {
 	max-width: 100vw;
 	overflow-x: hidden;
 }
+
 * {
 	box-sizing: border-box;
 }
 
 body {
-	margin: 0;
 	padding: 0;
-	background-color: var(--surface-minor);
-	color: var(--text-minor);
+	margin: 0;
 	font-family: var(--font-family-sans);
 	font-size: var(--text-size-400);
 	font-weight: var(--font-weight-regular);
 	line-height: var(--text-leading-400);
+	color: var(--text-minor);
 	letter-spacing: var(--text-tracking-400);
+	background-color: var(--surface-minor);
 	-webkit-font-smoothing: antialiased;
 	-moz-osx-font-smoothing: grayscale;
 }
 
 /* ===== Text styles ===== */
+
 /* Display text styles */
 .text-display-1 {
-	color: var(--text-major);
-	font-size: var(--text-size-1000);
-	line-height: var(--text-leading-400);
-	font-weight: var(--font-weight-regular);
-	letter-spacing: var(--text-tracking-600);
-	font-family: var(--font-family-display);
 	margin-bottom: var(--space-200);
+	font-family: var(--font-family-display);
+	font-size: var(--text-size-1000);
+	font-weight: var(--font-weight-regular);
+	line-height: var(--text-leading-400);
+	color: var(--text-major);
+	letter-spacing: var(--text-tracking-600);
 }
 
 .text-display-2 {
-	color: var(--text-major);
-	font-size: var(--text-size-900);
-	line-height: var(--text-leading-400);
-	font-weight: var(--font-weight-regular);
-	letter-spacing: var(--text-tracking-600);
-	font-family: var(--font-family-display);
 	margin-bottom: var(--space-200);
+	font-family: var(--font-family-display);
+	font-size: var(--text-size-900);
+	font-weight: var(--font-weight-regular);
+	line-height: var(--text-leading-400);
+	color: var(--text-major);
+	letter-spacing: var(--text-tracking-600);
 }
 
 .text-display-3 {
-	color: var(--text-major);
-	font-size: var(--text-size-800);
-	line-height: var(--text-leading-400);
-	font-weight: var(--font-weight-regular);
-	letter-spacing: var(--text-tracking-600);
-	font-family: var(--font-family-display);
 	margin-bottom: var(--space-200);
+	font-family: var(--font-family-display);
+	font-size: var(--text-size-800);
+	font-weight: var(--font-weight-regular);
+	line-height: var(--text-leading-400);
+	color: var(--text-major);
+	letter-spacing: var(--text-tracking-600);
 }
 
 .text-display-4 {
-	color: var(--text-major);
-	font-size: var(--text-size-700);
-	line-height: var(--text-leading-400);
-	font-weight: var(--font-weight-regular);
-	letter-spacing: var(--text-tracking-600);
-	font-family: var(--font-family-display);
 	margin-bottom: var(--space-200);
+	font-family: var(--font-family-display);
+	font-size: var(--text-size-700);
+	font-weight: var(--font-weight-regular);
+	line-height: var(--text-leading-400);
+	color: var(--text-major);
+	letter-spacing: var(--text-tracking-600);
 }
 
 .text-display-5 {
-	color: var(--text-major);
-	font-size: var(--text-size-600);
-	line-height: var(--text-leading-400);
-	font-weight: var(--font-weight-regular);
-	letter-spacing: var(--text-tracking-600);
-	font-family: var(--font-family-display);
 	margin-bottom: var(--space-200);
+	font-family: var(--font-family-display);
+	font-size: var(--text-size-600);
+	font-weight: var(--font-weight-regular);
+	line-height: var(--text-leading-400);
+	color: var(--text-major);
+	letter-spacing: var(--text-tracking-600);
 }
 
 .text-display-6 {
-	color: var(--text-major);
-	font-size: var(--text-size-500);
-	line-height: var(--text-leading-400);
-	font-weight: var(--font-weight-regular);
-	letter-spacing: var(--text-tracking-600);
-	font-family: var(--font-family-display);
 	margin-bottom: var(--space-200);
+	font-family: var(--font-family-display);
+	font-size: var(--text-size-500);
+	font-weight: var(--font-weight-regular);
+	line-height: var(--text-leading-400);
+	color: var(--text-major);
+	letter-spacing: var(--text-tracking-600);
 }
 
 /* Heading text styles */
 .text-h1 {
-	color: var(--text-major);
-	font-size: var(--text-size-1000);
-	line-height: var(--text-leading-200);
-	font-weight: var(--font-weight-regular);
-	letter-spacing: var(--text-tracking-800);
-	text-transform: uppercase;
-	font-family: var(--font-family-display);
 	margin-top: var(--space-100);
 	margin-bottom: var(--space-100);
+	font-family: var(--font-family-display);
+	font-size: var(--text-size-1000);
+	font-weight: var(--font-weight-regular);
+	line-height: var(--text-leading-200);
+	color: var(--text-major);
+	text-transform: uppercase;
+	letter-spacing: var(--text-tracking-800);
 }
 
 .text-h2 {
-	color: var(--text-major);
-	font-size: var(--text-size-900);
-	line-height: var(--text-leading-200);
-	font-weight: var(--font-weight-regular);
-	letter-spacing: var(--text-tracking-800);
-	text-transform: uppercase;
-	font-family: var(--font-family-display);
 	margin-top: var(--space-100);
 	margin-bottom: var(--space-100);
+	font-family: var(--font-family-display);
+	font-size: var(--text-size-900);
+	font-weight: var(--font-weight-regular);
+	line-height: var(--text-leading-200);
+	color: var(--text-major);
+	text-transform: uppercase;
+	letter-spacing: var(--text-tracking-800);
 }
 
 .text-h3 {
-	color: var(--text-major);
-	font-size: var(--text-size-800);
-	line-height: var(--text-leading-200);
-	font-weight: var(--font-weight-regular);
-	letter-spacing: var(--text-tracking-800);
-	text-transform: uppercase;
-	font-family: var(--font-family-display);
 	margin-top: var(--space-100);
 	margin-bottom: var(--space-100);
+	font-family: var(--font-family-display);
+	font-size: var(--text-size-800);
+	font-weight: var(--font-weight-regular);
+	line-height: var(--text-leading-200);
+	color: var(--text-major);
+	text-transform: uppercase;
+	letter-spacing: var(--text-tracking-800);
 }
 
 .text-h4 {
-	color: var(--text-major);
-	font-size: var(--text-size-700);
-	line-height: var(--text-leading-200);
-	font-weight: var(--font-weight-regular);
-	letter-spacing: var(--text-tracking-800);
-	text-transform: uppercase;
-	font-family: var(--font-family-display);
 	margin-top: var(--space-100);
 	margin-bottom: var(--space-100);
+	font-family: var(--font-family-display);
+	font-size: var(--text-size-700);
+	font-weight: var(--font-weight-regular);
+	line-height: var(--text-leading-200);
+	color: var(--text-major);
+	text-transform: uppercase;
+	letter-spacing: var(--text-tracking-800);
 }
 
 .text-h5 {
-	color: var(--text-major);
-	font-size: var(--text-size-600);
-	line-height: var(--text-leading-200);
-	font-weight: var(--font-weight-regular);
-	letter-spacing: var(--text-tracking-800);
-	text-transform: uppercase;
-	font-family: var(--font-family-display);
 	margin-top: var(--space-100);
 	margin-bottom: var(--space-100);
+	font-family: var(--font-family-display);
+	font-size: var(--text-size-600);
+	font-weight: var(--font-weight-regular);
+	line-height: var(--text-leading-200);
+	color: var(--text-major);
+	text-transform: uppercase;
+	letter-spacing: var(--text-tracking-800);
 }
 
 .text-h6 {
-	color: var(--text-major);
-	font-size: var(--text-size-500);
-	line-height: var(--text-leading-200);
-	font-weight: var(--font-weight-regular);
-	letter-spacing: var(--text-tracking-800);
-	text-transform: uppercase;
-	font-family: var(--font-family-display);
 	margin-top: var(--space-100);
 	margin-bottom: var(--space-100);
+	font-family: var(--font-family-display);
+	font-size: var(--text-size-500);
+	font-weight: var(--font-weight-regular);
+	line-height: var(--text-leading-200);
+	color: var(--text-major);
+	text-transform: uppercase;
+	letter-spacing: var(--text-tracking-800);
 }
 
 /* Body text styles */
 .text-body-major {
-	color: var(--text-major);
-	font-size: var(--text-size-500);
-	line-height: var(--text-leading-400);
-	font-weight: var(--font-weight-regular);
-	letter-spacing: var(--text-tracking-400);
-	margin-bottom: var(--space-100);
 	margin-top: 0;
+	margin-bottom: var(--space-100);
+	font-size: var(--text-size-500);
+	font-weight: var(--font-weight-regular);
+	line-height: var(--text-leading-400);
+	color: var(--text-major);
+	letter-spacing: var(--text-tracking-400);
 }
 
 body, p,
 .text-body-minor {
-	color: var(--text-minor);
-	font-size: var(--text-size-400);
-	line-height: var(--text-leading-400);
-	font-weight: var(--font-weight-regular);
-	letter-spacing: var(--text-tracking-400);
-	margin-bottom: var(--space-100);
 	margin-top: 0;
+	margin-bottom: var(--space-100);
+	font-size: var(--text-size-400);
+	font-weight: var(--font-weight-regular);
+	line-height: var(--text-leading-400);
+	color: var(--text-minor);
+	letter-spacing: var(--text-tracking-400);
 }
 
 .text-body-diminished {
-	color: var(--text-diminished);
-	font-size: var(--text-size-300);
-	line-height: var(--text-leading-400);
-	font-weight: var(--font-weight-regular);
-	letter-spacing: var(--text-tracking-400);
-	margin-bottom: var(--space-100);
 	margin-top: 0;
+	margin-bottom: var(--space-100);
+	font-size: var(--text-size-300);
+	font-weight: var(--font-weight-regular);
+	line-height: var(--text-leading-400);
+	color: var(--text-diminished);
+	letter-spacing: var(--text-tracking-400);
 }
 
 .text-body-major:last-child,
@@ -202,11 +204,11 @@ p:last-child {
 .text-label-diminished {
 	font-family: var(--font-family-display);
 	font-size: var(--text-size-400);
-	line-height: var(--text-leading-400);
 	font-weight: var(--font-weight-regular);
-	letter-spacing: var(--text-tracking-1200);
-	text-transform: uppercase;
+	line-height: var(--text-leading-400);
 	dominant-baseline: middle;
+	text-transform: uppercase;
+	letter-spacing: var(--text-tracking-1200);
 
 	@media (prefers-color-scheme: light) {
 		font-weight: var(--font-weight-medium);
@@ -278,19 +280,19 @@ a.link-augmented:focus {
 
 /* ===== Button styles ===== */
 button {
-	border: var(--border-weight-200) solid transparent;
-	font-size: var(--interactive-font-size);
-	font-family: var(--interactive-font-family);
-	text-transform: var(--interactive-text-transform);
-	letter-spacing: var(--interactive-text-tracking);
-	cursor: pointer;
-	gap: var(--space-100);
-	transition: all 0.1s linear;
-	text-decoration: none;
 	display: flex;
+	gap: var(--space-100);
 	align-items: center;
 	justify-content: center;
+	font-family: var(--interactive-font-family);
+	font-size: var(--interactive-font-size);
+	text-transform: var(--interactive-text-transform);
+	letter-spacing: var(--interactive-text-tracking);
+	text-decoration: none;
+	cursor: pointer;
 	background: transparent;
+	border: var(--border-weight-200) solid transparent;
+	transition: all 0.1s linear;
 }
 
 /* Button grouping */
@@ -315,8 +317,8 @@ button:not(.btn-group button),
 }
 
 button {
-	padding-left: var(--space-300);
 	padding-right: var(--space-300);
+	padding-left: var(--space-300);
 }
 
 button.btn-icon-left,
@@ -330,23 +332,23 @@ button.btn-icon-right,
 }
 
 button.btn-icon-only {
-	padding-left: var(--space-150);
 	padding-right: var(--space-150);
+	padding-left: var(--space-150);
 }
 
 /* Augmented buttons */
 button.btn-augmented,
 .btn-group.btn-augmented {
-	background-color: var(--interactive-augmented);
 	color: var(--interactive-augmented-inverse);
+	background-color: var(--interactive-augmented);
 }
 
 button.btn-augmented,
 .btn-group.btn-augmented > button {
+	font-weight: var(--interactive-font-weight-augmented);
 	color: var(--interactive-augmented-inverse);
 	outline: var(--border-weight-200) solid transparent;
 	outline-offset: var(--space-negative-050);
-	font-weight: var(--interactive-font-weight-augmented);
 }
 
 button.btn-augmented:hover:not([disabled]),
@@ -373,10 +375,10 @@ button.btn-major,
 
 button.btn-major,
 .btn-group.btn-major > button {
+	font-weight: var(--interactive-font-weight-major);
 	color: var(--interactive-major-inverse);
 	outline: var(--border-weight-200) solid transparent;
 	outline-offset: var(--space-negative-050);
-	font-weight: var(--interactive-font-weight-major);
 }
 
 button.btn-major:hover:not([disabled]),
@@ -405,9 +407,9 @@ button.btn-minor,
 
 button.btn-minor,
 .btn-group.btn-minor > button {
+	font-weight: var(--interactive-font-weight-minor);
 	color: var(--interactive-minor);
 	outline: var(--border-weight-200) solid transparent;
-	font-weight: var(--interactive-font-weight-minor);
 }
 
 button.btn-minor {
@@ -443,9 +445,9 @@ button.btn-diminished,
 
 button.btn-diminished,
 .btn-group.btn-diminished > button {
+	font-weight: var(--interactive-font-weight-diminished);
 	color: var(--interactive-minor);
 	outline: var(--border-weight-200) solid transparent;
-	font-weight: var(--interactive-font-weight-diminished);
 }
 
 button.btn-diminished {
@@ -469,9 +471,9 @@ button.btn-diminished:focus,
 
 /* Disabled buttons */
 button[disabled] {
+	cursor: not-allowed;
 	border-color: transparent;
 	opacity: var(--opacity-disabled);
-	cursor: not-allowed;
 }
 
 .btn-group-vertical > button.btn-icon-left {
@@ -480,26 +482,27 @@ button[disabled] {
 }
 
 /* ===== UI controls ===== */
+
 /* Full control area */
 label:has(input[type="checkbox"]),
 label:has(input[type="radio"]),
 label:has(input[type="switch"]) {
 	display: flex;
-	align-items: center;
 	gap: var(--space-100);
-	padding: var(--space-100);
+	align-items: center;
 	min-width: var(--interactive-min-size);
 	min-height: var(--interactive-min-size);
+	padding: var(--space-100);
+	font-family: var(--interactive-font-family);
+	font-size: var(--interactive-font-size);
+	font-weight: var(--interactive-font-weight-minor);
+	text-transform: var(--interactive-text-transform);
+	letter-spacing: var(--interactive-text-tracking);
+	cursor: pointer;
 	user-select: none;
 	outline: var(--border-weight-200) solid transparent;
 	outline-offset: var(--space-negative-025);
-	cursor: pointer;
 	transition: all 0.1s linear;
-	font-size: var(--interactive-font-size);
-	font-family: var(--interactive-font-family);
-	text-transform: var(--interactive-text-transform);
-	letter-spacing: var(--interactive-text-tracking);
-	font-weight: var(--interactive-font-weight-minor);
 }
 
 label:hover:not(:has([disabled])):has(input[type="checkbox"]),
@@ -528,17 +531,13 @@ input[type="radio"] {
 /* General styling  */
 input[type="checkbox"],
 input[type="radio"] {
-	appearance: none;
-	-webkit-appearance: none;
-
 	display: flex;
-	aspect-ratio: 1 / 1;
 	height: var(--space-200);
+	aspect-ratio: 1 / 1;
 	padding: var(--space-025);
-
-	background-color: var(--surface-depth-minor);
-
+	appearance: none;
 	outline: var(--border-weight-100) solid var(--interactive-diminished);
+	background-color: var(--surface-depth-minor);
 	transition: all 0.1s linear;
 }
 
@@ -557,9 +556,9 @@ input[type="radio"]:checked:not([disabled]) {
 
 input[type="checkbox"]::before,
 input[type="radio"]::before {
-	content: "";
 	display: block;
 	aspect-ratio: 1 / 1;
+	content: "";
 	transition: all 0.1s ease-in-out;
 }
 
@@ -569,8 +568,8 @@ input[type="radio"]:checked::before {
 }
 
 label:has(input:disabled) {
-	opacity: var(--opacity-disabled);
 	cursor: not-allowed;
+	opacity: var(--opacity-disabled);
 }
 
 input:disabled {
@@ -580,8 +579,8 @@ input:disabled {
 /* Checkbox */
 .input-checkbox input[type="checkbox"] {
 	margin: 0;
-	margin-left: var(--space-150);
 	margin-right: var(--space-100);
+	margin-left: var(--space-150);
 }
 
 .input-checkbox input[type="checkbox"]::before {
@@ -595,16 +594,16 @@ input:disabled {
 /* Radio */
 input[type="radio"] {
 	height: var(--space-150);
-	transform: rotate(45deg);
 	margin: 0;
-	margin-left: var(--space-150);
 	margin-right: var(--space-150);
+	margin-left: var(--space-150);
+	transform: rotate(45deg);
 }
 
 input[type="radio"]::before {
-	transition: opacity 0.1s ease-in-out;
-	transform: scaleY(1);
 	opacity: 0;
+	transform: scaleY(1);
+	transition: opacity 0.1s ease-in-out;
 }
 
 input[type="radio"]:checked::before {
@@ -623,20 +622,21 @@ input[type="radio"]:checked::before {
 }
 
 .input-switch input[type="checkbox"]::before {
+	width: var(--space-100);
 	background-color: transparent;
 	border: var(--border-weight-100) solid var(--interactive-minor);
-	width: var(--space-100);
 }
 
 .input-switch input[type="checkbox"]:checked::before {
-	transform: translateX(calc(100% - var(--space-150)));
+	width: calc(100% - var(--space-100));
 	background-color: var(--interactive-major);
 	border: none;
-	width: calc(100% - var(--space-100));
+	transform: translateX(calc(100% - var(--space-150)));
 }
 
 
 /* ===== Frames ===== */
+
 /* Frame borders */
 .frame-augmented:not(hr) {
 	border: var(--border-weight-100) solid var(--border-augmented);
@@ -678,32 +678,29 @@ hr.frame-diminished {
 	display: flex;
 	flex-grow: 1;
 	flex-direction: row;
-	align-items: stretch;
-	justify-items: stretch;
+	place-items: stretch stretch;
 }
 
 .frame-flex-vertical {
 	display: flex;
 	flex-grow: 1;
 	flex-direction: column;
-	align-items: stretch;
-	align-items: stretch;
-	justify-items: stretch;
+	place-items: stretch stretch;
 }
 
 /* TIL if <hr> is in a flex row container, it'll become a vertical rule */
 hr {
-	margin: 0;
-	padding: 0;
 	flex-grow: 0;
-	border-width: var(--border-weight-100) 0 0 0;
-	border-style: solid;
+	padding: 0;
+	margin: 0;
 	margin-top: calc(var(--border-weight-100) * -1);
+	border-style: solid;
+	border-width: var(--border-weight-100) 0 0 0;
 }
 
 *[flex-direction="row"] > hr {
-	border-width: 0 0 0 var(--border-weight-100);
 	margin-left: calc(var(--border-weight-100) * -1);
+	border-width: 0 0 0 var(--border-weight-100);
 }
 
 .frame-flex-horizontal > hr {
@@ -737,8 +734,8 @@ hr {
 
 .frame-content-vertical {
 	flex-grow: 0;
-	writing-mode: sideways-lr;
 	text-align: center;
+	writing-mode: sideways-lr;
 }
 
 /* ===== Surface depth ===== */
@@ -766,18 +763,17 @@ table {
 }
 
 thead tr th {
+	padding: var(--space-150) var(--space-200);
+	font-family: var(--font-family-display);
+	font-size: var(--text-size-350);
+	font-weight: var(--font-weight-regular);
+	line-height: var(--text-leading-200);
+	color: var(--text-minor);
+	text-transform: uppercase;
+	letter-spacing: var(--text-tracking-800);
 	background-color: var(--surface-depth-augmented);
 	border-top: var(--border-weight-100) solid var(--border-minor);
 	border-bottom: var(--border-weight-100) solid var(--border-minor);
-	padding: var(--space-150) var(--space-200);
-
-	font-family: var(--font-family-display);
-	font-size: var(--text-size-350);
-	line-height: var(--text-leading-200);
-	font-weight: var(--font-weight-regular);
-	letter-spacing: var(--text-tracking-800);
-	text-transform: uppercase;
-	color: var(--text-minor);
 
 	@media (prefers-color-scheme: light) {
 		font-weight: var(--font-weight-medium);
@@ -804,18 +800,23 @@ table tbody tr:focus-within {
 	0% {
 		opacity: 1;
 	}
+
 	20% {
 		opacity: 0.5;
 	}
+
 	30% {
 		opacity: 1;
 	}
+
 	50% {
 		opacity: 0.5;
 	}
+
 	60% {
 		opacity: 1;
 	}
+
 	100% {
 		opacity: 1;
 	}

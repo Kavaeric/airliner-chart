@@ -168,53 +168,53 @@ export default function AirlinerChart({ data }: AirlinerChartProps) {
 						<p className="text-body-diminished">Airliner Chart by <a href="https://www.shojiushiyama.net/">Shoji Ushiyama</a> / <a href="https://www.kavaeric.com">Kavaeric</a>.</p>
 					</div>
 				</div>
-				<hr className="frame-minor" />
+				<hr className="frame-minor mobile-hidden" />
 				<button
-					className="btn-diminished btn-icon-only"
+					className="btn-diminished btn-icon-only mobile-hidden"
 					onClick={() => viewportRef.current.view.move(0, 1000)}
 					aria-label="Pan up"
 				>
 					<span className="material-symbols-sharp" aria-hidden="true">keyboard_double_arrow_up</span>
 				</button>
 				<button
-					className="btn-diminished btn-icon-only"
+					className="btn-diminished btn-icon-only mobile-hidden"
 					onClick={() => viewportRef.current.view.move(0, -1000)}
 					aria-label="Pan down"
 				>
 					<span className="material-symbols-sharp" aria-hidden="true">keyboard_double_arrow_down</span>
 				</button>
 				<button
-					className="btn-diminished btn-icon-only"
+					className="btn-diminished btn-icon-only mobile-hidden"
 					onClick={() => viewportRef.current.view.move(-50, 0)}
 					aria-label="Pan left"
 				>
 					<span className="material-symbols-sharp" aria-hidden="true">keyboard_double_arrow_left</span>
 				</button>
 				<button
-					className="btn-diminished btn-icon-only"
+					className="btn-diminished btn-icon-only mobile-hidden"
 					onClick={() => viewportRef.current.view.move(50, 0)}
 					aria-label="Pan right"
 				>
 					<span className="material-symbols-sharp" aria-hidden="true">keyboard_double_arrow_right</span>
 				</button>
-				<hr className="frame-minor" />
+				<hr className="frame-minor mobile-hidden" />
 				<button
-					className="btn-diminished btn-icon-only"
+					className="btn-diminished btn-icon-only mobile-hidden"
 					onClick={() => viewportRef.current.view.zoom(1.1)}
 					aria-label="Zoom in"
 				>
 					<span className="material-symbols-sharp" aria-hidden="true">zoom_in</span>
 				</button>
 				<button
-					className="btn-diminished btn-icon-only"
+					className="btn-diminished btn-icon-only mobile-hidden"
 					onClick={() => viewportRef.current.view.zoom(0.9)}
 					aria-label="Zoom out"
 				>
 					<span className="material-symbols-sharp" aria-hidden="true">zoom_out</span>
 				</button>
-				<hr className="frame-minor" />
+				<hr className="frame-minor mobile-hidden" />
 				<button
-					className="btn-diminished btn-icon-left"
+					className="btn-diminished btn-icon-left mobile-hidden"
 					onClick={() => viewportRef.current.view.reset()}
 					aria-label="Reset zoom"
 				>
