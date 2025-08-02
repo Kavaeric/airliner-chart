@@ -393,11 +393,11 @@ export default function AirlinerScatterPlot() {
 				height={height}
 				fill="transparent"
 				{...drag.bindGestures({ dragAxis: 'both', wheelAxis: 'both', enablePinch: true })}
-				onMouseMove={handleMouseMove}
-				onMouseEnter={handleMouseEnter}
-				onMouseLeave={handleMouseLeave}
-				onClick={handleClick}
-				onKeyDown={handleKeyDown}
+				// onMouseMove={handleMouseMove}
+				// onMouseEnter={handleMouseEnter}
+				// onMouseLeave={handleMouseLeave}
+				// onClick={handleClick}
+				// onKeyDown={handleKeyDown}
 				style={{ 
 					cursor: proximityDetection.nearestTarget && proximityDetection.nearestTarget.type !== 'cluster' 
 						? 'pointer' 
