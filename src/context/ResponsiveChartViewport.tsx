@@ -887,7 +887,7 @@ export function ResponsiveChartViewport<T>({
 	}, {
 		drag: {
 			filterTaps: true,
-			preventScroll: 100,
+			preventScroll: true,
 			immediate: true,
 			threshold: 0,
 		},
