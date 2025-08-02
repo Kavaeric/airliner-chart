@@ -402,7 +402,7 @@ export default function AirlinerScatterPlot() {
 					cursor: proximityDetection.nearestTarget && proximityDetection.nearestTarget.type !== 'cluster' 
 						? 'pointer' 
 						: 'move', 
-					// touchAction: 'none',
+					touchAction: 'none',
 					/* === Browser Interaction Feedback Suppression === */
 					outline: 'none', /* Suppress Chrome desktop white outline */
 					WebkitTapHighlightColor: 'transparent', /* Suppress Chrome mobile blue tap highlight */
