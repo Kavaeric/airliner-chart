@@ -1,7 +1,7 @@
 "use client";
 
 // [IMPORT] React //
-import React, { useMemo } from "react";
+import React, { useMemo, useState, useCallback } from "react";
 
 // [IMPORT] Third-party libraries //
 import { AxisLeft } from "@visx/axis";
@@ -36,8 +36,12 @@ export default function YAxis({ label }: YAxisProps) {
 	const { hoveredAirlinerID, selectedAirlinerID } = useAirlinerSelection();
 	const data = useChartData();
 
+	// === Position Caching ===
+	// Cache the last valid range figure position to prevent jarring animations
+	const [lastValidPosition, setLastValidPosition] = useState<number | null>(null);
+
 	// === Range Figure Calculation ===
-	// Calculate range figure with priority: selected > hovered > mouse cursor
+	// Calculate range figure with priority: selected > hovered > mouse cursor > cached position
 	const rangeFigure = React.useMemo(() => {
 		// Priority 1: Selected airliner
 		if (selectedAirlinerID && data) {
@@ -45,8 +49,10 @@ export default function YAxis({ label }: YAxisProps) {
 			if (airliner?.airlinerData.rangeKM) {
 				const y = viewportScale.y(airliner.airlinerData.rangeKM);
 				if (y !== undefined && y !== null) {
+					const position = Number(y);
+					setLastValidPosition(position);
 					return {
-						y: Number(y),
+						y: position,
 						rangeKM: airliner.airlinerData.rangeKM,
 						state: 'selected' as const,
 						source: 'airliner' as const,
@@ -61,8 +67,10 @@ export default function YAxis({ label }: YAxisProps) {
 			if (airliner?.airlinerData.rangeKM) {
 				const y = viewportScale.y(airliner.airlinerData.rangeKM);
 				if (y !== undefined && y !== null) {
+					const position = Number(y);
+					setLastValidPosition(position);
 					return {
-						y: Number(y),
+						y: position,
 						rangeKM: airliner.airlinerData.rangeKM,
 						state: 'hovered' as const,
 						source: 'airliner' as const,
@@ -73,17 +81,29 @@ export default function YAxis({ label }: YAxisProps) {
 
 		// Priority 3: Mouse cursor position
 		if (mouse.coordinates && mouse.isOverChart) {
+			const position = mouse.coordinates.screen.y;
+			setLastValidPosition(position);
 			return {
-				y: mouse.coordinates.screen.y,
+				y: position,
 				rangeKM: null,
 				state: 'mouse' as const,
 				source: 'mouse' as const,
 			};
 		}
 
-		// No active position
+		// Priority 4: Cached position (prevents jarring animations)
+		if (lastValidPosition !== null) {
+			return {
+				y: lastValidPosition,
+				rangeKM: null,
+				state: 'cached' as const,
+				source: 'cached' as const,
+			};
+		}
+
+		// No active position and no cached position
 		return null;
-	}, [hoveredAirlinerID, selectedAirlinerID, data, viewportScale.y, mouse.coordinates, mouse.isOverChart]);
+	}, [hoveredAirlinerID, selectedAirlinerID, data, viewportScale.y, mouse.coordinates, mouse.isOverChart, lastValidPosition]);
 
 	// === State-based CSS classes helper ===
 	// Pre-compute state-specific CSS classes to avoid duplication
@@ -91,7 +111,8 @@ export default function YAxis({ label }: YAxisProps) {
 		if (!rangeFigure) return "";
 		
 		return rangeFigure.state === 'hovered' ? "hoveredAirliner" : 
-			   rangeFigure.state === 'selected' ? "selectedAirliner" : "";
+			   rangeFigure.state === 'selected' ? "selectedAirliner" : 
+			   rangeFigure.state === 'cached' ? "" : ""; // No special styling for cached state
 	}, [rangeFigure]);
 
 	return (
@@ -137,7 +158,7 @@ export default function YAxis({ label }: YAxisProps) {
 
 			{/* Range figure group - always renders, follows mouse or snaps to airliners */}
 			<g
-				className={`yAxisReadout yAxisReadout${rangeFigure ? (rangeFigure.state.charAt(0).toUpperCase() + rangeFigure.state.slice(1)) : "None"}`}
+				className={`yAxisReadout ${stateClass}`}
 				transform={`translate(0, ${rangeFigure ? rangeFigure.y : 0})`}
 			>
 				{/* Range value text and background - shows for selected airliners or when following mouse */}

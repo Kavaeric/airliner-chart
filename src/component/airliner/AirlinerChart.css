@@ -57,7 +57,7 @@
 	display: none;
 }
 
-@media (width >= 600px) {
+@media (width >= 768px) {
 	.mobile-hidden {
 		display: inherit;
 	}
@@ -516,6 +516,21 @@
 	stroke-width: var(--border-weight-100);
 }
 
+/* Hide axis readouts on touch devices for clarity */
+@media (pointer: coarse) {
+	.yAxisReadout,
+	.yAxisReadoutLine,
+	.xAxisReadoutLine {
+		transition: all 0.1s ease-in-out;
+		opacity: 0;
+	}
+}
+
+.yAxisReadout.hoveredAirliner,
+.yAxisReadout.selectedAirliner {
+	opacity: 1;
+}
+
 .yAxisReadoutBox {
 	fill: var(--surface-minor);
 	stroke: var(--border-minor);
@@ -529,10 +544,6 @@
 
 .yAxisReadoutBox.selectedAirliner {
 	fill: var(--interactive-major);
-}
-
-.yAxisReadoutLine.hoveredAirliner {
-	stroke: var(--interactive-minor);
 }
 
 .yAxisReadoutText {

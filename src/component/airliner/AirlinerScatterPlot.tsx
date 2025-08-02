@@ -209,8 +209,11 @@ export default function AirlinerScatterPlot() {
 			maxDistance: 20, // Maximum distance for proximity detection
 			onTargetChange: (target) => {
 				// Update hovered airliner based on nearest target
-				// Only set hover for lines and labels, not clusters
+				// Only set hover for mouse events, not touch events
+				// Touch events will handle selection directly in handleTouchEnd
 				if (target && target.type !== 'cluster') {
+					// Only set hover state for mouse interactions
+					// Touch events will use nearestTarget for direct selection
 					setHoveredAirliner(target.id);
 				} else {
 					setHoveredAirliner(null);
@@ -284,6 +287,35 @@ export default function AirlinerScatterPlot() {
 			}
 		} else {
 			// Clicked on empty chart area - clear selection
+			clearSelection();
+		}
+	}, [proximityDetection, selectedAirlinerID, clearSelection, setSelectedAirliner]);
+
+	/**
+	 * handleTouchEnd
+	 * 
+	 * Handles touch end events within the chart area.
+	 * Manages selection state based on what was touched.
+	 * Provides immediate tap-to-select functionality for touch devices.
+	 */
+	const handleTouchEnd = useCallback((event: React.TouchEvent) => {
+		// Prevent default to avoid unwanted browser behaviours
+		event.preventDefault();
+		
+		// Check if we have a current target from proximity detection
+		if (proximityDetection.nearestTarget && proximityDetection.nearestTarget.type !== 'cluster') {
+			// Touched on an interactive element - select it
+			const airlinerID = proximityDetection.nearestTarget.id;
+			
+			// Toggle selection if touching on already selected airliner
+			if (selectedAirlinerID === airlinerID) {
+				clearSelection();
+			} else {
+				// Select the new airliner
+				setSelectedAirliner(airlinerID);
+			}
+		} else {
+			// Touched on empty chart area - clear selection
 			clearSelection();
 		}
 	}, [proximityDetection, selectedAirlinerID, clearSelection, setSelectedAirliner]);
@@ -398,6 +430,8 @@ export default function AirlinerScatterPlot() {
 				onMouseLeave={handleMouseLeave}
 				onClick={handleClick}
 				onKeyDown={handleKeyDown}
+				onTouchStart={proximityDetection.handlers.onTouchStart}
+				onTouchEnd={handleTouchEnd}
 				style={{ 
 					cursor: proximityDetection.nearestTarget && proximityDetection.nearestTarget.type !== 'cluster' 
 						? 'pointer' 
@@ -694,15 +728,6 @@ export default function AirlinerScatterPlot() {
 					/>
 					
 					{/* Debug information panel */}
-					<rect
-						x={4}
-						y={4}
-						width={300}
-						height={80}
-						fill="rgba(0, 0, 0, 0.8)"
-						rx={4}
-						style={{ pointerEvents: 'none' }}
-					/>
 					
 					{/* Mouse position text */}
 					<text

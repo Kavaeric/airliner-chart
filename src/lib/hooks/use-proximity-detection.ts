@@ -453,16 +453,65 @@ export function useProximityDetection<T>(
 		onTargetChange?.(null);
 	}, [onTargetChange]);
 
+	/**
+	 * handleTouchStart
+	 * 
+	 * Handles touch start events within the chart area.
+	 * Updates touch position and finds the nearest target element immediately.
+	 * This enables immediate tap-to-select functionality on touch devices.
+	 * 
+	 * @param event - React touch start event
+	 */
+	const handleTouchStart = useCallback((event: React.TouchEvent) => {
+		// Prevent default to avoid unwanted browser behaviours
+		event.preventDefault();
+		
+		// Get the first touch point
+		const touch = event.touches[0];
+		if (!touch) return;
+		
+		// Convert screen coordinates to chart-relative coordinates
+		const rect = event.currentTarget.getBoundingClientRect();
+		const touchX = touch.clientX - rect.left;
+		const touchY = touch.clientY - rect.top;
+		
+		const touchPos = { x: touchX, y: touchY };
+		setMousePosition(touchPos);
+		
+		// Find and update the nearest target immediately
+		const target = findNearestTarget(touchPos);
+		setNearestTarget(target);
+		
+		// Don't call onTargetChange for touch events to avoid setting hover state
+		// Touch events will handle selection directly in the component
+	}, [findNearestTarget]);
+
+	/**
+	 * handleTouchEnd
+	 * 
+	 * Handles touch end events within the chart area.
+	 * Maintains the current target state for selection logic.
+	 * 
+	 * @param event - React touch end event
+	 */
+	const handleTouchEnd = useCallback((event: React.TouchEvent) => {
+		// Prevent default to avoid unwanted browser behaviours
+		event.preventDefault();
+		
+		// Keep the current target state for selection logic
+		// The target was already set in handleTouchStart
+	}, []);
+
 	// === Return Interface ===
 	
 	/**
 	 * Return object containing:
-	 * - mousePosition: Current mouse coordinates relative to chart
+	 * - mousePosition: Current mouse/touch coordinates relative to chart
 	 * - nearestTarget: Currently detected nearest element
 	 * - handlers: Event handlers to attach to chart container
 	 */
 	return {
-		/** Current mouse position relative to chart container, or null if outside */
+		/** Current mouse/touch position relative to chart container, or null if outside */
 		mousePosition,
 		/** Currently detected nearest target element, or null if none */
 		nearestTarget,
@@ -470,7 +519,9 @@ export function useProximityDetection<T>(
 		handlers: {
 			onMouseMove: handleMouseMove,
 			onMouseEnter: handleMouseEnter,
-			onMouseLeave: handleMouseLeave
+			onMouseLeave: handleMouseLeave,
+			onTouchStart: handleTouchStart,
+			onTouchEnd: handleTouchEnd
 		}
 	};
 } 
