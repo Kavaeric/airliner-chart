@@ -694,7 +694,7 @@ export function ResponsiveChartViewport<T>({
 				if (!dragStartViewport.current) {
 					dragStartViewport.current = { ...viewport };
 				}
-				
+
 				// Calculate deltas based on config
 				// Use full data range if useFullDataScale is true, otherwise use viewport range
 				const dataDeltaX = config.axis !== 'y' 
@@ -711,7 +711,7 @@ export function ResponsiveChartViewport<T>({
 				// Apply inversion
 				const finalDeltaX = config.invert ? dataDeltaX : -dataDeltaX;
 				const finalDeltaY = config.invert ? -dataDeltaY : dataDeltaY;
-				
+
 				// Calculate target viewport
 				const targetXDomain: [number, number] = config.axis !== 'y' ? [
 					dragStartViewport.current.x[0] + finalDeltaX,
@@ -724,14 +724,14 @@ export function ResponsiveChartViewport<T>({
 				] : viewport.y;
 				
 				// Apply constraints
-		const constrainedXDomain = applyAllConstraints(targetXDomain, 'x', viewportConstraints);
-		const constrainedYDomain = applyAllConstraints(targetYDomain, 'y', viewportConstraints);
+				const constrainedXDomain = applyAllConstraints(targetXDomain, 'x', viewportConstraints);
+				const constrainedYDomain = applyAllConstraints(targetYDomain, 'y', viewportConstraints);
 
 				// Update viewport
-		setViewport({
-			x: constrainedXDomain,
-			y: constrainedYDomain,
-		});
+				setViewport({
+					x: constrainedXDomain,
+					y: constrainedYDomain
+				});
 			} else {
 				dragStartViewport.current = null;
 			}
@@ -746,7 +746,7 @@ export function ResponsiveChartViewport<T>({
 		const handler = createDragHandler(config);
 		return useDrag(handler, {
 			filterTaps: true,
-			preventScroll: true,
+			preventScroll: false,
 			...config.options,
 		});
 	}, [createDragHandler]);
@@ -887,7 +887,7 @@ export function ResponsiveChartViewport<T>({
 	}, {
 		drag: {
 			filterTaps: true,
-			preventScroll: true,
+			preventScroll: false,
 			immediate: true,
 			threshold: 0,
 		},
