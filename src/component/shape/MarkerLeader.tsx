@@ -72,6 +72,19 @@ function getEuclideanDistance(x1: number, y1: number, x2: number, y2: number) {
 }
 
 /**
+ * Returns the Manhattan distance between two points.
+ * 
+ * @param {number} x1 - X coordinate of the first point
+ * @param {number} y1 - Y coordinate of the first point
+ * @param {number} x2 - X coordinate of the second point
+ * @param {number} y2 - Y coordinate of the second point
+ * @returns {number} - The Manhattan distance between the two points
+ */
+function getManhattanDistance(x1: number, y1: number, x2: number, y2: number) {
+	return Math.abs(x2 - x1) + Math.abs(y2 - y1);
+}
+
+/**
  * MarkerLeader
  *
  * Renders a leader line that always starts at a 45° angle (up-left, up-right, bottom-right, bottom-left)
@@ -231,7 +244,7 @@ export const MarkerLeader = React.forwardRef<SVGPathElement, MarkerLeaderProps &
 	// Early return: Check if line is too short for clipping box
 	if (clippingBBox) {
 		const closestPointOnClippingBox = getClosestPointOnRect(x1, y1, x2, y2, clippingBBox.width, clippingBBox.height);
-		const distanceToClippingBox = getEuclideanDistance(x1, y1, closestPointOnClippingBox.point.x, closestPointOnClippingBox.point.y);
+		const distanceToClippingBox = getManhattanDistance(x1, y1, closestPointOnClippingBox.point.x, closestPointOnClippingBox.point.y);
 		
 		if (distanceToClippingBox < minLength) {
 			return null;

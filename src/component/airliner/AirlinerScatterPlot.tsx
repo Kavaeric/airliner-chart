@@ -21,6 +21,7 @@ import { useResponsiveSVG } from "@/context/ResponsiveSVG";
 import { useResponsiveChartViewport } from "@/context/ResponsiveChartViewport";
 import { useAirlinerSelection } from "@/context/AirlinerSelectionContext";
 import { useProximityDetection } from "@/lib/hooks/use-proximity-detection";
+import { useAnimatedScales } from "@/lib/hooks/use-animated-scales";
 
 // [IMPORT] Utilities //
 import type { AirlinerModel } from "@/lib/data/airliner-types";
@@ -43,8 +44,14 @@ export default function AirlinerScatterPlot() {
 	const { debugMode } = useDebugMode();
 	const { clearSelection, hoveredAirlinerID, selectedAirlinerID, setHoveredAirliner, setSelectedAirliner } = useAirlinerSelection();
 
+	// === Animated Scales ===
+	const animatedScales = useAnimatedScales({
+		x: viewportScale.x,
+		y: viewportScale.y
+	}, { animate: true, duration: 50 });
+
 	// Hide/consolidate labels in clusters larger than this
-	const labelClusterThreshold = 3;
+	const labelClusterThreshold = 2;
 
 	// === ViewModel ===
 	const {
@@ -54,7 +61,7 @@ export default function AirlinerScatterPlot() {
 		areLabelsMeasured,	// Flag for if all labels have been measured
 		plotFormat,				// Formatting options for the plot
 		airlinerLabelClusters,	// Cluster detection results
-	} = useAirlinerViewModel(data, viewportScale.x, viewportScale.y, width, height, debugMode);
+	} = useAirlinerViewModel(data, animatedScales.x, animatedScales.y, width, height, debugMode);
 
 	// === Proximity Detection ===
 	// 
@@ -367,8 +374,8 @@ export default function AirlinerScatterPlot() {
 
 			// Add arbitrary padding to the width and height
 			pendingLabelDimensions.current.set(airlinerID, {
-				width: bbox.width + plotFormat.labelPadding * 2 + plotFormat.labelMargin * 2,
-				height: bbox.height + plotFormat.labelPadding * 2 + plotFormat.labelMargin * 2
+				width: bbox.width + plotFormat.labelPadding[1] + plotFormat.labelMargin[1],
+				height: bbox.height + plotFormat.labelPadding[0] + plotFormat.labelMargin[0]
 			});
 
 			// If all ghost labels have been measured, call batchUpdateLabelDimensions
@@ -399,8 +406,8 @@ export default function AirlinerScatterPlot() {
 		<g>
 			{/* Grid intersection dots */}
 			<GridDots
-				xScale={viewportScale.x}
-				yScale={viewportScale.y}
+				xScale={animatedScales.x}
+				yScale={animatedScales.y}
 				width={width}
 				height={height}
 				numTicks={10}
@@ -566,7 +573,7 @@ export default function AirlinerScatterPlot() {
 							height: label.labelDimensions.height 
 						}}
 						startOffset={plotFormat.markerSize / -2}
-						endOffset={plotFormat.labelPadding / 2}
+						endOffset={plotFormat.labelPadding[0] / 2}
 						minLength={12}
 						className={leaderClassNames}
 						debug={debugMode}

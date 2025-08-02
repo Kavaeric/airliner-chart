@@ -17,7 +17,6 @@ import { AirlinerSelectionProvider } from "@/context/AirlinerSelectionContext";
 // [IMPORT] Types/interfaces //
 import type { AirlinerData, AirlinerModel } from "@/lib/data/airliner-types";
 import { ResponsiveSVG } from "@/context/ResponsiveSVG";
-import type { ChartViewport } from "@/types/zoom";
 
 // [IMPORT] CSS styling //
 import "./AirlinerChart.css";
@@ -107,15 +106,15 @@ export default function AirlinerChart({ data }: AirlinerChartProps) {
 	});
 
 	// Initialise initial viewport
-	const initialChartViewport = useMemo<ChartViewport>(() => ({
+	const initialChartViewport = useMemo(() => ({
 		x: [
 			Math.min(...xAxisData) - 50,
 			Math.max(...xAxisData) - 250
-		],
+		] as [number, number],
 		y: [
 			Math.min(...chartData.map(airliner => airliner.airlinerData.rangeKM ?? 0)) - 1000,
 			Math.max(...chartData.map(airliner => airliner.airlinerData.rangeKM ?? 0)) + 800
-		]
+		] as [number, number]
 	}), [xAxisData, chartData]);
 
 	// Set viewport constraints

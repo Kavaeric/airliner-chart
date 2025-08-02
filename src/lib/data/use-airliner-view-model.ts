@@ -80,8 +80,8 @@ export function useAirlinerViewModel(
 		markerLineMinorWidth: 8,
 		markerMargin: 8,
 		labelFontSize: 16,
-		labelPadding: 4,
-		labelMargin: 0
+		labelPadding: [4, 12],
+		labelMargin: [0, 0]
 	}), []);
 	
 	/**
@@ -455,12 +455,12 @@ function calculateLabelPlacement(
 			strategy: {
 				firstPass: {
 					modes: ['left', 'top', 'top-left'],
-					maxDistance: { x: 50, y: 40 },
+					maxDistance: { x: 50, y: 50 },
 					offset: { x: 0, y: 0 }
 				},
 				sweep: {
 					horizontal: 'sweep-to-right',
-					maxDistance: { x: 50, y: 40 },
+					maxDistance: { x: 50, y: 50 },
 					stepFactor: .5,
 					verticalSearch: [-1, 1, 0],
 					maxIterations: 2,
