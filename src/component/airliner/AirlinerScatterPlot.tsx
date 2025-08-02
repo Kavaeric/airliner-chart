@@ -402,7 +402,18 @@ export default function AirlinerScatterPlot() {
 					cursor: proximityDetection.nearestTarget && proximityDetection.nearestTarget.type !== 'cluster' 
 						? 'pointer' 
 						: 'move', 
-					touchAction: 'none' 
+					touchAction: 'none',
+					/* === Browser Interaction Feedback Suppression === */
+					outline: 'none', /* Suppress Chrome desktop white outline */
+					WebkitTapHighlightColor: 'transparent', /* Suppress Chrome mobile blue tap highlight */
+					userSelect: 'none', /* Prevent text selection */
+					WebkitUserSelect: 'none', /* Safari/Chrome */
+					MozUserSelect: 'none', /* Firefox */
+					msUserSelect: 'none', /* IE/Edge */
+					/* Suppress any default browser styling */
+					WebkitAppearance: 'none',
+					MozAppearance: 'none',
+					appearance: 'none'
 				}}
 				tabIndex={0} // Make focusable for keyboard events
 				data-chart-viewport="true"

@@ -71,6 +71,24 @@
 	min-height: 0; /* Critical: allows grid item to shrink */
 	overflow: hidden; /* Prevent content from expanding beyond bounds */
 	touch-action: none; /* Prevent browser gestures for proper pinch zoom */
+	
+	/* === Browser Interaction Feedback Suppression === */
+	/* Suppress Chrome desktop white outline on focus */
+	outline: none;
+	
+	/* Suppress Chrome mobile blue tap highlight */
+	-webkit-tap-highlight-color: transparent;
+	
+	/* Prevent text selection during interactions */
+	user-select: none;
+	-webkit-user-select: none; /* Safari/Chrome */
+	-moz-user-select: none; /* Firefox */
+	-ms-user-select: none; /* IE/Edge */
+	
+	/* Suppress any default browser styling */
+	-webkit-appearance: none;
+	-moz-appearance: none;
+	appearance: none;
 }
 
 /* Y-axis grid area */
