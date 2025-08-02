@@ -889,6 +889,10 @@ export function ResponsiveChartViewport<T>({
 			filterTaps: true,
 			preventScroll: true,
 			immediate: true,
+			threshold: 0,
+			pointer: {
+				touch: true  // Use touch events instead of pointer events
+			},
 		},
 		wheel: {
 			preventDefault: true,
