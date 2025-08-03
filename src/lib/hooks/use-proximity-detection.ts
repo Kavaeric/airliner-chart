@@ -463,9 +463,6 @@ export function useProximityDetection<T>(
 	 * @param event - React touch start event
 	 */
 	const handleTouchStart = useCallback((event: React.TouchEvent) => {
-		// Prevent default to avoid unwanted browser behaviours
-		event.preventDefault();
-		
 		// Get the first touch point
 		const touch = event.touches[0];
 		if (!touch) return;

@@ -4,7 +4,7 @@
 import React, { useMemo, useRef, useCallback, useEffect, useState } from "react";
 
 // [IMPORT] Third-party libraries //
-import { usePinch } from "@use-gesture/react";
+import { useGesture } from "@use-gesture/react";
 
 // [IMPORT] Internal components //
 import AirlinerScatterMarker from './AirlinerScatterMarker';
@@ -401,43 +401,86 @@ export default function AirlinerScatterPlot() {
 		setAnimationDuration(0);
 	}, [setAnimationDuration]);
 
-	// === Pinch Zoom Handling ===
+	// === Combined Gesture Handling ===
 	// Track previous pinch scale for incremental zooming
 	const previousPinchScale = useRef<number>(1);
+	
+	// Track previous movement for incremental delta calculation
+	const previousMovement = useRef<[number, number]>([0, 0]);
 
-	// Pinch gesture handler for touch zoom
-	const bindPinch = usePinch(({ offset: [scale], origin: [originX, originY], event, first, last }) => {
-		// Only handle pinch events when we have a valid scale
-		if (scale === undefined || scale === 0) return;
+	// Combined gesture handler for drag and pinch
+	const bindGestures = useGesture({
+		onDrag: ({ active, movement: [mx, my] }) => {
+			// Set animation duration to 0 for immediate drag response
+			setAnimationDuration(0);
+			
+			// Handle drag using the same logic as ResponsiveChartViewport
+			if (active) {
+				// Calculate incremental movement (difference from previous frame)
+				const incrementalX = mx - previousMovement.current[0];
+				const incrementalY = my - previousMovement.current[1];
+				
+				// Calculate deltas based on current viewport range
+				// This matches the ResponsiveChartViewport approach
+				const dataDeltaX = (incrementalX / width) * (animatedScale.x.domain()[1] - animatedScale.x.domain()[0]);
+				const dataDeltaY = (incrementalY / height) * (animatedScale.y.domain()[1] - animatedScale.y.domain()[0]);
+				
+				// Apply inversion (normal drag for plot area)
+				const finalDeltaX = -dataDeltaX;
+				const finalDeltaY = dataDeltaY;
+				
+				// Use view.move() which handles constraints and viewport updates
+				view.move(finalDeltaX, finalDeltaY);
+				
+				// Update previous movement for next frame
+				previousMovement.current = [mx, my];
+			} else {
+				// Reset previous movement when drag ends
+				previousMovement.current = [0, 0];
+			}
+		},
+		onPinch: ({ offset: [scale], origin: [originX, originY], event, first, last }) => {
+			// Only handle pinch events when we have a valid scale
+			if (scale === undefined || scale === 0) return;
 
-		// Set animation duration to 0 for immediate pinch response
-		setAnimationDuration(0);
+			// Set animation duration to 0 for immediate pinch response
+			setAnimationDuration(0);
 
-		// Store initial viewport state on first pinch frame
-		if (first) {
+			// Store initial viewport state on first pinch frame
+			if (first) {
+				previousPinchScale.current = scale;
+			}
+
+			// Calculate zoom factor from scale change
+			// Use a more conservative zoom factor calculation
+			const scaleChange = scale - previousPinchScale.current;
+			const zoomFactor = 1 + scaleChange;
+
+			// Convert pinch origin to data coordinates
+			if (event && event.currentTarget) {
+				const rect = (event.currentTarget as Element).getBoundingClientRect();
+				const pinchCenterX = (animatedScale.x as any).invert(originX - rect.left);
+				const pinchCenterY = (animatedScale.y as any).invert(originY - rect.top);
+
+				// Apply zoom with constraints
+				view.zoom(zoomFactor, { x: pinchCenterX, y: pinchCenterY }, 'both');
+			}
+
+			// Update previous scale for next frame
 			previousPinchScale.current = scale;
 		}
-
-		// Calculate zoom factor from scale change
-		// Use a more conservative zoom factor calculation
-		const scaleChange = scale - previousPinchScale.current;
-		const zoomFactor = 1 + scaleChange;
-
-		// Convert pinch origin to data coordinates
-		if (event && event.currentTarget) {
-			const rect = (event.currentTarget as Element).getBoundingClientRect();
-			const pinchCenterX = (animatedScale.x as any).invert(originX - rect.left);
-			const pinchCenterY = (animatedScale.y as any).invert(originY - rect.top);
-
-			// Apply zoom with constraints
-			view.zoom(zoomFactor, { x: pinchCenterX, y: pinchCenterY }, 'both');
-		}
-
-		// Update previous scale for next frame
-		previousPinchScale.current = scale;
 	}, {
-		preventDefault: true,
-		eventOptions: { passive: false }
+		drag: {
+			filterTaps: true,
+			preventScroll: false,
+			immediate: true,
+			threshold: 0,
+			eventOptions: { passive: false }
+		},
+		pinch: {
+			preventDefault: true, // Prevent browser zoom gestures
+			eventOptions: { passive: false } // Need non-passive to call preventDefault
+		}
 	});
 
 	// === Batch label measurement logic ===
@@ -521,8 +564,7 @@ export default function AirlinerScatterPlot() {
 				width={width}
 				height={height}
 				fill="transparent"
-				{...drag.bindDrag()}
-				{...bindPinch()}
+				{...bindGestures()}
 				onWheel={handleWheel}
 				onMouseDown={handleDragStart}
 				onMouseMove={handleMouseMove}
