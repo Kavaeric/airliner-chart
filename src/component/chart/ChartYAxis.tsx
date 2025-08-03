@@ -1,7 +1,7 @@
 "use client";
 
 // [IMPORT] React //
-import React from "react";
+import React, { useMemo, useState, useCallback } from "react";
 
 // [IMPORT] Third-party libraries //
 import { AxisLeft } from "@visx/axis";
@@ -13,6 +13,7 @@ import { useAirlinerSelection } from "@/context/AirlinerSelectionContext";
 import { useChartData } from "@/component/airliner/AirlinerChart";
 import { Text } from "@visx/text";
 import { RectCentre } from "@/component/shape/RectCentre";
+import { useAnimatedChartViewport } from "@/context/AnimatedChartViewport";
 
 interface YAxisProps {
 	label?: string;
@@ -26,46 +27,111 @@ interface YAxisProps {
  * - Reports its dimensions up to the parent via onDimensionsChange
  * - Receives all layout and scale info as props
  * - Renders ticks and gridlines
+ * - Shows range figure that follows mouse cursor or snaps to airliner positions
  *
  * This enables robust, race-condition-free axis measurement and layout.
  */
 export default function YAxis({ label }: YAxisProps) {
-	const { viewportScale } = useResponsiveChartViewport();
+	const { viewportScale, mouse } = useResponsiveChartViewport();
+	const { animatedScale } = useAnimatedChartViewport();
 	const { width, height } = useResponsiveSVG();
 	const { hoveredAirlinerID, selectedAirlinerID } = useAirlinerSelection();
 	const data = useChartData();
 
+	// === Position Caching ===
+	// Cache the last valid range figure position to prevent jarring animations
+	const [lastValidPosition, setLastValidPosition] = useState<number | null>(null);
+
 	// === Range Figure Calculation ===
-	// Calculate range figure for hovered/selected airliner
+	// Calculate range figure with priority: selected > hovered > mouse cursor > cached position
 	const rangeFigure = React.useMemo(() => {
-		const activeAirlinerID = selectedAirlinerID || hoveredAirlinerID;
-		if (!activeAirlinerID || !data) return null;
+		// Priority 1: Selected airliner
+		if (selectedAirlinerID && data) {
+			const airliner = data.find(d => d.airlinerID === selectedAirlinerID);
+			if (airliner?.airlinerData.rangeKM) {
+				const y = viewportScale.y(airliner.airlinerData.rangeKM);
+				if (y !== undefined && y !== null) {
+					const position = Number(y);
+					setLastValidPosition(position);
+					return {
+						y: position,
+						rangeKM: airliner.airlinerData.rangeKM,
+						state: 'selected' as const,
+						source: 'airliner' as const,
+					};
+				}
+			}
+		}
 
-		const airliner = data.find(d => d.airlinerID === activeAirlinerID);
-		if (!airliner) return null;
+		// Priority 2: Hovered airliner
+		if (hoveredAirlinerID && data) {
+			const airliner = data.find(d => d.airlinerID === hoveredAirlinerID);
+			if (airliner?.airlinerData.rangeKM) {
+				const y = viewportScale.y(airliner.airlinerData.rangeKM);
+				if (y !== undefined && y !== null) {
+					const position = Number(y);
+					setLastValidPosition(position);
+					return {
+						y: position,
+						rangeKM: airliner.airlinerData.rangeKM,
+						state: 'hovered' as const,
+						source: 'airliner' as const,
+					};
+				}
+			}
+		}
 
-		const rangeKM = airliner.airlinerData.rangeKM;
-		if (!rangeKM) return null;
+		// Priority 3: Mouse cursor position
+		if (mouse.coordinates && mouse.isOverChart) {
+			const position = mouse.coordinates.screen.y;
+			setLastValidPosition(position);
+			return {
+				y: position,
+				rangeKM: null,
+				state: 'mouse' as const,
+				source: 'mouse' as const,
+			};
+		}
 
-		// Convert range to Y coordinate
-		const y = viewportScale.y(rangeKM);
-		if (y === undefined || y === null) return null;
+		// Priority 4: Cached position (prevents jarring animations)
+		if (lastValidPosition !== null) {
+			return {
+				y: lastValidPosition,
+				rangeKM: null,
+				state: 'cached' as const,
+				source: 'cached' as const,
+			};
+		}
+
+		// No active position and no cached position
+		return null;
+	}, [hoveredAirlinerID, selectedAirlinerID, data, viewportScale.y, mouse.coordinates, mouse.isOverChart, lastValidPosition]);
+
+	// === State-based CSS classes helper ===
+	// Pre-compute state-specific CSS classes to avoid duplication
+	const stateClass = useMemo(() => {
+		if (!rangeFigure) return "";
 		
-		// Determine if this is hover or selection state
-		const isSelected = selectedAirlinerID === activeAirlinerID;
-		const isHovered = hoveredAirlinerID === activeAirlinerID && !isSelected;
-
-		return {
-			y: Number(y),
-			rangeKM,
-			state: isSelected ? 'selected' : 'hovered',
-		};
-	}, [hoveredAirlinerID, selectedAirlinerID, data, viewportScale.y]);
+		return rangeFigure.state === 'hovered' ? "hoveredAirliner" : 
+			   rangeFigure.state === 'selected' ? "selectedAirliner" : 
+			   rangeFigure.state === 'cached' ? "" : ""; // No special styling for cached state
+	}, [rangeFigure]);
 
 	return (
 		<g style={{transform: `translateX(${width}px)`}}>
+
+			{/* Range figure line - always renders, follows mouse */}
+			<line
+				x1={-width}
+				y1={mouse.isOverChart && mouse.coordinates ? mouse.coordinates.screen.y : 0}
+				x2={0}
+				y2={mouse.isOverChart && mouse.coordinates ? mouse.coordinates.screen.y : 0}
+				className="yAxisReadoutLine"
+			/>
+
+			{/* Render the axis */}
 			<AxisLeft
-				scale={viewportScale.y}
+				scale={animatedScale.y}
 				numTicks={10}
 				tickLength={4}
 				tickFormat={d => {
@@ -92,36 +158,33 @@ export default function YAxis({ label }: YAxisProps) {
 				{label}
 			</text>
 
-			{/* Always render range figure group, using placeholder/blank values if not hovered/selected */}
-			<g className={`yAxisRangeFigure yAxisRangeFigure${rangeFigure ? (rangeFigure.state.charAt(0).toUpperCase() + rangeFigure.state.slice(1)) : "None"}`}>
-				{/* Range line for hovered state, or invisible line if not hovered */}
-				<line
-					x1={-width}
-					y1={rangeFigure && rangeFigure.y ? rangeFigure.y : 0}
-					x2={0}
-					y2={rangeFigure && rangeFigure.y ? rangeFigure.y : 0}
-					className={`activeAirlinerYAxisLine ${rangeFigure && rangeFigure.state === 'hovered' ? "hoveredAirliner" : ""}`}
+			{/* Range figure group - always renders, follows mouse or snaps to airliners */}
+			<g
+				className={`yAxisReadout ${stateClass}`}
+				transform={`translate(0, ${rangeFigure ? rangeFigure.y : 0})`}
+			>
+				{/* Range value text and background - shows for selected airliners or when following mouse */}
+				<RectCentre
+					cx={-width / 2}
+					cy={0}
+					width={width}
+					height={32}
+					className={`yAxisReadoutBox ${stateClass}`}
 				/>
-
-				{/* Range value text and background for selected state, or invisible/blank if not selected */}
-				<g>
-					<RectCentre
-						cx={-width / 2}
-						cy={rangeFigure && rangeFigure.y ? rangeFigure.y : 0}
-						width={width}
-						height={32}
-						className={`activeAirlinerYAxisTextbox ${rangeFigure && rangeFigure.state === 'selected' ? "selectedAirliner" : ""}`}
-					/>
-					<Text
-						x={0}
-						y={(rangeFigure && rangeFigure.y ? rangeFigure.y : 0)}
-						className={`activeAirlinerYAxisText ${rangeFigure && rangeFigure.state === 'selected' ? "selectedAirliner" : ""}`}
-						textAnchor="end"
-						verticalAnchor="middle"
-					>
-						{rangeFigure && rangeFigure.rangeKM ? rangeFigure.rangeKM : ""}
-					</Text>
-				</g>
+				<Text
+					x={0}
+					y={0}
+					className={`yAxisReadoutText ${stateClass}`}
+					textAnchor="end"
+					verticalAnchor="middle"
+				>
+					{rangeFigure && rangeFigure.source === 'airliner' 
+						? rangeFigure.rangeKM 
+						: rangeFigure && rangeFigure.source === 'mouse' && mouse.coordinates
+							? Math.round((viewportScale.y as any).invert(mouse.coordinates.screen.y))
+							: ""
+					}
+				</Text>
 			</g>
 		</g>
 	);

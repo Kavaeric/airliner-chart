@@ -1,7 +1,10 @@
+// [IMPORT] React and core libraries //
+import React, { createContext, useContext, useState, useRef, useMemo, useCallback, useEffect, ReactNode, useImperativeHandle, forwardRef } from "react";
+
+// [IMPORT] Third-party libraries //
 import { AxisScale } from "@visx/axis";
 import { scaleLinear } from "@visx/scale";
-import { extent } from "d3-array";
-import { createContext, useContext, ReactNode, useRef, useImperativeHandle, forwardRef, useState, useMemo, useCallback, useEffect } from "react";
+import { useDrag, useWheel } from "@use-gesture/react";
 
 /**
  * @interface ViewportState
@@ -23,6 +26,35 @@ interface ViewportState {
 }
 
 /**
+ * @interface MouseCoordinates
+ * Represents mouse coordinates in both screen space and data space
+ */
+interface MouseCoordinates {
+	screen: {
+		x: number;
+		y: number;
+	};
+	data: {
+		x: number;
+		y: number;
+	};
+}
+
+/**
+ * @interface DragConfig
+ * Configuration for drag gesture handling
+ */
+interface DragConfig {
+	axis: 'x' | 'y' | 'both';
+	invert: boolean;
+	useFullDataScale?: boolean; // Optional flag to use full data range instead of viewport range for delta calculations
+	options?: {
+		threshold?: number;
+		immediate?: boolean;
+	};
+}
+
+/**
  * @interface ResponsiveChartViewportType
  * ResponsiveChartViewport Context Type
  *
@@ -38,16 +70,17 @@ interface ViewportState {
  * @property {Object} viewportScale D3 scales covering the current visible viewport (zoomed/panned).
  *   - `x`: Scale for X axis and plotting visible data.
  *   - `y`: Scale for Y axis and plotting visible data.
+ * @property {Object} mouse Current mouse coordinates and tracking state.
+ *   - `coordinates`: Current mouse position in both screen and data coordinates.
+ *   - `isOverChart`: Whether the mouse is currently over the chart area.
+ *   - `updateCoordinates`: Function to update mouse coordinates from a mouse event.
  * @property {Object} view Viewport manipulation functions.
  *   - `move`: Pan the viewport by a given delta in data units. Positive values move right/up.
  *   - `zoom`: Zoom the viewport by a scale factor, optionally around a data-space center point.
  *   - `reset`: Reset the viewport to its initial state (as defined by initialViewport or data extents).
  *   - `zoomToExtents`: Zoom the viewport to fit the full data extents.
- * @property {Object} drag Drag and wheel interaction functions.
- *   - `start`: Start a drag operation. Call on mouseDown/touchStart to begin viewport panning.
- *   - `move`: Handle drag movement. Call on mouseMove/touchMove during a drag operation.
- *   - `end`: End a drag operation. Call on mouseUp/touchEnd to finish viewport panning.
- *   - `wheelZoom`: Zoom in/out the viewport with the mouse wheel.
+ * @property {Object} drag Drag interaction functions.
+ *   - `bindDrag`: Returns gesture bind props for drag interactions with optional configuration.
  *   - `isDragging`: Whether a drag operation is currently in progress.
  */
 interface ResponsiveChartViewportType {
@@ -63,6 +96,11 @@ interface ResponsiveChartViewportType {
 		x: AxisScale;	// previously xScaleView
 		y: AxisScale;	// previously yScaleView
 	};
+	mouse: {
+		coordinates: MouseCoordinates | null;
+		isOverChart: boolean;
+		updateCoordinates: (event: React.MouseEvent | MouseEvent, element: Element) => void;
+	};
 	view: {
 		move: (x: number, y: number) => void; // previously translateViewport
 		zoom: (factor: number, center?: { x: number; y: number }, axis?: 'x' | 'y' | 'both') => void; // previously zoomViewport
@@ -70,11 +108,8 @@ interface ResponsiveChartViewportType {
 		zoomToExtents: () => void; // previously zoomToExtents
 	},
 	drag: {
-		start: (event: React.PointerEvent | React.MouseEvent | React.TouchEvent, axis?: 'x' | 'y' | 'both', invert?: boolean) => void; // previously viewDragStart
-		move: (event: PointerEvent | React.MouseEvent | React.TouchEvent, invert?: boolean) => void; // previously viewDragMove
-		end: (event?: PointerEvent | React.MouseEvent | React.TouchEvent) => void; // previously viewDragEnd
-		wheelZoom: (axis?: 'x' | 'y' | 'both', center?: { x: number; y: number }, invert?: boolean) => (event: React.WheelEvent) => void;
-		isDragging: boolean; // previously viewIsDragging
+		bindDrag: (config?: Partial<DragConfig>) => any;
+		isDragging: boolean;
 	},
 }
 
@@ -103,8 +138,6 @@ const ResponsiveChartViewportContext = createContext<ResponsiveChartViewportType
  *   - @property {[number | null, number | null]} y: [min, max] - Limits for the Y axis domain (data-space).
  *   - @property {[number | null, number | null]} extentX: [min, max] - Minimum and maximum allowed width of the X viewport (zoom constraints).
  *   - @property {[number | null, number | null]} extentY: [min, max] - Minimum and maximum allowed height of the Y viewport (zoom constraints).
- *   Use `null` to indicate no constraint for a bound.
- *
  * @property {React.RefObject<ResponsiveChartViewportType>} [viewportRef] Optional. Ref to expose imperative viewport controls (e.g., translate, zoom, reset) to parent components.
  */
 interface ResponsiveChartViewportProps<T> {
@@ -386,14 +419,46 @@ export function ResponsiveChartViewport<T>({
 		y: initialViewport?.y || yDomain,
 	});
 
-	// Drag state management using refs to avoid re-renders during drag
-	const dragState = useRef({
-		isDragging: false,
-		startPos: null as { x: number; y: number } | null,
-		startViewport: null as ViewportState | null,
-		dragAxis: null as 'x' | 'y' | 'both' | null,
-		invertDirection: false,
-	});
+	// Drag state for tracking isDragging and initial viewport
+	const [isDragging, setIsDragging] = useState(false);
+	const dragStartViewport = useRef<ViewportState | null>(null);
+
+	// Mouse tracking state
+	const [mouseCoordinates, setMouseCoordinates] = useState<MouseCoordinates | null>(null);
+	const [isMouseOverChart, setIsMouseOverChart] = useState(false);
+
+	// Global wheel event prevention for chart elements
+	useEffect(() => {
+		const handleWheel = (event: WheelEvent) => {
+			// Check if the wheel event is over a chart element with wheel interaction capabilities
+			const target = event.target as Element;
+			if (target) {
+				// Only prevent wheel events on elements that actually have wheel interaction capabilities
+				// Look for chart elements with data-chart-viewport attribute or touch-action: none
+				const chartElement = target.closest('[data-chart-viewport]') || 
+					target.closest('rect[style*="touch-action: none"]');
+				
+				if (chartElement) {
+					event.preventDefault();
+					event.stopPropagation();
+				}
+			}
+		};
+
+		// Prevent Safari accessibility zoom conflicts
+		const preventSafariZoom = (e: Event) => e.preventDefault();
+
+		// Use passive: false to allow preventDefault
+		document.addEventListener('wheel', handleWheel, { passive: false });
+		document.addEventListener('gesturestart', preventSafariZoom);
+		document.addEventListener('gesturechange', preventSafariZoom);
+		
+		return () => {
+			document.removeEventListener('wheel', handleWheel);
+			document.removeEventListener('gesturestart', preventSafariZoom);
+			document.removeEventListener('gesturechange', preventSafariZoom);
+		};
+	}, []);
 
 	// Viewport scales - memoized to prevent unnecessary re-renders
 	const xScaleView = useMemo(() => scaleLinear({
@@ -405,6 +470,22 @@ export function ResponsiveChartViewport<T>({
 		domain: viewport.y,
 		range: [height, 0],
 	}), [viewport.y[0], viewport.y[1], height]);
+
+	// Mouse coordinate update function
+	const updateMouseCoordinates = useCallback((event: React.MouseEvent | MouseEvent, element: Element) => {
+		const rect = element.getBoundingClientRect();
+		const mouseX = event.clientX - rect.left;
+		const mouseY = event.clientY - rect.top;
+
+		const dataX = xScaleView.invert(mouseX);
+		const dataY = yScaleView.invert(mouseY);
+
+		setMouseCoordinates({
+			screen: { x: mouseX, y: mouseY },
+			data: { x: dataX, y: dataY },
+		});
+		setIsMouseOverChart(true);
+	}, [xScaleView, yScaleView]);
 
 	/**
 	 * @function translateViewport
@@ -590,260 +671,147 @@ export function ResponsiveChartViewport<T>({
 	}
 
 	/**
-	 * @function viewDragStart
-	 * 
-	 * Start a drag operation to pan the viewport.
-	 * 
-	 * @param event - The mouse/touch/pointer down event.
-	 * @param axis - Optional axis constraint for the drag operation ('x', 'y', or 'both'). Defaults to 'both'.
-	 * 
-	 * @example
-	 * ```jsx
-	 * <rect
-	 *   onMouseDown={(e) => viewport.drag.start(e, 'x')}  // Constrain mouse movements to X-axis only
-	 *   onTouchStart={(e) => viewport.drag.start(e, 'y')} // Constrain touch screen movement to Y-axis only
-	 * />
-	 * ```
+	 * @function createDragHandler
+	 * Creates a drag handler function based on configuration
 	 */
-	const viewDragStart = useCallback((event: React.PointerEvent | React.MouseEvent | React.TouchEvent, axis: 'x' | 'y' | 'both' = 'both', invert: boolean = false) => {
-		// Prevent default to avoid text selection and other browser behaviors
-		event.preventDefault();
-		
-		// Get client coordinates from the event
-		const clientX = 'clientX' in event ? event.clientX : event.touches?.[0]?.clientX ?? 0;
-		const clientY = 'clientY' in event ? event.clientY : event.touches?.[0]?.clientY ?? 0;
-		
-		dragState.current.isDragging = true;
-		dragState.current.startPos = { x: clientX, y: clientY };
-		dragState.current.startViewport = { ...viewport };
-		dragState.current.dragAxis = axis;
-		dragState.current.invertDirection = invert;
-		
-		// Attach global listeners so drag continues even if pointer leaves the SVG
-		document.addEventListener("pointermove", viewDragMove);
-		document.addEventListener("pointerup", viewDragEnd);
-	}, [viewport]);
-
-	/**
-	 * @function viewDragMove
-	 * 
-	 * Handle drag movement to pan the viewport.
-	 * 
-	 * @param event - The mouse/touch/pointer move event.
-	 * 
-	 * @example
-	 * ```jsx
-	 * <rect
-	 *   onMouseMove={viewport.drag.move}
-	 *   onTouchMove={viewport.drag.move}
-	 * />
-	 * ```
-	 */
-	const viewDragMove = useCallback((event: PointerEvent | React.MouseEvent | React.TouchEvent, invert: boolean = false) => {
-		// If a drag is not in progress, or if any of the required refs are missing, do nothing
-		if (!dragState.current.isDragging || !dragState.current.startPos || !dragState.current.startViewport || !dragState.current.dragAxis) return;
-
-		// Prevent default to avoid scrolling and other browser behaviors
-		event.preventDefault();
-
-		// Get client coordinates from the event
-		const clientX = 'clientX' in event ? event.clientX : event.touches?.[0]?.clientX ?? 0;
-		const clientY = 'clientY' in event ? event.clientY : event.touches?.[0]?.clientY ?? 0;
-
-		// Calculate the total movement since drag start (like ChartBrush does)
-		const totalDeltaX = clientX - dragState.current.startPos.x;
-		const totalDeltaY = clientY - dragState.current.startPos.y;
-		
-		// Ignore tiny movements (noise)
-		if (Math.abs(totalDeltaX) < 1 && Math.abs(totalDeltaY) < 1) return;
-
-		// Convert screen deltas to data deltas using the start viewport scales
-		// We need to calculate how much data space corresponds to the screen movement
-		// Use startViewport to avoid using corrupted current viewport state
-		const dataDeltaX = (totalDeltaX / width) * (dragState.current.startViewport.x[1] - dragState.current.startViewport.x[0]);
-		const dataDeltaY = (totalDeltaY / height) * (dragState.current.startViewport.y[1] - dragState.current.startViewport.y[0]);
-
-		// Apply invert direction if specified (either from parameter or stored state)
-		const shouldInvert = invert || dragState.current.invertDirection;
-		const finalDataDeltaX = shouldInvert ? -dataDeltaX : dataDeltaX;
-		const finalDataDeltaY = shouldInvert ? -dataDeltaY : dataDeltaY;
-
-		// Calculate the target viewport based on the original start viewport plus the total movement
-		// Apply axis constraints based on the drag axis setting
-		let targetXDomain: [number, number] = dragState.current.startViewport.x;
-		let targetYDomain: [number, number] = dragState.current.startViewport.y;
-
-		if (dragState.current.dragAxis === 'x' || dragState.current.dragAxis === 'both') {
-			targetXDomain = [
-				dragState.current.startViewport.x[0] - finalDataDeltaX,
-				dragState.current.startViewport.x[1] - finalDataDeltaX
-			];
-		}
-
-		if (dragState.current.dragAxis === 'y' || dragState.current.dragAxis === 'both') {
-			targetYDomain = [
-				dragState.current.startViewport.y[0] + finalDataDeltaY,
-				dragState.current.startViewport.y[1] + finalDataDeltaY
-			];
-		}
-
-		// Apply constraints to the target viewport
-		const constrainedXDomain = applyAllConstraints(targetXDomain, 'x', viewportConstraints);
-		const constrainedYDomain = applyAllConstraints(targetYDomain, 'y', viewportConstraints);
-
-		// Validate that the constrained domains are valid numbers
-		if (isNaN(constrainedXDomain[0]) || isNaN(constrainedXDomain[1]) || 
-			isNaN(constrainedYDomain[0]) || isNaN(constrainedYDomain[1])) {
-			/* console.warn('Invalid viewport domains detected, aborting drag update:', {
-				targetXDomain,
-				targetYDomain,
-				constrainedXDomain,
-				constrainedYDomain
-			}); */
-			return;
-		}
-
-		// Update the viewport state directly (bypass translateViewport to avoid double-constraining)
-		setViewport({
-			x: constrainedXDomain,
-			y: constrainedYDomain,
-		});
-	}, [width, height, viewport, viewportConstraints]);
-
-	/**
-	 * @function viewDragEnd
-	 * 
-	 * End a drag operation.
-	 * 
-	 * @param event - The mouse/touch/pointer up event (optional).
-	 * 
-	 * @example
-	 * ```jsx
-	 * <rect
-	 *   onMouseUp={viewport.drag.end}
-	 *   onTouchEnd={viewport.drag.end}
-	 *   onMouseLeave={() => {
-	 *     if (viewport.drag.isDragging) viewport.drag.end();
-	 *   }}
-	 * />
-	 * ```
-	 */
-	const viewDragEnd = useCallback((event?: PointerEvent | React.MouseEvent | React.TouchEvent) => {
-		if (event) {
-			event.preventDefault();
-		}
-		
-		dragState.current.isDragging = false;
-		dragState.current.startPos = null;
-		dragState.current.startViewport = null;
-		dragState.current.dragAxis = null;
-		dragState.current.invertDirection = false;
-		
-		// Remove global listeners to avoid memory leaks
-		document.removeEventListener("pointermove", viewDragMove);
-		document.removeEventListener("pointerup", viewDragEnd);
-	}, [viewDragMove]);
-
-	/**
-	 * @function viewWheel
-	 * 
-	 * Handle mouse wheel events for zooming the viewport.
-	 * 
-	 * @param event - The wheel event containing delta information.
-	 * @param axis - Optional. Which axis to zoom ('x', 'y', or 'both'). Defaults to 'both'.
-	 * @param center - Optional. Data coordinates to center the zoom on. If not provided, uses mouse cursor position.
-	 * 
-	 * @example
-	 * ```jsx
-	 * <rect
-	 *   onWheel={(e) => viewport.drag.wheel(e, 'both')}                    // Zoom both axes around mouse cursor
-	 *   onWheel={(e) => viewport.drag.wheel(e, 'x')}                       // Zoom X-axis only around mouse cursor
-	 *   onWheel={(e) => viewport.drag.wheel(e, 'y')}                       // Zoom Y-axis only around mouse cursor
-	 *   onWheel={(e) => viewport.drag.wheel(e, 'both', {x: 50, y: 25})}   // Zoom both axes around specific point
-	 * />
-	 * ```
-	 */
-	const viewWheel = useCallback((event: React.WheelEvent, axis: 'x' | 'y' | 'both' = 'both', center?: { x: number; y: number }, invert: boolean = false) => {
-		// Prevent default to avoid page scrolling
-		event.preventDefault();
-		event.stopPropagation();
-
-		// Determine the zoom center
-		let zoomCenterX: number;
-		let zoomCenterY: number;
-
-		if (center) {
-			// Use the provided center point
-			zoomCenterX = center.x;
-			zoomCenterY = center.y;
-		} else {
-			// Use the mouse cursor position as the zoom center
-			const rect = event.currentTarget.getBoundingClientRect();
-			const mouseX = event.clientX - rect.left;
-			const mouseY = event.clientY - rect.top;
-
-			// Convert mouse position to data coordinates using current viewport scale
-			// This ensures proper zoom centering relative to what the user is seeing
-			zoomCenterX = xScaleView.invert(mouseX);
-			zoomCenterY = yScaleView.invert(mouseY);
-		}
-
-		// Calculate zoom factor based on wheel delta
-		// Negative delta = zoom in, positive delta = zoom out
-		// Normalize the delta and apply a reasonable zoom factor
-		const delta = event.deltaY;
-		const baseZoomFactor = delta < 0 ? 1.1 : 0.9; // Zoom in by 10% or zoom out by 10%
-		
-		// Apply invert direction if specified
-		const zoomFactor = invert ? (1 / baseZoomFactor) : baseZoomFactor;
-
-		// Use the zoomViewport function with the determined center and axis
-		zoomViewport(zoomFactor, { x: zoomCenterX, y: zoomCenterY }, axis);
-	}, [zoomViewport]);
-
-	// Track SVG elements with wheel handlers for global prevention
-	const svgElementsWithWheel = useRef<Set<Element>>(new Set());
-
-	// Add global wheel event prevention for SVG elements with wheel handlers
-	useEffect(() => {
-		const handleWheel = (event: WheelEvent) => {
-			// Check if the wheel event is over an SVG element with wheel handlers
-			const target = event.target as Element;
-			if (target) {
-				// Look for SVG elements in the event path
-				const svgElement = target.tagName === 'SVG' ? target : target.closest('svg');
-				if (svgElement && svgElementsWithWheel.current.has(svgElement)) {
-					event.preventDefault();
-					event.stopPropagation();
+	const createDragHandler = useCallback((config: DragConfig) => {
+		return ({ 
+			active, 
+			movement: [mx, my]
+		}: { 
+			active: boolean; 
+			movement: [number, number];
+		}) => {
+			setIsDragging(active);
+			
+			if (active) {
+				// Store initial viewport state on first drag frame
+				if (!dragStartViewport.current) {
+					dragStartViewport.current = { ...viewport };
 				}
+
+				// Calculate deltas based on config
+				// Use full data range if useFullDataScale is true, otherwise use viewport range
+				const dataDeltaX = config.axis !== 'y' 
+					? (mx / width) * (config.useFullDataScale 
+						? (xDomain[1] - xDomain[0])  // Full data range
+						: (dragStartViewport.current.x[1] - dragStartViewport.current.x[0]))  // Viewport range
+					: 0;
+				const dataDeltaY = config.axis !== 'x'
+					? (my / height) * (config.useFullDataScale 
+						? (yDomain[1] - yDomain[0])  // Full data range
+						: (dragStartViewport.current.y[1] - dragStartViewport.current.y[0]))  // Viewport range
+					: 0;
+				
+				// Apply inversion
+				const finalDeltaX = config.invert ? dataDeltaX : -dataDeltaX;
+				const finalDeltaY = config.invert ? -dataDeltaY : dataDeltaY;
+
+				// Calculate target viewport
+				const targetXDomain: [number, number] = config.axis !== 'y' ? [
+					dragStartViewport.current.x[0] + finalDeltaX,
+					dragStartViewport.current.x[1] + finalDeltaX
+				] : viewport.x;
+				
+				const targetYDomain: [number, number] = config.axis !== 'x' ? [
+					dragStartViewport.current.y[0] + finalDeltaY,
+					dragStartViewport.current.y[1] + finalDeltaY
+				] : viewport.y;
+				
+				// Apply constraints
+				const constrainedXDomain = applyAllConstraints(targetXDomain, 'x', viewportConstraints);
+				const constrainedYDomain = applyAllConstraints(targetYDomain, 'y', viewportConstraints);
+
+				// Update viewport
+				setViewport({
+					x: constrainedXDomain,
+					y: constrainedYDomain
+				});
+			} else {
+				dragStartViewport.current = null;
 			}
 		};
+	}, [viewport, viewportConstraints, width, height, xDomain, yDomain]);
 
-		// Use passive: false to allow preventDefault
-		document.addEventListener('wheel', handleWheel, { passive: false });
+	/**
+	 * @function useConfigurableDrag
+	 * Single configurable drag hook that replaces multiple individual hooks
+	 */
+	const useConfigurableDrag = useCallback((config: DragConfig) => {
+		const handler = createDragHandler(config);
+		return useDrag(handler, {
+			filterTaps: true,
+			preventScroll: false,
+			...config.options,
+		});
+	}, [createDragHandler]);
+
+	// Memoize common configurations to prevent unnecessary re-creation
+	const dragConfigs = useMemo(() => ({
+		both: { axis: 'both' as const, invert: false },
+		x: { axis: 'x' as const, invert: false },
+		y: { axis: 'y' as const, invert: false },
+		xInverted: { axis: 'x' as const, invert: true },
+		yInverted: { axis: 'y' as const, invert: true },
+		bothInverted: { axis: 'both' as const, invert: true },
+		// Brush-specific configurations with useFullDataScale
+		bothBrush: { axis: 'both' as const, invert: false, useFullDataScale: true },
+		xBrush: { axis: 'x' as const, invert: false, useFullDataScale: true },
+		yBrush: { axis: 'y' as const, invert: false, useFullDataScale: true },
+		xInvertedBrush: { axis: 'x' as const, invert: true, useFullDataScale: true },
+		yInvertedBrush: { axis: 'y' as const, invert: true, useFullDataScale: true },
+		bothInvertedBrush: { axis: 'both' as const, invert: true, useFullDataScale: true },
+	}), []);
+
+	// Create drag bind functions using the configurable hook
+	const bindDrag = useConfigurableDrag(dragConfigs.both);
+	const bindDragX = useConfigurableDrag(dragConfigs.x);
+	const bindDragY = useConfigurableDrag(dragConfigs.y);
+	const bindDragXInverted = useConfigurableDrag(dragConfigs.xInverted);
+	const bindDragYInverted = useConfigurableDrag(dragConfigs.yInverted);
+	const bindDragInverted = useConfigurableDrag(dragConfigs.bothInverted);
+	
+	// Brush-specific drag bind functions with useFullDataScale
+	const bindDragBrush = useConfigurableDrag(dragConfigs.bothBrush);
+	const bindDragXBrush = useConfigurableDrag(dragConfigs.xBrush);
+	const bindDragYBrush = useConfigurableDrag(dragConfigs.yBrush);
+	const bindDragXInvertedBrush = useConfigurableDrag(dragConfigs.xInvertedBrush);
+	const bindDragYInvertedBrush = useConfigurableDrag(dragConfigs.yInvertedBrush);
+	const bindDragInvertedBrush = useConfigurableDrag(dragConfigs.bothInvertedBrush);
+
+
+
+	// Create configurable bindDrag function that selects from pre-configured hooks
+	const bindDragConfigurable = useCallback((config?: Partial<DragConfig>) => {
+		const axis = config?.axis ?? 'both';
+		const invert = config?.invert ?? false;
+		const useFullDataScale = config?.useFullDataScale ?? false;
 		
-		return () => {
-			document.removeEventListener('wheel', handleWheel);
-		};
-	}, []);
-
-	// Create a wheel handler that automatically prevents default behavior and registers the SVG
-	const wheelZoom = useCallback((axis: 'x' | 'y' | 'both' = 'both', center?: { x: number; y: number }, invert: boolean = false) => {
-		return (event: React.WheelEvent) => {
-			// Prevent default to avoid page scrolling
-			event.preventDefault();
-			event.stopPropagation();
-			
-			// Register the SVG element for global prevention
-			const svgElement = event.currentTarget.closest('svg');
-			if (svgElement) {
-				svgElementsWithWheel.current.add(svgElement);
+		// Select the appropriate pre-configured drag bind
+		if (useFullDataScale) {
+			// Use brush-specific handlers with useFullDataScale
+			if (invert) {
+				if (axis === 'x') return bindDragXInvertedBrush();
+				if (axis === 'y') return bindDragYInvertedBrush();
+				return bindDragInvertedBrush(); // both axes inverted
+			} else {
+				if (axis === 'x') return bindDragXBrush();
+				if (axis === 'y') return bindDragYBrush();
+				return bindDragBrush(); // both axes normal
 			}
-			
-			// Call the viewWheel function with the specified axis, center, and invert flag
-			viewWheel(event, axis, center, invert);
-		};
-	}, [viewWheel]);
+		} else {
+			// Use normal handlers without useFullDataScale
+			if (invert) {
+				if (axis === 'x') return bindDragXInverted();
+				if (axis === 'y') return bindDragYInverted();
+				return bindDragInverted(); // both
+			} else {
+				if (axis === 'x') return bindDragX();
+				if (axis === 'y') return bindDragY();
+				return bindDrag(); // both
+			}
+		}
+	}, [bindDrag, bindDragX, bindDragY, bindDragXInverted, bindDragYInverted, bindDragInverted, bindDragBrush, bindDragXBrush, bindDragYBrush, bindDragXInvertedBrush, bindDragYInvertedBrush, bindDragInvertedBrush]);
 
 	const viewportManager: ResponsiveChartViewportType = useMemo(() => ({
 		plotArea: {
@@ -858,20 +826,22 @@ export function ResponsiveChartViewport<T>({
 			x: xScaleView,
 			y: yScaleView,
 		},
+		mouse: {
+			coordinates: mouseCoordinates,
+			isOverChart: isMouseOverChart,
+			updateCoordinates: updateMouseCoordinates,
+		},
 		view: {
 			move: translateViewport,
 			zoom: zoomViewport,
 			reset: resetViewport,
-			zoomToExtents,
+			zoomToExtents: zoomToExtents,
 		},
 		drag: {
-			start: viewDragStart,
-			move: viewDragMove,
-			end: viewDragEnd,
-			wheelZoom,
-			isDragging: dragState.current.isDragging,
+			bindDrag: bindDragConfigurable,
+			isDragging,
 		},
-	}), [width, height, xScale, yScale, xScaleView, yScaleView, translateViewport, zoomViewport, resetViewport, zoomToExtents, viewDragStart, viewDragMove, viewDragEnd, wheelZoom, dragState.current.isDragging]);
+	}), [width, height, xScale, yScale, xScaleView, yScaleView, mouseCoordinates, isMouseOverChart, updateMouseCoordinates, translateViewport, zoomViewport, resetViewport, zoomToExtents, bindDragConfigurable, isDragging]);
 
 	// Expose viewport functions via ref if provided
 	useImperativeHandle(viewportRef, () => viewportManager, [viewportManager]);
@@ -897,16 +867,17 @@ export function ResponsiveChartViewport<T>({
  * @property {Object} viewportScale D3 scales covering the current visible viewport (zoomed/panned).
  *   - `x`: Scale for X axis and plotting visible data.
  *   - `y`: Scale for Y axis and plotting visible data.
+ * @property {Object} mouse Current mouse coordinates and tracking state.
+ *   - `coordinates`: Current mouse position in both screen and data coordinates.
+ *   - `isOverChart`: Whether the mouse is currently over the chart area.
+ *   - `updateCoordinates`: Function to update mouse coordinates from a mouse event.
  * @property {Object} view Viewport manipulation functions.
  *   - `move`: Pan the viewport by a given delta in data units. Positive values move right/up.
  *   - `zoom`: Zoom the viewport by a scale factor, optionally around a data-space center point.
  *   - `reset`: Reset the viewport to its initial state (as defined by initialViewport or data extents).
  *   - `zoomToExtents`: Zoom the viewport to fit the full data extents.
- * @property {Object} drag Drag and wheel interaction functions.
- *   - `start`: Start a drag operation. Call on mouseDown/touchStart to begin viewport panning.
- *   - `move`: Handle drag movement. Call on mouseMove/touchMove during a drag operation.
- *   - `end`: End a drag operation. Call on mouseUp/touchEnd to finish viewport panning.
- *   - `wheelZoom`: Zoom in/out the viewport with the mouse wheel.
+ * @property {Object} drag Drag interaction functions.
+ *   - `bindDrag`: Returns gesture bind props for drag interactions with optional configuration.
  *   - `isDragging`: Whether a drag operation is currently in progress.
  */
 export function useResponsiveChartViewport(): ResponsiveChartViewportType {

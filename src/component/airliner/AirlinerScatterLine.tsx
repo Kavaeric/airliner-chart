@@ -3,9 +3,6 @@
 // [IMPORT] Components //
 import MarkerBevelLine from "../shape/MarkerBevelLine";
 
-// [IMPORT] CSS styling //
-// Styles moved to AirlinerChart.css
-
 // [IMPORT] Types //
 import type { AirlinerMarkerSeries } from "@/lib/data/airliner-types";
 
@@ -21,11 +18,12 @@ interface AirlinerScatterLineProps {
 /**
  * AirlinerScatterLine Component
  *
- * Renders connecting lines between airliner markers with interactive hover/selection states:
- * - Line connecting largest class value to largest limit value
- * - Line connecting class values
- * - Highlight line for visual emphasis
- * - Interactive hover and click handlers for airliner selection
+ * Renders connecting lines between airliner markers with visual state based on selection context.
+ * 
+ * Features:
+ * - Line connecting largest class value to largest limit value (minor line)
+ * - Line connecting class values (major line)
+ * - Visual state changes based on hover and selection
  */
 export default function AirlinerScatterLine({ 
 	airlinerID,
@@ -34,45 +32,21 @@ export default function AirlinerScatterLine({
 }: AirlinerScatterLineProps) {
 
 	// === Selection State Management ===
-	// Access airliner selection context for hover and selection states
-	const { 
-		selectedAirlinerID, 
-		hoveredAirlinerID, 
-		setSelectedAirliner, 
-		setHoveredAirliner 
-	} = useAirlinerSelection();
+	// Access airliner selection context for visual state only
+	// Interaction logic is handled centrally in AirlinerScatterPlot
+	const { selectedAirlinerID, hoveredAirlinerID } = useAirlinerSelection();
 
-	// === Interaction State Calculation ===
-	// Determine if this airliner is currently hovered or selected
+	// === Visual State Calculation ===
+	// Determine visual state based on selection context
 	const isHovered = hoveredAirlinerID === airlinerID;
 	const isSelected = selectedAirlinerID === airlinerID;
-	const isInteractive = isHovered || isSelected;
 
-	// === Event Handlers ===
-	// Handle mouse enter for hover state
-	const handleMouseEnter = () => {
-		setHoveredAirliner(airlinerID);
-	};
-
-	// Handle mouse leave to clear hover state
-	const handleMouseLeave = () => {
-		setHoveredAirliner(null);
-	};
-
-	// Handle click for selection state
-	const handleClick = () => {
-		// Toggle selection: if already selected, deselect; otherwise select
-		setSelectedAirliner(isSelected ? null : airlinerID);
-	};
-
-	// Get the y coordinate for line rendering
+	// === Rendering Configuration ===
 	const y = airlinerMarkers.lines.y;
-
-	// Check if the minor line is valid
 	const minorLineValid = Math.abs(airlinerMarkers.lines.x3 - airlinerMarkers.lines.x2) > 0;
 
 	return (
-		<g>
+		<g style={{ pointerEvents: 'none' }}>
 			{/* Line connecting largest class value to largest limit value */}
 			{minorLineValid && (
 				<line
@@ -80,12 +54,14 @@ export default function AirlinerScatterLine({
 					x2={airlinerMarkers.lines.x2}
 					y1={y}
 					y2={y}
-					className="markerConnectingLineMinor"
+					className={`markerConnectingLineMinor ${
+						isSelected ? 'selectedAirliner' : ''
+					} ${isHovered ? 'hoveredAirliner' : ''}`}
 					strokeWidth={plotFormat.markerLineMinorWidth}
 				/>
 			)}
 
-			{/* Interactive major line connecting min and max class values */}
+			{/* Major line connecting min and max class values */}
 			<MarkerBevelLine
 				x1={airlinerMarkers.lines.x2}
 				x2={airlinerMarkers.lines.x1}
@@ -95,9 +71,6 @@ export default function AirlinerScatterLine({
 					isSelected ? 'selectedAirliner' : ''
 				} ${isHovered ? 'hoveredAirliner' : ''}`}
 				weight={plotFormat.markerLineMajorWidth}
-				onMouseEnter={handleMouseEnter}
-				onMouseLeave={handleMouseLeave}
-				onClick={handleClick}
 			/>
 		</g>
 	);

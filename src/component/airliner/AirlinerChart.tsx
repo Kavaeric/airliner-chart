@@ -13,11 +13,11 @@ import { ResponsiveChartViewport, useResponsiveChartViewport } from "@/context/R
 import { createChartDataContext } from "@/context/ChartDataContext";
 import { useDebugMode } from "@/context/DebugModeContext";
 import { AirlinerSelectionProvider } from "@/context/AirlinerSelectionContext";
+import { AnimatedChartViewport } from "@/context/AnimatedChartViewport";
 
 // [IMPORT] Types/interfaces //
 import type { AirlinerData, AirlinerModel } from "@/lib/data/airliner-types";
 import { ResponsiveSVG } from "@/context/ResponsiveSVG";
-import type { ChartViewport } from "@/types/zoom";
 
 // [IMPORT] CSS styling //
 import "./AirlinerChart.css";
@@ -84,8 +84,8 @@ export default function AirlinerChart({ data }: AirlinerChartProps) {
 	 }, [data]);
 
 	// ResizeObserver for plot dimensions
-	const [plotWidth, setPlotWidth] = useState(0);
-	const [plotHeight, setPlotHeight] = useState(0);
+	const [plotWidth, setPlotWidth] = useState(200);
+	const [plotHeight, setPlotHeight] = useState(200);
 	
 	// ResizeObserver callback for measuring plot area
 	const handlePlotResize = (dims: { width: number; height: number }) => {
@@ -95,6 +95,9 @@ export default function AirlinerChart({ data }: AirlinerChartProps) {
 
 	// Store viewport object for button control
 	const viewportRef = useRef<any>(null);
+	
+	// Store animated viewport object for animation control
+	const animatedViewportRef = useRef<any>(null);
 
 	// ResizeObserver ref for plot area
 	const plotResizeRef = useResizeObserver(handlePlotResize);
@@ -107,30 +110,29 @@ export default function AirlinerChart({ data }: AirlinerChartProps) {
 	});
 
 	// Initialise initial viewport
-	const initialChartViewport = useMemo<ChartViewport>(() => ({
+	const initialChartViewport = useMemo(() => ({
 		x: [
 			Math.min(...xAxisData) - 50,
 			Math.max(...xAxisData) - 250
-		],
+		] as [number, number],
 		y: [
 			Math.min(...chartData.map(airliner => airliner.airlinerData.rangeKM ?? 0)) - 1000,
 			Math.max(...chartData.map(airliner => airliner.airlinerData.rangeKM ?? 0)) + 800
-		]
+		] as [number, number]
 	}), [xAxisData, chartData]);
 
 	// Set viewport constraints
 	const viewportConstraints = useMemo(() => ({
-		x: [0, 1000] as [number | null, number | null],		// X-axis constraints
+		x: [0, 950] as [number | null, number | null],		// X-axis constraints
 		y: [0, 20000] as [number | null, number | null],		// Y-axis constraints
 		extentX: [20, 1000] as [number | null, number | null],	// Zoom X constraints
 		extentY: [1000, 20000] as [number | null, number | null],	// Zoom Y constraints
 	}), [xAxisData, chartData]);
 
 
-	// ChartLayoutContext provides layout and tick info to all chart children
-	// ChartScalesContext provides D3 scales for axes and plotting
 	// ChartDataContext provides the airliner data array
 	// AirlinerSelectionProvider provides selection and hover state management
+	// ResponsiveChartViewport provides the viewport and zoom controls
 	return (
 		<>
 		<ChartDataContext.Provider value={chartData}>
@@ -155,44 +157,78 @@ export default function AirlinerChart({ data }: AirlinerChartProps) {
 			viewportRef={viewportRef}
 		>
 			<div className="chartControls frame-flex-horizontal">
-				<hr className="frame-minor" />
-				<button className="btn-diminished btn-icon-only" onClick={() => viewportRef.current.view.move(0, 1000)}>
-					<span className="material-symbols-sharp">keyboard_double_arrow_up</span>
-				</button>
-				<button className="btn-diminished btn-icon-only" onClick={() => viewportRef.current.view.move(0, -1000)}>
-					<span className="material-symbols-sharp">keyboard_double_arrow_down</span>
-				</button>
-				<button className="btn-diminished btn-icon-only" onClick={() => viewportRef.current.view.move(-50, 0)}>
-					<span className="material-symbols-sharp">keyboard_double_arrow_left</span>
-				</button>
-				<button className="btn-diminished btn-icon-only" onClick={() => viewportRef.current.view.move(50, 0)}>
-					<span className="material-symbols-sharp">keyboard_double_arrow_right</span>
-				</button>
-				<hr className="frame-minor" />
-				<button className="btn-diminished btn-icon-only" onClick={() => viewportRef.current.view.zoom(1.1)}>
-					<span className="material-symbols-sharp">zoom_in</span>
-				</button>
-				<button className="btn-diminished btn-icon-only" onClick={() => viewportRef.current.view.zoom(0.9)}>
-					<span className="material-symbols-sharp">zoom_out</span>
-				</button>
-				<hr className="frame-minor" />
-				<button className="btn-diminished" onClick={() => viewportRef.current.view.reset()}>
-					<span className="material-symbols-sharp">zoom_out_map</span>
-					Reset zoom
-				</button>
-				<hr className="frame-minor" />
+				<div className="frame-flex-horizontal">
 				<label className="input-switch">
 					<input
 						type="checkbox"
 						checked={debugMode}
 						onChange={() => setDebugMode(!debugMode)}
 					/>
-					Debug
-				</label>
+						Debug
+					</label>
+					<hr className="frame-minor" />
+					<div style={{ display: "flex", padding: "var(--space-100)", alignItems: "center" }}>
+						<p className="text-body-diminished">Airliner Chart by <a href="https://www.shojiushiyama.net/">Shoji Ushiyama</a> / <a href="https://www.kavaeric.com">Kavaeric</a>.</p>
+					</div>
+				</div>
+				<hr className="frame-minor" />
+				<button
+					className="btn-diminished btn-icon-only mobile-hidden"
+					onClick={() => viewportRef.current.view.move(0, 1000)}
+					aria-label="Pan up"
+				>
+					<span className="material-symbols-sharp" aria-hidden="true">keyboard_double_arrow_up</span>
+				</button>
+				<button
+					className="btn-diminished btn-icon-only mobile-hidden"
+					onClick={() => viewportRef.current.view.move(0, -1000)}
+					aria-label="Pan down"
+				>
+					<span className="material-symbols-sharp" aria-hidden="true">keyboard_double_arrow_down</span>
+				</button>
+				<button
+					className="btn-diminished btn-icon-only mobile-hidden"
+					onClick={() => viewportRef.current.view.move(-50, 0)}
+					aria-label="Pan left"
+				>
+					<span className="material-symbols-sharp" aria-hidden="true">keyboard_double_arrow_left</span>
+				</button>
+				<button
+					className="btn-diminished btn-icon-only mobile-hidden"
+					onClick={() => viewportRef.current.view.move(50, 0)}
+					aria-label="Pan right"
+				>
+					<span className="material-symbols-sharp" aria-hidden="true">keyboard_double_arrow_right</span>
+				</button>
+				<hr className="frame-minor mobile-hidden" />
+				<button
+					className="btn-diminished btn-icon-only"
+					onClick={() => viewportRef.current.view.zoom(1.1)}
+					aria-label="Zoom in"
+				>
+					<span className="material-symbols-sharp" aria-hidden="true">zoom_in</span>
+				</button>
+				<button
+					className="btn-diminished btn-icon-only"
+					onClick={() => viewportRef.current.view.zoom(0.9)}
+					aria-label="Zoom out"
+				>
+					<span className="material-symbols-sharp" aria-hidden="true">zoom_out</span>
+				</button>
+				<hr className="frame-minor mobile-hidden" />
+				<button
+					className="btn-diminished btn-icon-left mobile-hidden"
+					onClick={() => viewportRef.current.view.reset()}
+					aria-label="Reset zoom"
+				>
+					<span className="material-symbols-sharp" aria-hidden="true">zoom_out_map</span>
+					Reset zoom
+				</button>
 			</div>
 			
 			<hr className="frame-minor" />
 			<div className="chartContainer">
+			<AnimatedChartViewport animatedViewportRef={animatedViewportRef}>
 				{/* Chart area (top-right) */}
 				<ResponsiveSVG
 					divProps={{
@@ -201,9 +237,9 @@ export default function AirlinerChart({ data }: AirlinerChartProps) {
 					}}
 					parentSizeProps={{ debounceTime: 1 }}
 				>
-					{viewportRef.current || data.length > 0
+					{viewportRef.current && data.length > 0
 						? <AirlinerScatterPlot />
-						: <p>Chart loading...</p>}
+						: <text x={plotWidth / 2} y={plotHeight / 2} fill="var(--text-minor)" textAnchor="middle" dominantBaseline="middle">Chart loading...</text>}
 				</ResponsiveSVG>
 
 				{/* Y-axis brush (top-left) */}
@@ -255,6 +291,7 @@ export default function AirlinerChart({ data }: AirlinerChartProps) {
 				<div className="empty2"></div>
 				<div className="empty3"></div>
 				<div className="empty4"></div>
+			</AnimatedChartViewport>
 			</div>
 		</ResponsiveChartViewport>
 		</AirlinerSelectionProvider>

@@ -22,9 +22,8 @@ export function plotAirlinerMarkerSeries(
 ): AirlinerMarkerSeries {
 
 	let markers: AirlinerMarker[] = [];
-
+	
 	// Get the x-coordinates for the markers
-	// If the value is undefined, set the marker to null
 	if (airlinerStats.pax3Class) {
 		markers.push({
 			markerClass: "pax3Class",
@@ -167,7 +166,7 @@ export function plotLabelAnchor(airlinerID: string, markerSeries: AirlinerMarker
 	const anchorY = markerSeries.markers.find(marker => marker)?.markerCoordinates.y ?? 0;
 
 	if (anchorY === 0) {
-		console.warn(`[getLabelAnchor] No anchor y coordinate found for airliner ${airlinerID}`);
+		console.warn(`[getLabelAnchor] No anchor y coordinate found for airliner ${airlinerID}.`);
 	}
 
 	return {
@@ -187,6 +186,7 @@ export function plotLabelAnchor(airlinerID: string, markerSeries: AirlinerMarker
  * @returns {AirlinerMarker} The converted marker.
  */
 function plotAirlinerMarkerXY(value: number, range: number, xScaleView: any, yScaleView: any) {
+
 	return {
 		x: xScaleView(value),
 		y: yScaleView(range)

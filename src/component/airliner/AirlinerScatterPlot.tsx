@@ -1,12 +1,13 @@
 "use client";
 
 // [IMPORT] React //
-import React, { useMemo, useRef, useCallback, useEffect } from "react";
+import React, { useMemo, useRef, useCallback, useEffect, useState } from "react";
 
 // [IMPORT] Internal components //
 import AirlinerScatterMarker from './AirlinerScatterMarker';
 import AirlinerScatterLine from './AirlinerScatterLine';
 import AirlinerScatterLabel from './AirlinerScatterLabel';
+import AirlinerGridLines from './AirlinerGridLines';
 import { MarkerPlus } from "../shape/MarkerPlus";
 import { MarkerLeader } from "../shape/MarkerLeader";
 import { MarkerCross } from "../shape/MarkerCross";
@@ -19,13 +20,14 @@ import { useAirlinerViewModel } from "@/lib/data/use-airliner-view-model";
 import { useResponsiveSVG } from "@/context/ResponsiveSVG";
 import { useResponsiveChartViewport } from "@/context/ResponsiveChartViewport";
 import { useAirlinerSelection } from "@/context/AirlinerSelectionContext";
+import { useProximityDetection } from "@/lib/hooks/use-proximity-detection";
 
 // [IMPORT] Utilities //
 import type { AirlinerModel } from "@/lib/data/airliner-types";
 
 // [IMPORT] CSS styling //
 import { RectCentre } from "../shape/RectCentre";
-import MarkerBevelLine from "../shape/MarkerBevelLine";
+import { useAnimatedChartViewport } from "@/context/AnimatedChartViewport";
 
 /**
  * AirlinerScatterPlot
@@ -37,13 +39,14 @@ export default function AirlinerScatterPlot() {
 	// === Context and chart config ===
 	// Retrieve chart scales (x/y), layout config, data, and debug mode from context providers.
 	const { width, height } = useResponsiveSVG();
-	const { dataScale, viewportScale, view, drag } = useResponsiveChartViewport();
+	const { dataScale, view, drag, mouse } = useResponsiveChartViewport();
+	const { animatedScale, setAnimationDuration } = useAnimatedChartViewport();
 	const data = useChartData() as AirlinerModel[];
 	const { debugMode } = useDebugMode();
-	const { clearSelection, hoveredAirlinerID, selectedAirlinerID } = useAirlinerSelection();
+	const { clearSelection, hoveredAirlinerID, selectedAirlinerID, setHoveredAirliner, setSelectedAirliner } = useAirlinerSelection();
 
 	// Hide/consolidate labels in clusters larger than this
-	const labelClusterThreshold = 3;
+	const labelClusterThreshold = 2;
 
 	// === ViewModel ===
 	const {
@@ -53,67 +56,347 @@ export default function AirlinerScatterPlot() {
 		areLabelsMeasured,	// Flag for if all labels have been measured
 		plotFormat,				// Formatting options for the plot
 		airlinerLabelClusters,	// Cluster detection results
-	} = useAirlinerViewModel(data, viewportScale.x, viewportScale.y, width, height, debugMode);
+	} = useAirlinerViewModel(data, animatedScale.x, animatedScale.y, width, height, debugMode);
 
-	// === Grid Line Calculation ===
-	// Calculate grid lines for hovered/selected airliner
-	const activeAirlinerAxisLines = useMemo(() => {
-		const activeAirlinerID = selectedAirlinerID || hoveredAirlinerID;
-		if (!activeAirlinerID) return null;
+	// === Proximity Detection ===
+	// 
+	// Combine all interactive elements for proximity detection
+	// This includes airliner lines, labels, and clusters for comprehensive interaction
+	const allElements = useMemo(() => [
+		// Airliner lines - for hovering over the actual data lines
+		// These provide the primary interaction area for airliner data
+		...Array.from(airlinerEntries.values()).map(airliner => ({ 
+			type: 'airliner', 
+			data: airliner 
+		})),
+		// Airliner labels - for hovering over the text labels
+		// These provide additional interaction areas for label-specific interactions
+		...Array.from(airlinerEntries.values()).map(airliner => ({ 
+			type: 'label', 
+			data: airliner 
+		})),
+		// Label clusters - for hovering over clusters of unrendered labels
+		// These allow interaction with clusters to potentially expand them in the future
+		...(airlinerLabelClusters ? Array.from(airlinerLabelClusters.entries()).map(entry => ({ 
+			type: 'cluster', 
+			data: entry 
+		})) : [])
+	], [airlinerEntries, airlinerLabelClusters]);
 
-		const airliner = airlinerEntries.get(activeAirlinerID);
-		if (!airliner?.markerSeries) return null;
-
-		// Determine if this is hover or selection state
-		const isSelected = selectedAirlinerID === activeAirlinerID;
-		const isHovered = hoveredAirlinerID === activeAirlinerID && !isSelected;
-
-		const lines: Array<{
-			x1: number;
-			y1: number;
-			x2: number;
-			y2: number;
-			type: 'vertical' | 'horizontal';
-			state: 'hovered' | 'selected';
-		}> = [];
-
-		// Get all passenger class markers (pax3Class, pax2Class, pax1Class)
-		const paxClassMarkers = airliner.markerSeries.markers.filter((marker: import("@/lib/data/airliner-types").AirlinerMarker) =>
-			marker.markerClass === 'pax3Class' ||
-			marker.markerClass === 'pax2Class' ||
-			marker.markerClass === 'pax1Class'
-		);
-
-		// Draw vertical lines from each marker to X axis (bottom chart edge)
-		paxClassMarkers.forEach((marker: import("@/lib/data/airliner-types").AirlinerMarker) => {
-			lines.push({
-				x1: marker.markerCoordinates.x,
-				y1: marker.markerCoordinates.y,
-				x2: marker.markerCoordinates.x,
-				y2: height, // Bottom chart edge
-				type: 'vertical',
-				state: isSelected ? 'selected' : 'hovered'
-			});
-		});
-
-		// Draw horizontal line from leftmost marker to Y axis (left chart edge)
-		if (paxClassMarkers.length > 0) {
-			const leftmostMarker = paxClassMarkers.reduce((leftmost: import("@/lib/data/airliner-types").AirlinerMarker, current: import("@/lib/data/airliner-types").AirlinerMarker) =>
-				current.markerCoordinates.x < leftmost.markerCoordinates.x ? current : leftmost
-			);
-
-			lines.push({
-				x1: 0, // Left chart edge
-				y1: leftmostMarker.markerCoordinates.y,
-				x2: leftmostMarker.markerCoordinates.x,
-				y2: leftmostMarker.markerCoordinates.y,
-				type: 'horizontal',
-				state: isSelected ? 'selected' : 'hovered'
-			});
+	// Unified accessor that handles all element types for proximity detection
+	// This provides a consistent interface for extracting bounds, IDs, and visibility
+	const unifiedAccessors = {
+		/**
+		 * Extract bounding box from an element
+		 * 
+		 * Defines the interactive area for each element type:
+		 * - Airliner lines: Use the marker series bounding box
+		 * - Labels: Use the label's placed coordinates and dimensions
+		 * - Clusters: Use the cluster's position and dimensions
+		 */
+		getBounds: (element: any): any => {
+			switch (element.type) {
+				case 'airliner':
+					// Use marker series bounding box for airliner lines
+					// This encompasses the entire line from start to end marker
+					if (element.data.markerSeries) {
+						return element.data.markerSeries.seriesBBox;
+					}
+					return { x: [0, 0], y: [0, 0] };
+					
+				case 'label':
+					// Use label bounding box based on placed coordinates
+					const { labelCoordinates, labelDimensions } = element.data.labels;
+					if (!labelCoordinates || !labelDimensions) {
+						return { x: [0, 0], y: [0, 0] };
+					}
+					const { x, y } = labelCoordinates;
+					const { width, height } = labelDimensions;
+					return {
+						x: [x - width/2, x + width/2],
+						y: [y - height/2, y + height/2]
+					};
+					
+				case 'cluster':
+					// Use cluster bounding box for cluster interaction
+					const [index, cluster] = element.data;
+					return {
+						x: [cluster.position.x, cluster.position.x + cluster.dimensions.width],
+						y: [cluster.position.y, cluster.position.y + cluster.dimensions.height]
+					};
+					
+				default:
+					return { x: [0, 0], y: [0, 0] };
+			}
+		},
+		
+		/**
+		 * Get unique identifier for an element
+		 * 
+		 * Used to identify which element was detected and for state management.
+		 * Returns the airliner ID for lines and labels, cluster index for clusters.
+		 */
+		getId: (element: any): string => {
+			switch (element.type) {
+				case 'airliner':
+					return element.data.airlinerID;
+				case 'label':
+					return element.data.airlinerID;
+				case 'cluster':
+					const [index, cluster] = element.data;
+					return `cluster-${index}`;
+				default:
+					return 'unknown';
+			}
+		},
+		
+		/**
+		 * Check if element should be considered for proximity detection
+		 * 
+		 * Filters out elements that shouldn't be interactive:
+		 * - Airliner lines: Only if they have marker data and labels are rendered
+		 * - Labels: Only if they have coordinates and aren't in large clusters
+		 * - Clusters: Only if they're larger than the threshold (unrendered labels)
+		 */
+		isVisible: (element: any): boolean => {
+			switch (element.type) {
+				case 'airliner':
+					// Only show airliners whose labels are being rendered
+					// This prevents interaction with airliners that are part of large clusters
+					const isLabelRendered = !element.data.labels?.clusterSize || 
+										   element.data.labels.clusterSize <= labelClusterThreshold;
+					return element.data.markerSeries && isLabelRendered;
+					
+				case 'label':
+					// Only show labels that are being rendered (not in large clusters)
+					const isLabelRendered2 = !element.data.labels?.clusterSize || 
+											element.data.labels.clusterSize <= labelClusterThreshold;
+					return element.data.labels?.labelCoordinates && isLabelRendered2;
+					
+				case 'cluster':
+					// Only show clusters that are larger than threshold (unrendered labels)
+					// This allows interaction with clusters to potentially expand them
+					const [index, cluster] = element.data;
+					return cluster.labelIDs.length > labelClusterThreshold;
+					
+				default:
+					return false;
+			}
+		},
+		
+		/**
+		 * Get the type/category of an element
+		 * 
+		 * Used for debugging and conditional logic in the proximity detection system.
+		 */
+		getType: (element: any): string => {
+			switch (element.type) {
+				case 'airliner':
+					return 'line';
+				case 'label':
+					return 'label';
+				case 'cluster':
+					return 'cluster';
+				default:
+					return 'unknown';
+			}
 		}
+	};
 
-		return lines;
-	}, [hoveredAirlinerID, selectedAirlinerID, airlinerEntries, height]);
+	// Initialise proximity detection with unified accessors
+	const proximityDetection = useProximityDetection(
+		allElements,
+		unifiedAccessors,
+		{
+			maxDistance: 20, // Maximum distance for proximity detection
+			onTargetChange: (target) => {
+				// Update hovered airliner based on nearest target
+				// Only set hover for mouse events, not touch events
+				// Touch events will handle selection directly in handleTouchEnd
+				if (target && target.type !== 'cluster') {
+					// Only set hover state for mouse interactions
+					// Touch events will use nearestTarget for direct selection
+					setHoveredAirliner(target.id);
+				} else {
+					setHoveredAirliner(null);
+				}
+			}
+		}
+	);
+
+	// === Mouse Event Handlers ===
+	// 
+	// Centralised mouse event handling that integrates proximity detection
+	// with chart viewport management and selection functionality
+	
+	/**
+	 * handleMouseMove
+	 * 
+	 * Handles mouse movement within the chart area.
+	 * Updates proximity detection, chart viewport mouse coordinates, and cursor styling.
+	 */
+	const handleMouseMove = useCallback((event: React.MouseEvent) => {
+		// Use proximity detection handlers for hover detection
+		proximityDetection.handlers.onMouseMove(event);
+		
+		// Update mouse coordinates for the chart viewport
+		mouse.updateCoordinates(event, event.currentTarget);
+	}, [proximityDetection, mouse]);
+
+	/**
+	 * handleMouseEnter
+	 * 
+	 * Handles mouse entering the chart area.
+	 * Initialises proximity detection and chart viewport mouse coordinates.
+	 */
+	const handleMouseEnter = useCallback((event: React.MouseEvent) => {
+		// Use proximity detection handlers for hover detection
+		proximityDetection.handlers.onMouseEnter(event);
+		
+		// Update mouse coordinates for the chart viewport
+		mouse.updateCoordinates(event, event.currentTarget);
+	}, [proximityDetection, mouse]);
+
+	/**
+	 * handleMouseLeave
+	 * 
+	 * Handles mouse leaving the chart area.
+	 * Clears proximity detection state and chart viewport mouse coordinates.
+	 */
+	const handleMouseLeave = useCallback(() => {
+		// Use proximity detection handlers to clear hover state
+		proximityDetection.handlers.onMouseLeave();
+	}, [proximityDetection]);
+
+	/**
+	 * handleClick
+	 * 
+	 * Handles mouse clicks within the chart area.
+	 * Manages selection state based on what was clicked.
+	 */
+	const handleClick = useCallback((event: React.MouseEvent) => {
+		// Check if we have a current target from proximity detection
+		if (proximityDetection.nearestTarget && proximityDetection.nearestTarget.type !== 'cluster') {
+			// Clicked on an interactive element - select it
+			const airlinerID = proximityDetection.nearestTarget.id;
+			
+			// Toggle selection if clicking on already selected airliner
+			if (selectedAirlinerID === airlinerID) {
+				clearSelection();
+			} else {
+				// Select the new airliner
+				setSelectedAirliner(airlinerID);
+			}
+		} else {
+			// Clicked on empty chart area - clear selection
+			clearSelection();
+		}
+	}, [proximityDetection, selectedAirlinerID, clearSelection, setSelectedAirliner]);
+
+	/**
+	 * handleTouchStart
+	 * 
+	 * Custom touch start handler that sets animation duration to 0 for immediate response.
+	 */
+	const handleTouchStart = useCallback((event: React.TouchEvent) => {
+		// Set animation duration to 0 for immediate touch response
+		setAnimationDuration(0);
+		
+		// Call the proximity detection touch start handler
+		proximityDetection.handlers.onTouchStart(event);
+	}, [setAnimationDuration, proximityDetection.handlers]);
+
+	/**
+	 * handleTouchEnd
+	 * 
+	 * Handles touch end events within the chart area.
+	 * Manages selection state based on what was touched.
+	 * Provides immediate tap-to-select functionality for touch devices.
+	 */
+	const handleTouchEnd = useCallback((event: React.TouchEvent) => {
+		// Prevent default to avoid unwanted browser behaviours
+		event.preventDefault();
+		
+		// Check if we have a current target from proximity detection
+		if (proximityDetection.nearestTarget && proximityDetection.nearestTarget.type !== 'cluster') {
+			// Touched on an interactive element - select it
+			const airlinerID = proximityDetection.nearestTarget.id;
+			
+			// Toggle selection if touching on already selected airliner
+			if (selectedAirlinerID === airlinerID) {
+				clearSelection();
+			} else {
+				// Select the new airliner
+				setSelectedAirliner(airlinerID);
+			}
+		} else {
+			// Touched on empty chart area - clear selection
+			clearSelection();
+		}
+	}, [proximityDetection, selectedAirlinerID, clearSelection, setSelectedAirliner]);
+
+	/**
+	 * handleKeyDown
+	 * 
+	 * Handles keyboard events within the chart area.
+	 * Provides keyboard shortcuts for selection management.
+	 */
+	const handleKeyDown = useCallback((event: React.KeyboardEvent) => {
+		switch (event.key) {
+			case 'Escape':
+				// Clear selection on Escape key
+				clearSelection();
+				break;
+			case 'Enter':
+			case ' ':
+				// Select currently hovered airliner on Enter or Space
+				if (hoveredAirlinerID && hoveredAirlinerID !== selectedAirlinerID) {
+					setSelectedAirliner(hoveredAirlinerID);
+				}
+				break;
+		}
+	}, [hoveredAirlinerID, selectedAirlinerID, clearSelection, setSelectedAirliner]);
+
+	/**
+	 * handleWheel
+	 * 
+	 * Custom wheel handler that sets animation duration for wheel interactions.
+	 * Sets 100ms animation duration for smooth wheel zoom transitions.
+	 */
+	const handleWheel = useCallback((event: React.WheelEvent) => {
+		// Set animation duration for wheel interactions
+		setAnimationDuration(100);
+		
+		// Handle wheel event for zooming
+		const delta = event.deltaY;
+		const baseZoomFactor = delta < 0 ? 1.2 : 0.8; // Zoom in by 10% or zoom out by 10%
+		const zoomFactor = baseZoomFactor;
+		
+		// Calculate zoom center from event position
+		if (event && event.currentTarget) {
+			const rect = (event.currentTarget as Element).getBoundingClientRect();
+			const mouseX = event.clientX - rect.left;
+			const mouseY = event.clientY - rect.top;
+			
+			const zoomCenterX = (animatedScale.x as any).invert(mouseX);
+			const zoomCenterY = (animatedScale.y as any).invert(mouseY);
+			
+			// Apply zoom with constraints
+			view.zoom(zoomFactor, { x: zoomCenterX, y: zoomCenterY }, 'both');
+		}
+		
+		// Prevent default browser scrolling
+		event.preventDefault();
+	}, [setAnimationDuration, animatedScale.x, animatedScale.y, view]);
+
+	/**
+	 * handleDragStart
+	 * 
+	 * Custom drag start handler that sets animation duration to 0 for immediate response.
+	 */
+	const handleDragStart = useCallback(() => {
+		setAnimationDuration(0);
+	}, [setAnimationDuration]);
 
 	// === Batch label measurement logic ===
 	// ghostLabelIDs is an array of airliner IDs that have not yet been measured
@@ -139,8 +422,8 @@ export default function AirlinerScatterPlot() {
 
 			// Add arbitrary padding to the width and height
 			pendingLabelDimensions.current.set(airlinerID, {
-				width: bbox.width + plotFormat.labelPadding * 2 + plotFormat.labelMargin * 2,
-				height: bbox.height + plotFormat.labelPadding * 2 + plotFormat.labelMargin * 2
+				width: bbox.width + plotFormat.labelPadding[1] + plotFormat.labelMargin[1],
+				height: bbox.height + plotFormat.labelPadding[0] + plotFormat.labelMargin[0]
 			});
 
 			// If all ghost labels have been measured, call batchUpdateLabelDimensions
@@ -171,8 +454,8 @@ export default function AirlinerScatterPlot() {
 		<g>
 			{/* Grid intersection dots */}
 			<GridDots
-				xScale={viewportScale.x}
-				yScale={viewportScale.y}
+				xScale={animatedScale.x}
+				yScale={animatedScale.y}
 				width={width}
 				height={height}
 				numTicks={10}
@@ -180,55 +463,51 @@ export default function AirlinerScatterPlot() {
 				className="gridIntersectionDot"
 			/>
 
-			{/* Airliner grid lines - drawn from markers to chart edges */}
-			{activeAirlinerAxisLines && (
-				<g className="airlinerGridLines">
-					{activeAirlinerAxisLines.map((line, index) => (
-						<line
-							key={`grid-line-${index}`}
-							x1={line.x1}
-							y1={line.y1}
-							x2={line.x2}
-							y2={line.y2}
-							className={`airlinerGridLine airlinerGridLine${line.type.charAt(0).toUpperCase() + line.type.slice(1)} airlinerGridLine${line.state.charAt(0).toUpperCase() + line.state.slice(1)}`}
-						/>
-					))}
-				</g>
-			)}
+			{/* Airliner grid lines - drawn from markers across entire plot area */}
+			<AirlinerGridLines
+				hoveredAirlinerID={hoveredAirlinerID}
+				selectedAirlinerID={selectedAirlinerID}
+				airlinerEntries={airlinerEntries}
+				width={width}
+				height={height}
+			/>
 			
-			{/* Chart area draggable area with selection clearing */}
+			{/* Chart area draggable area with comprehensive interaction handling */}
 			<rect
 				x={0}
 				y={0}
 				width={width}
 				height={height}
 				fill="transparent"
-				onMouseDown={(event) => drag.start(event)}
-				onMouseMove={(event) => drag.move(event)}
-				onMouseUp={(event) => drag.end(event)}
-				onTouchStart={(event) => drag.start(event)}
-				onTouchMove={(event) => drag.move(event)}
-				onTouchEnd={(event) => drag.end(event)}
-				onTouchCancel={(event) => drag.end(event)}
-				onMouseLeave={() => {
-					if (drag.isDragging) drag.end();
+				{...drag.bindDrag()}
+				onWheel={handleWheel}
+				onMouseDown={handleDragStart}
+				onMouseMove={handleMouseMove}
+				onMouseEnter={handleMouseEnter}
+				onMouseLeave={handleMouseLeave}
+				onClick={handleClick}
+				onKeyDown={handleKeyDown}
+				onTouchStart={handleTouchStart}
+				onTouchEnd={handleTouchEnd}
+				style={{ 
+					cursor: proximityDetection.nearestTarget && proximityDetection.nearestTarget.type !== 'cluster' 
+						? 'pointer' 
+						: 'move', 
+					touchAction: 'none',
+					/* === Browser Interaction Feedback Suppression === */
+					outline: 'none', /* Suppress Chrome desktop white outline */
+					WebkitTapHighlightColor: 'transparent', /* Suppress Chrome mobile blue tap highlight */
+					userSelect: 'none', /* Prevent text selection */
+					WebkitUserSelect: 'none', /* Safari/Chrome */
+					MozUserSelect: 'none', /* Firefox */
+					msUserSelect: 'none', /* IE/Edge */
+					/* Suppress any default browser styling */
+					WebkitAppearance: 'none',
+					MozAppearance: 'none',
+					appearance: 'none'
 				}}
-				onWheel={drag.wheelZoom('both')}
-				onClick={(event) => {
-					// Clear selection when clicking on empty chart area
-					// Only if not clicking on an interactive element
-					if (event.target === event.currentTarget) {
-						clearSelection();
-					}
-				}}
-				onKeyDown={(event) => {
-					// Clear selection on Escape key
-					if (event.key === 'Escape') {
-						clearSelection();
-					}
-				}}
-				style={{ cursor: 'grab', touchAction: 'none' }}
 				tabIndex={0} // Make focusable for keyboard events
+				data-chart-viewport="true"
 			/>
 
 			{/* Chart bands */}
@@ -318,7 +597,16 @@ export default function AirlinerScatterPlot() {
 				const label = airliner.labels;
 				if (!label?.labelAnchor || !label?.labelCoordinates) return null;
 				if (label.clusterSize && label.clusterSize > labelClusterThreshold) return null;
-				
+
+				// Determine interactive state classes
+				const isHovered = airliner.airlinerID === hoveredAirlinerID;
+				const isSelected = airliner.airlinerID === selectedAirlinerID;
+				const leaderClassNames = [
+					"markerLeader",
+					isHovered ? "hoveredAirliner" : "",
+					isSelected ? "selectedAirliner" : ""
+				].filter(Boolean).join(" ");
+
 				return (
 					<MarkerLeader
 						key={airliner.airlinerID}
@@ -334,8 +622,10 @@ export default function AirlinerScatterPlot() {
 							width: Math.max(20, label.labelDimensions.width / 2),
 							height: label.labelDimensions.height 
 						}}
+						startOffset={plotFormat.markerSize / -2}
+						endOffset={plotFormat.labelPadding[0] / 2}
 						minLength={12}
-						className="markerLeader"
+						className={leaderClassNames}
 						debug={debugMode}
 					/>
 				);
@@ -393,6 +683,7 @@ export default function AirlinerScatterPlot() {
 						fill="rgba(22, 78, 234, 0.1)"
 						stroke="rgb(23, 116, 238)"
 						strokeWidth={1}
+						style={{ pointerEvents: 'none' }}
 					/>
 				) : label.labelAnchor ? (
 					<RectCentre
@@ -411,7 +702,7 @@ export default function AirlinerScatterPlot() {
 
 			{/* Debug: Cluster bounding boxes */}
 			{debugMode && airlinerLabelClusters && (
-				<g>
+				<g style={{ pointerEvents: 'none' }}>
 					{Array.from(airlinerLabelClusters.entries()).map(([clusterIndex, cluster]) => {
 
 						if (cluster.labelIDs.length <= labelClusterThreshold) return null;
@@ -453,6 +744,95 @@ export default function AirlinerScatterPlot() {
 							</g>
 						);
 					})}
+				</g>
+			)}
+
+			{/* Interaction Debug Visualization */}
+			{debugMode && proximityDetection.mousePosition && proximityDetection.nearestTarget && (
+				<g style={{ pointerEvents: 'none' }}>
+					{/* Mouse cursor indicator */}
+					<circle
+						cx={proximityDetection.mousePosition.x}
+						cy={proximityDetection.mousePosition.y}
+						r={4}
+						fill="red"
+						stroke="white"
+						strokeWidth={2}
+						style={{ pointerEvents: 'none' }}
+					/>
+					
+					{/* Line from mouse to nearest target */}
+					<line
+						x1={proximityDetection.mousePosition.x}
+						y1={proximityDetection.mousePosition.y}
+						x2={proximityDetection.nearestTarget.coordinates.x}
+						y2={proximityDetection.nearestTarget.coordinates.y}
+						stroke={proximityDetection.nearestTarget.type === 'line' ? 'blue' : proximityDetection.nearestTarget.type === 'cluster' ? 'orange' : 'red'}
+						strokeWidth={2}
+						strokeDasharray="4 2"
+						style={{ pointerEvents: 'none' }}
+					/>
+					
+					{/* Target indicator - different style for each type */}
+					<circle
+						cx={proximityDetection.nearestTarget.coordinates.x}
+						cy={proximityDetection.nearestTarget.coordinates.y}
+						r={proximityDetection.nearestTarget.type === 'line' ? 4 : proximityDetection.nearestTarget.type === 'cluster' ? 8 : 6}
+						fill="transparent"
+						stroke={proximityDetection.nearestTarget.type === 'line' ? 'blue' : proximityDetection.nearestTarget.type === 'cluster' ? 'orange' : 'red'}
+						strokeWidth={3}
+						strokeDasharray={proximityDetection.nearestTarget.type === 'cluster' ? '2 2' : 'none'}
+					/>
+					
+					{/* Debug information panel */}
+					
+					{/* Mouse position text */}
+					<text
+						x={12}
+						y={20}
+						fill="white"
+						fontSize={12}
+						fontWeight="bold"
+						style={{ pointerEvents: 'none' }}
+					>
+						Mouse: ({proximityDetection.mousePosition.x.toFixed(0)}, {proximityDetection.mousePosition.y.toFixed(0)})
+					</text>
+					
+					{/* Target info text */}
+					<text
+						x={12}
+						y={36}
+						fill={proximityDetection.nearestTarget.type === 'line' ? '#4A90E2' : proximityDetection.nearestTarget.type === 'cluster' ? '#F5A623' : '#D0021B'}
+						fontSize={12}
+						fontWeight="bold"
+						style={{ pointerEvents: 'none' }}
+					>
+						Nearest: {proximityDetection.nearestTarget.type} ({proximityDetection.nearestTarget.id})
+					</text>
+					
+					{/* Distance text */}
+					<text
+						x={12}
+						y={52}
+						fill={proximityDetection.nearestTarget.type === 'line' ? '#4A90E2' : proximityDetection.nearestTarget.type === 'cluster' ? '#F5A623' : '#D0021B'}
+						fontSize={12}
+						fontWeight="bold"
+						style={{ pointerEvents: 'none' }}
+					>
+						Distance: {proximityDetection.nearestTarget.distance.toFixed(1)}px
+					</text>
+					
+					{/* Selection state text */}
+					<text
+						x={12}
+						y={68}
+						fill="white"
+						fontSize={12}
+						fontWeight="bold"
+						style={{ pointerEvents: 'none' }}
+					>
+						Hovered: {hoveredAirlinerID || 'none'} | Selected: {selectedAirlinerID || 'none'}
+					</text>
 				</g>
 			)}
 		</g>

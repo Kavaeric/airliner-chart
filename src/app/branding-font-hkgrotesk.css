@@ -8,6 +8,7 @@
 	src: url('/fonts/HKGroteskPro/HKGroteskPro-Hairline.woff2') format('woff2');
 	font-display: swap;
 }
+
 @font-face {
 	font-family: 'HK Grotesk Pro';
 	font-style: italic;
@@ -24,6 +25,7 @@
 	src: url('/fonts/HKGroteskPro/HKGroteskPro-Thin.woff2') format('woff2');
 	font-display: swap;
 }
+
 @font-face {
 	font-family: 'HK Grotesk Pro';
 	font-style: italic;
@@ -40,6 +42,7 @@
 	src: url('/fonts/HKGroteskPro/HKGroteskPro-ExtraLight.woff2') format('woff2');
 	font-display: swap;
 }
+
 @font-face {
 	font-family: 'HK Grotesk Pro';
 	font-style: italic;
@@ -56,6 +59,7 @@
 	src: url('/fonts/HKGroteskPro/HKGroteskPro-Light.woff2') format('woff2');
 	font-display: swap;
 }
+
 @font-face {
 	font-family: 'HK Grotesk Pro';
 	font-style: italic;
@@ -72,6 +76,7 @@
 	src: url("/fonts/HKGroteskPro/HKGroteskPro-Regular.woff2") format("woff2");
 	font-display: swap;
 }
+
 @font-face {
 	font-family: "HK Grotesk Pro";
 	font-style: italic;
@@ -88,6 +93,7 @@
 	src: url('/fonts/HKGroteskPro/HKGroteskPro-Medium.woff2') format('woff2');
 	font-display: swap;
 }
+
 @font-face {
 	font-family: 'HK Grotesk Pro';
 	font-style: italic;
@@ -104,6 +110,7 @@
 	src: url('/fonts/HKGroteskPro/HKGroteskPro-SemiBold.woff2') format('woff2');
 	font-display: swap;
 }
+
 @font-face {
 	font-family: 'HK Grotesk Pro';
 	font-style: italic;
@@ -120,6 +127,7 @@
 	src: url("/fonts/HKGroteskPro/HKGroteskPro-Bold.woff2") format("woff2");
 	font-display: swap;
 }
+
 @font-face {
 	font-family: "HK Grotesk Pro";
 	font-style: italic;
@@ -137,6 +145,7 @@
 	src: url('/fonts/HKGroteskPro/HKGroteskPro-ExtraBold.woff2') format('woff2');
 	font-display: swap;
 }
+
 @font-face {
 	font-family: 'HK Grotesk Pro';
 	font-style: italic;
@@ -153,6 +162,7 @@
 	src: url('/fonts/HKGroteskPro/HKGroteskPro-Black.woff2') format('woff2');
 	font-display: swap;
 }
+
 @font-face {
 	font-family: 'HK Grotesk Pro';
 	font-style: italic;

@@ -59,154 +59,6 @@ function getClosestPointOnRect(
 }
 
 /**
- * Clips a line segment to the bounds of a rectangle.
- * The rectangle is defined by its centre (rectX, rectY) and dimensions (rectWidth, rectHeight).
- * Returns the intersection point on the rectangle edge that is closest to the start of the line.
- *
- * @param {number} startX - X coordinate of the line's start point
- * @param {number} startY - Y coordinate of the line's start point
- * @param {number} endX - X coordinate of the line's end point
- * @param {number} endY - Y coordinate of the line's end point
- * @param {number} rectX - X coordinate of the rectangle's centre
- * @param {number} rectY - Y coordinate of the rectangle's centre
- * @param {number} rectWidth - Width of the rectangle
- * @param {number} rectHeight - Height of the rectangle
- * @returns {{x: number, y: number}} - The clipped end point, or the original end if no intersection
- */
-function clipLineToRect(
-	startX: number,
-	startY: number,
-	endX: number,
-	endY: number,
-	rectX: number,
-	rectY: number,
-	rectWidth: number,
-	rectHeight: number
-) {
-	// Calculate rectangle bounds from centre and dimensions
-	const left   = rectX - rectWidth / 2;
-	const right  = rectX + rectWidth / 2;
-	const top    = rectY - rectHeight / 2;
-	const bottom = rectY + rectHeight / 2;
-
-	// Calculate the direction vector of the line
-	const dx = endX - startX;
-	const dy = endY - startY;
-
-	// Will collect all valid intersection points with rectangle edges
-	const intersections = [];
-
-	// --- Check intersection with left edge (x = left) ---
-	// Only if the line is not vertical (dx !== 0)
-	if (dx !== 0) {
-		// Solve for t where line crosses x = left
-		const t = (left - startX) / dx;
-		// Find corresponding y at this t
-		const y = startY + t * dy;
-		// t in [0,1] means intersection is between start and end
-		// y must be within vertical bounds of rectangle
-		if (t >= 0 && t <= 1 && y >= top && y <= bottom) {
-			intersections.push({ x: left, y, t });
-		}
-	}
-
-	// --- Check intersection with right edge (x = right) ---
-	if (dx !== 0) {
-		const t = (right - startX) / dx;
-		const y = startY + t * dy;
-		if (t >= 0 && t <= 1 && y >= top && y <= bottom) {
-			intersections.push({ x: right, y, t });
-		}
-	}
-
-	// --- Check intersection with top edge (y = top) ---
-	// Only if the line is not horizontal (dy !== 0)
-	if (dy !== 0) {
-		const t = (top - startY) / dy;
-		const x = startX + t * dx;
-		// x must be within horizontal bounds of rectangle
-		if (t >= 0 && t <= 1 && x >= left && x <= right) {
-			intersections.push({ x, y: top, t });
-		}
-	}
-
-	// --- Check intersection with bottom edge (y = bottom) ---
-	if (dy !== 0) {
-		const t = (bottom - startY) / dy;
-		const x = startX + t * dx;
-		if (t >= 0 && t <= 1 && x >= left && x <= right) {
-			intersections.push({ x, y: bottom, t });
-		}
-	}
-
-	// If any intersections were found, pick the one closest to the start point (smallest t)
-	if (intersections.length > 0) {
-		const closest = intersections.reduce(
-			(min, curr) => curr.t < min.t ? curr : min
-		);
-		return { x: closest.x, y: closest.y };
-	}
-
-	// If no intersection, return the original end point (line does not cross rectangle)
-	return { x: endX, y: endY };
-}
-
-/**
- * Given a start and end point, returns a new end point such that the line from start to end
- * is "snapped" to the nearest multiple of `angleStep` degrees, preserving the original distance.
- *
- * This is used to constrain leader lines to fixed angles (e.g., 45° increments).
- *
- * @param {number} startX - X coordinate of the start point
- * @param {number} startY - Y coordinate of the start point
- * @param {number} endX - X coordinate of the original end point
- * @param {number} endY - Y coordinate of the original end point
- * @param {number} [angleStep=45] - Angle increment in degrees to snap to (default: 45)
- * @returns {{x: number, y: number}} - The new end point, snapped to the nearest angle
- */
-/**
- * Given a start and end point, returns a new end point such that the line from start to end
- * is "snapped" to the nearest multiple of `angleStep` degrees, but does NOT preserve the original distance.
- * The new end point will be at the same distance as the original, but projected along the snapped angle.
- *
- * @param {number} startX - X coordinate of the start point
- * @param {number} startY - Y coordinate of the start point
- * @param {number} endX - X coordinate of the original end point
- * @param {number} endY - Y coordinate of the original end point
- * @param {number} [angleStep=45] - Angle increment in degrees to snap to (default: 45)
- * @returns {{x: number, y: number}} - The new end point, snapped to the nearest angle, but not preserving distance
- */
-function clampToAngle(
-	startX: number,
-	startY: number,
-	endX: number,
-	endY: number,
-	angleStep: number = 45
-) {
-	// --- Calculate the vector from start to end ---
-	const deltaX = endX - startX;
-	const deltaY = endY - startY;
-
-	// --- Find the angle of this vector in degrees ---
-	const currentAngle = Math.atan2(deltaY, deltaX) * (180 / Math.PI);
-
-	// --- Snap the angle to the nearest allowed increment ---
-	const snappedAngle = Math.round(currentAngle / angleStep) * angleStep;
-
-	// --- Convert the snapped angle back to radians for trig functions ---
-	const snappedRadians = snappedAngle * (Math.PI / 180);
-
-	// --- Instead of preserving the original distance, use the original end point's offset projected onto the snapped angle ---
-	// Project the original vector's length onto the snapped angle's direction, but use only the direction, not the length
-	// We'll set the new end point to be the same offset as the original, but along the snapped angle
-	const absDelta = Math.max(Math.abs(deltaX), Math.abs(deltaY));
-	const newEndX = startX + Math.cos(snappedRadians) * absDelta;
-	const newEndY = startY + Math.sin(snappedRadians) * absDelta;
-
-	return { x: newEndX, y: newEndY };
-}
-
-/**
  * Returns the Euclidean distance between two points.
  *
  * @param {number} x1 - X coordinate of the first point
@@ -217,6 +69,19 @@ function clampToAngle(
  */
 function getEuclideanDistance(x1: number, y1: number, x2: number, y2: number) {
 	return Math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2);
+}
+
+/**
+ * Returns the Manhattan distance between two points.
+ * 
+ * @param {number} x1 - X coordinate of the first point
+ * @param {number} y1 - Y coordinate of the first point
+ * @param {number} x2 - X coordinate of the second point
+ * @param {number} y2 - Y coordinate of the second point
+ * @returns {number} - The Manhattan distance between the two points
+ */
+function getManhattanDistance(x1: number, y1: number, x2: number, y2: number) {
+	return Math.abs(x2 - x1) + Math.abs(y2 - y1);
 }
 
 /**
@@ -250,10 +115,10 @@ export interface MarkerLeaderProps {
 	y2: number;
 	clippingBBox?: { width: number; height: number };
 	targetBBox?: { width: number; height: number };
+	startOffset?: number;
+	endOffset?: number;
 	angleStep?: number;
 	minLength?: number;
-	stroke?: string;
-	strokeWidth?: number;
 	className?: string;
 	debug?: boolean;
 }
@@ -268,6 +133,70 @@ export interface MarkerLeaderProps {
  */
 function getMidPoint(x1: number, y1: number, x2: number, y2: number) {
 	return { x: (x1 + x2) / 2, y: (y1 + y2) / 2 };
+}
+
+/**
+ * Calculates the midpoint for leader line based on outward direction.
+ * Creates orthogonal segments (horizontal or vertical) based on the target edge.
+ * 
+ * @param anchorPoint - The starting point of the line
+ * @param targetPoint - The target point (closest point on bounding box)
+ * @param outwardDirection - The direction from target ('left', 'right', 'top', 'bottom', or null)
+ * @returns The calculated midpoint for the leader line
+ */
+function calculateMidPoint(
+	anchorPoint: { x: number; y: number },
+	targetPoint: { x: number; y: number },
+	outwardDirection: string | null
+): { x: number; y: number } {
+	if (!outwardDirection) {
+		return getMidPoint(anchorPoint.x, anchorPoint.y, targetPoint.x, targetPoint.y);
+	}
+	
+	const isHorizontal = outwardDirection === 'left' || outwardDirection === 'right';
+	
+	return isHorizontal
+		? { x: targetPoint.x, y: anchorPoint.y }  // Horizontal line
+		: { x: anchorPoint.x, y: targetPoint.y }; // Vertical line
+}
+
+/**
+ * Calculates an offset point by moving along or away from a line direction.
+ * 
+ * @param basePoint - The point to offset from
+ * @param directionPoint - The point that defines the direction vector
+ * @param offset - The amount to offset (positive extends, negative shortens)
+ * @param isStartOffset - Whether this is a start offset (moves away from line) or end offset (moves along line)
+ * @returns The offset point
+ */
+function calculateOffsetPoint(
+	basePoint: { x: number; y: number },
+	directionPoint: { x: number; y: number },
+	offset: number,
+	isStartOffset: boolean
+): { x: number; y: number } {
+	if (offset === 0) return { ...basePoint };
+	
+	const direction = {
+		x: directionPoint.x - basePoint.x,
+		y: directionPoint.y - basePoint.y
+	};
+	const distance = Math.sqrt(direction.x ** 2 + direction.y ** 2);
+	
+	if (distance === 0) return { ...basePoint };
+	
+	const unitVector = {
+		x: direction.x / distance,
+		y: direction.y / distance
+	};
+	
+	// Start offset moves away from line, end offset moves along line
+	const multiplier = isStartOffset ? -1 : 1;
+	
+	return {
+		x: basePoint.x + unitVector.x * offset * multiplier,
+		y: basePoint.y + unitVector.y * offset * multiplier
+	};
 }
 
 /**
@@ -286,6 +215,8 @@ function getMidPoint(x1: number, y1: number, x2: number, y2: number) {
  * @param {Object} [props.clippingBBox] - Bounding box of the clipping area, such as the label's bounding box.
  * @param {Object} [props.targetBBox] - Bounding box of the target. Can be smaller than the clipping box.
  * @param {number} [props.angleStep=45] - Angle increment in degrees to snap to (default: 45)
+ * @param {number} props.startOffset - Amount to offset the start of the line
+ * @param {number} props.endOffset - Amount to offset the end of the line
  * @param {number} [props.minLength=12] - Minimum length of the line
  * @param {string} [props.stroke="#222"] - Stroke colour
  * @param {number} [props.strokeWidth=2] - Stroke width
@@ -299,46 +230,46 @@ export const MarkerLeader = React.forwardRef<SVGPathElement, MarkerLeaderProps &
 	clippingBBox,
 	targetBBox,
 	angleStep = 45,
+	startOffset = 0,
+	endOffset = 0,
 	minLength = 12,
-	stroke = "#222",
-	strokeWidth = 2,
 	className,
 	debug = false,
 	...rest
 }, ref) => {
 
-	let anchorPoint: { x: number; y: number } = { x: x1, y: y1 };
-	let midPoint: { x: number; y: number } = getMidPoint(x1, y1, x2, y2);
-	let targetPoint: { x: number; y: number } = { x: x2, y: y2 };
+	const anchorPoint: { x: number; y: number } = { x: x1, y: y1 };
+	const initialTargetPoint: { x: number; y: number } = { x: x2, y: y2 };
 
-	// If either the distance to any point along the edges of the clipping box is less than the min length, return
+	// Early return: Check if line is too short for clipping box
 	if (clippingBBox) {
 		const closestPointOnClippingBox = getClosestPointOnRect(x1, y1, x2, y2, clippingBBox.width, clippingBBox.height);
-		if (getEuclideanDistance(x1, y1, closestPointOnClippingBox.point.x, closestPointOnClippingBox.point.y) < minLength) {
+		const distanceToClippingBox = getManhattanDistance(x1, y1, closestPointOnClippingBox.point.x, closestPointOnClippingBox.point.y);
+		
+		if (distanceToClippingBox < minLength) {
 			return null;
 		}
 	}
 	
-	let outwardDirection = null;
-
-	// If the target bounding box is provided, use the closest point as the end target
+	// Calculate target point and outward direction
+	let outwardDirection: string | null = null;
+	let targetPoint = { ...initialTargetPoint };
+	
 	if (targetBBox) {
 		const { point, edge } = getClosestPointOnRect(x1, y1, x2, y2, targetBBox.width, targetBBox.height);
 		targetPoint = point;
 		outwardDirection = edge;
 	}
 
-	// Draw a line perpendicular to the edge of the clipping box until it meets either the X or Y of the anchor point (x1, y1)
-	if (outwardDirection) {
-		if (outwardDirection === 'left' || outwardDirection === 'right') {
-			midPoint = { x: targetPoint.x, y: anchorPoint.y };
-		} else if (outwardDirection === 'top' || outwardDirection === 'bottom') {
-			midPoint = { x: anchorPoint.x, y: targetPoint.y };
-		}
-	}
+	// Calculate midpoint using helper function
+	const midPoint = calculateMidPoint(anchorPoint, targetPoint, outwardDirection);
 
-	// Draw the line
-	const path = `M ${anchorPoint.x} ${anchorPoint.y} L ${midPoint.x} ${midPoint.y} L ${targetPoint.x} ${targetPoint.y}`;
+	// Apply offsets using helper function
+	const adjustedAnchorPoint = calculateOffsetPoint(anchorPoint, midPoint, startOffset, true);
+	const adjustedTargetPoint = calculateOffsetPoint(targetPoint, midPoint, endOffset, false);
+
+	// Draw the line using the adjusted points
+	const path = `M ${adjustedAnchorPoint.x} ${adjustedAnchorPoint.y} L ${midPoint.x} ${midPoint.y} L ${adjustedTargetPoint.x} ${adjustedTargetPoint.y}`;
 	
 
 	return (
@@ -369,8 +300,6 @@ export const MarkerLeader = React.forwardRef<SVGPathElement, MarkerLeaderProps &
 
 			<path
 				d={path}
-				stroke={stroke}
-				strokeWidth={strokeWidth}
 				fill="none"
 				className={className}
 				ref={ref}

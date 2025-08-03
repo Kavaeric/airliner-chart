@@ -80,7 +80,7 @@ export default function Home() {
 	return (
 		<div className="mainContainer">
 			<div className="aboveCut">
-				<div className="frame-flex-horizontal">
+				{/*<div className="frame-flex-horizontal">
 					<div className="frame-content frame-flex-vertical headerTitle">
 						<h1 className="text-h1">Airliner Chart</h1>
 					</div>
@@ -97,7 +97,7 @@ export default function Home() {
 						)}
 					</div>
 				</div>
-				<hr className="frame-major" />
+				<hr className="frame-major" />*/}
 
 				{/* Chart component handles all the complex visualization logic */}
 				<DebugProvider initialDebugMode={false}>
