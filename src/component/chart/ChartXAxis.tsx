@@ -6,6 +6,7 @@ import { AxisBottom } from "@visx/axis";
 // [IMPORT] Context providers/hooks //
 import { useResponsiveSVG } from "@/context/ResponsiveSVG";
 import { useResponsiveChartViewport } from "@/context/ResponsiveChartViewport";
+import { useAnimatedChartViewport } from "@/context/AnimatedChartViewport";
 
 interface XAxisProps {
 	label?: string;
@@ -24,6 +25,7 @@ interface XAxisProps {
  */
 export default function XAxis({ label }: XAxisProps) {
 	const { viewportScale, mouse } = useResponsiveChartViewport();
+	const { animatedScale } = useAnimatedChartViewport();
 	const { width, height } = useResponsiveSVG();
 	
 	return (
@@ -41,7 +43,7 @@ export default function XAxis({ label }: XAxisProps) {
 			
 			{/* Render the axis */}
 			<AxisBottom
-				scale={viewportScale.x}
+				scale={animatedScale.x}
 				numTicks={10}
 				tickLength={4}
 				axisClassName="axis"

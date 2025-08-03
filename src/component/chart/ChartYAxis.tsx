@@ -13,6 +13,7 @@ import { useAirlinerSelection } from "@/context/AirlinerSelectionContext";
 import { useChartData } from "@/component/airliner/AirlinerChart";
 import { Text } from "@visx/text";
 import { RectCentre } from "@/component/shape/RectCentre";
+import { useAnimatedChartViewport } from "@/context/AnimatedChartViewport";
 
 interface YAxisProps {
 	label?: string;
@@ -32,6 +33,7 @@ interface YAxisProps {
  */
 export default function YAxis({ label }: YAxisProps) {
 	const { viewportScale, mouse } = useResponsiveChartViewport();
+	const { animatedScale } = useAnimatedChartViewport();
 	const { width, height } = useResponsiveSVG();
 	const { hoveredAirlinerID, selectedAirlinerID } = useAirlinerSelection();
 	const data = useChartData();
@@ -129,7 +131,7 @@ export default function YAxis({ label }: YAxisProps) {
 
 			{/* Render the axis */}
 			<AxisLeft
-				scale={viewportScale.y}
+				scale={animatedScale.y}
 				numTicks={10}
 				tickLength={4}
 				tickFormat={d => {

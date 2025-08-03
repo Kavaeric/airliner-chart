@@ -21,13 +21,13 @@ import { useResponsiveSVG } from "@/context/ResponsiveSVG";
 import { useResponsiveChartViewport } from "@/context/ResponsiveChartViewport";
 import { useAirlinerSelection } from "@/context/AirlinerSelectionContext";
 import { useProximityDetection } from "@/lib/hooks/use-proximity-detection";
-import { useAnimatedScales } from "@/lib/hooks/use-animated-scales";
 
 // [IMPORT] Utilities //
 import type { AirlinerModel } from "@/lib/data/airliner-types";
 
 // [IMPORT] CSS styling //
 import { RectCentre } from "../shape/RectCentre";
+import { useAnimatedChartViewport } from "@/context/AnimatedChartViewport";
 
 /**
  * AirlinerScatterPlot
@@ -39,16 +39,11 @@ export default function AirlinerScatterPlot() {
 	// === Context and chart config ===
 	// Retrieve chart scales (x/y), layout config, data, and debug mode from context providers.
 	const { width, height } = useResponsiveSVG();
-	const { dataScale, viewportScale, view, drag, mouse } = useResponsiveChartViewport();
+	const { dataScale, view, drag, mouse } = useResponsiveChartViewport();
+	const { animatedScale, setAnimationDuration } = useAnimatedChartViewport();
 	const data = useChartData() as AirlinerModel[];
 	const { debugMode } = useDebugMode();
 	const { clearSelection, hoveredAirlinerID, selectedAirlinerID, setHoveredAirliner, setSelectedAirliner } = useAirlinerSelection();
-
-	// === Animated Scales ===
-	const animatedScales = useAnimatedScales({
-		x: viewportScale.x,
-		y: viewportScale.y
-	}, { animate: true, duration: 50 });
 
 	// Hide/consolidate labels in clusters larger than this
 	const labelClusterThreshold = 2;
@@ -61,7 +56,7 @@ export default function AirlinerScatterPlot() {
 		areLabelsMeasured,	// Flag for if all labels have been measured
 		plotFormat,				// Formatting options for the plot
 		airlinerLabelClusters,	// Cluster detection results
-	} = useAirlinerViewModel(data, animatedScales.x, animatedScales.y, width, height, debugMode);
+	} = useAirlinerViewModel(data, animatedScale.x, animatedScale.y, width, height, debugMode);
 
 	// === Proximity Detection ===
 	// 
@@ -299,6 +294,19 @@ export default function AirlinerScatterPlot() {
 	}, [proximityDetection, selectedAirlinerID, clearSelection, setSelectedAirliner]);
 
 	/**
+	 * handleTouchStart
+	 * 
+	 * Custom touch start handler that sets animation duration to 0 for immediate response.
+	 */
+	const handleTouchStart = useCallback((event: React.TouchEvent) => {
+		// Set animation duration to 0 for immediate touch response
+		setAnimationDuration(0);
+		
+		// Call the proximity detection touch start handler
+		proximityDetection.handlers.onTouchStart(event);
+	}, [setAnimationDuration, proximityDetection.handlers]);
+
+	/**
 	 * handleTouchEnd
 	 * 
 	 * Handles touch end events within the chart area.
@@ -349,6 +357,46 @@ export default function AirlinerScatterPlot() {
 		}
 	}, [hoveredAirlinerID, selectedAirlinerID, clearSelection, setSelectedAirliner]);
 
+	/**
+	 * handleWheel
+	 * 
+	 * Custom wheel handler that sets animation duration for wheel interactions.
+	 * Sets 100ms animation duration for smooth wheel zoom transitions.
+	 */
+	const handleWheel = useCallback((event: React.WheelEvent) => {
+		// Set animation duration for wheel interactions
+		setAnimationDuration(100);
+		
+		// Handle wheel event for zooming
+		const delta = event.deltaY;
+		const baseZoomFactor = delta < 0 ? 1.2 : 0.8; // Zoom in by 10% or zoom out by 10%
+		const zoomFactor = baseZoomFactor;
+		
+		// Calculate zoom center from event position
+		if (event && event.currentTarget) {
+			const rect = (event.currentTarget as Element).getBoundingClientRect();
+			const mouseX = event.clientX - rect.left;
+			const mouseY = event.clientY - rect.top;
+			
+			const zoomCenterX = (animatedScale.x as any).invert(mouseX);
+			const zoomCenterY = (animatedScale.y as any).invert(mouseY);
+			
+			// Apply zoom with constraints
+			view.zoom(zoomFactor, { x: zoomCenterX, y: zoomCenterY }, 'both');
+		}
+		
+		// Prevent default browser scrolling
+		event.preventDefault();
+	}, [setAnimationDuration, animatedScale.x, animatedScale.y, view]);
+
+	/**
+	 * handleDragStart
+	 * 
+	 * Custom drag start handler that sets animation duration to 0 for immediate response.
+	 */
+	const handleDragStart = useCallback(() => {
+		setAnimationDuration(0);
+	}, [setAnimationDuration]);
 
 	// === Batch label measurement logic ===
 	// ghostLabelIDs is an array of airliner IDs that have not yet been measured
@@ -406,8 +454,8 @@ export default function AirlinerScatterPlot() {
 		<g>
 			{/* Grid intersection dots */}
 			<GridDots
-				xScale={animatedScales.x}
-				yScale={animatedScales.y}
+				xScale={animatedScale.x}
+				yScale={animatedScale.y}
 				width={width}
 				height={height}
 				numTicks={10}
@@ -431,13 +479,15 @@ export default function AirlinerScatterPlot() {
 				width={width}
 				height={height}
 				fill="transparent"
-				{...drag.bindGestures({ dragAxis: 'both', wheelAxis: 'both', enablePinch: true })}
+				{...drag.bindDrag()}
+				onWheel={handleWheel}
+				onMouseDown={handleDragStart}
 				onMouseMove={handleMouseMove}
 				onMouseEnter={handleMouseEnter}
 				onMouseLeave={handleMouseLeave}
 				onClick={handleClick}
 				onKeyDown={handleKeyDown}
-				onTouchStart={proximityDetection.handlers.onTouchStart}
+				onTouchStart={handleTouchStart}
 				onTouchEnd={handleTouchEnd}
 				style={{ 
 					cursor: proximityDetection.nearestTarget && proximityDetection.nearestTarget.type !== 'cluster' 

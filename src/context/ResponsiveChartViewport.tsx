@@ -4,7 +4,7 @@ import React, { createContext, useContext, useState, useRef, useMemo, useCallbac
 // [IMPORT] Third-party libraries //
 import { AxisScale } from "@visx/axis";
 import { scaleLinear } from "@visx/scale";
-import { useDrag, useWheel, useGesture } from "@use-gesture/react";
+import { useDrag, useWheel } from "@use-gesture/react";
 
 /**
  * @interface ViewportState
@@ -79,10 +79,8 @@ interface DragConfig {
  *   - `zoom`: Zoom the viewport by a scale factor, optionally around a data-space center point.
  *   - `reset`: Reset the viewport to its initial state (as defined by initialViewport or data extents).
  *   - `zoomToExtents`: Zoom the viewport to fit the full data extents.
- * @property {Object} drag Drag and wheel interaction functions.
+ * @property {Object} drag Drag interaction functions.
  *   - `bindDrag`: Returns gesture bind props for drag interactions with optional configuration.
- *   - `bindWheel`: Returns gesture bind props for wheel interactions.
- *   - `bindGestures`: Returns gesture bind props for combined drag and wheel interactions.
  *   - `isDragging`: Whether a drag operation is currently in progress.
  */
 interface ResponsiveChartViewportType {
@@ -111,9 +109,6 @@ interface ResponsiveChartViewportType {
 	},
 	drag: {
 		bindDrag: (config?: Partial<DragConfig>) => any;
-		bindWheel: (axis?: 'x' | 'y' | 'both', invert?: boolean) => any;
-		bindGestures: (config?: { dragAxis?: 'x' | 'y' | 'both', wheelAxis?: 'x' | 'y' | 'both', invertDrag?: boolean, invertWheel?: boolean, useFullDataScale?: boolean, enablePinch?: boolean }) => any;
-		bindPinch: () => any; // Pinch gesture bind function for touch zoom
 		isDragging: boolean;
 	},
 }
@@ -784,225 +779,39 @@ export function ResponsiveChartViewport<T>({
 	const bindDragYInvertedBrush = useConfigurableDrag(dragConfigs.yInvertedBrush);
 	const bindDragInvertedBrush = useConfigurableDrag(dragConfigs.bothInvertedBrush);
 
-	// Track previous pinch scale for incremental zooming
-	const previousPinchScale = useRef<number>(1);
 
-	// Create separate gesture handlers for different configurations
-	const bindGesturesWithPinch = useGesture({
-		onDrag: ({ active, movement: [mx, my] }) => {
-			setIsDragging(active);
-			
-			if (active) {
-				// Store initial viewport state on first drag frame
-				if (!dragStartViewport.current) {
-					dragStartViewport.current = { ...viewport };
-				}
-				
-				// Calculate deltas based on config - use viewport range for plot area
-				const dataDeltaX = (mx / width) * (dragStartViewport.current.x[1] - dragStartViewport.current.x[0]);
-				const dataDeltaY = (my / height) * (dragStartViewport.current.y[1] - dragStartViewport.current.y[0]);
-				
-				// Apply inversion (normal drag for plot area)
-				const finalDeltaX = -dataDeltaX;
-				const finalDeltaY = dataDeltaY;
-				
-				// Calculate target viewport
-				const targetXDomain: [number, number] = [
-					dragStartViewport.current.x[0] + finalDeltaX,
-					dragStartViewport.current.x[1] + finalDeltaX
-				];
-				
-				const targetYDomain: [number, number] = [
-					dragStartViewport.current.y[0] + finalDeltaY,
-					dragStartViewport.current.y[1] + finalDeltaY
-				];
-				
-				// Apply constraints
-				const constrainedXDomain = applyAllConstraints(targetXDomain, 'x', viewportConstraints);
-				const constrainedYDomain = applyAllConstraints(targetYDomain, 'y', viewportConstraints);
-
-				// Update viewport
-				setViewport({
-					x: constrainedXDomain,
-					y: constrainedYDomain,
-				});
-			} else {
-				dragStartViewport.current = null;
-			}
-		},
-		onWheel: ({ event, delta: [, dy] }) => {
-			// Handle wheel event directly instead of relying on @use-gesture/react
-			const delta = dy;
-			const baseZoomFactor = delta < 0 ? 1.1 : 0.9; // Zoom in by 10% or zoom out by 10%
-			const zoomFactor = baseZoomFactor;
-			
-			// Calculate zoom center from event position
-			if (event && event.currentTarget) {
-				const rect = (event.currentTarget as Element).getBoundingClientRect();
-				const mouseX = event.clientX - rect.left;
-				const mouseY = event.clientY - rect.top;
-				
-				const zoomCenterX = xScaleView.invert(mouseX);
-				const zoomCenterY = yScaleView.invert(mouseY);
-				
-				// Apply zoom with constraints
-				zoomViewport(zoomFactor, { x: zoomCenterX, y: zoomCenterY }, 'both');
-			}
-		},
-		onPinch: ({ offset: [scale], origin: [originX, originY], event, first, last }) => {
-			// Only handle pinch events when we have a valid scale
-			if (scale === undefined || scale === 0) return;
-			
-			// Store initial viewport state on first pinch frame
-			if (first) {
-				if (!dragStartViewport.current) {
-					dragStartViewport.current = { ...viewport };
-				}
-				previousPinchScale.current = scale;
-			}
-			
-			// Calculate zoom factor from scale change
-			// Use a more conservative zoom factor calculation
-			const scaleChange = scale - previousPinchScale.current;
-			const zoomFactor = 1 + scaleChange;
-			
-			// Convert pinch origin to data coordinates
-			if (event && event.currentTarget) {
-				const rect = (event.currentTarget as Element).getBoundingClientRect();
-				const pinchCenterX = xScaleView.invert(originX - rect.left);
-				const pinchCenterY = yScaleView.invert(originY - rect.top);
-				
-				// Apply zoom with constraints
-				zoomViewport(zoomFactor, { x: pinchCenterX, y: pinchCenterY }, 'both');
-			}
-			
-			// Update previous scale for next frame
-			previousPinchScale.current = scale;
-			
-			// Clear drag start viewport on last pinch frame
-			if (last) {
-				dragStartViewport.current = null;
-			}
-		}
-	}, {
-		drag: {
-			filterTaps: true,
-			preventScroll: false,
-			immediate: true,
-			threshold: 0,
-		},
-		wheel: {
-			preventDefault: true,
-			eventOptions: { passive: false }
-		},
-		pinch: {
-			preventDefault: true,
-			eventOptions: { passive: false }
-		}
-	});
-
-	// Combined gesture bind function
-	const bindGestures = useCallback((config: { 
-		dragAxis?: 'x' | 'y' | 'both', 
-		wheelAxis?: 'x' | 'y' | 'both', 
-		invertDrag?: boolean, 
-		invertWheel?: boolean,
-		useFullDataScale?: boolean,
-		enablePinch?: boolean
-	} = {}) => {
-		const { dragAxis = 'both', wheelAxis = 'both', invertDrag = false, invertWheel = false, useFullDataScale = false, enablePinch = false } = config;
-		
-		// If pinch is enabled, use the combined gesture handler
-		if (enablePinch) {
-			return bindGesturesWithPinch();
-		}
-		
-		// Otherwise, use the original approach without pinch
-		// Select the appropriate pre-configured drag bind based on configuration
-		let dragBind;
-		if (useFullDataScale) {
-			// Use brush-specific handlers with useFullDataScale
-			if (invertDrag) {
-				if (dragAxis === 'x') {
-					dragBind = bindDragXInvertedBrush();
-				} else if (dragAxis === 'y') {
-					dragBind = bindDragYInvertedBrush();
-				} else {
-					dragBind = bindDragInvertedBrush(); // Both axes inverted
-				}
-			} else {
-				if (dragAxis === 'x') {
-					dragBind = bindDragXBrush();
-				} else if (dragAxis === 'y') {
-					dragBind = bindDragYBrush();
-				} else {
-					dragBind = bindDragBrush(); // Both axes normal
-				}
-			}
-		} else {
-			// Use normal handlers without useFullDataScale
-			if (invertDrag) {
-				if (dragAxis === 'x') {
-					dragBind = bindDragXInverted();
-				} else if (dragAxis === 'y') {
-					dragBind = bindDragYInverted();
-				} else {
-					dragBind = bindDragInverted(); // Both axes inverted
-				}
-			} else {
-				if (dragAxis === 'x') {
-					dragBind = bindDragX();
-				} else if (dragAxis === 'y') {
-					dragBind = bindDragY();
-				} else {
-					dragBind = bindDrag(); // Both axes normal
-				}
-			}
-		}
-
-		// Combine the bind props
-		return {
-			...dragBind,
-			// Don't spread wheelBind to avoid conflicts
-			// Create custom wheel handler that properly prevents scrolling and respects axis configuration
-			onWheel: (e: React.WheelEvent) => {
-				// Handle wheel event directly instead of relying on @use-gesture/react
-				const delta = e.deltaY;
-				const baseZoomFactor = delta < 0 ? 1.1 : 0.9; // Zoom in by 10% or zoom out by 10%
-				const zoomFactor = baseZoomFactor;
-				
-				// Calculate zoom center from event position
-				if (e && e.currentTarget) {
-					const rect = (e.currentTarget as Element).getBoundingClientRect();
-					const mouseX = e.clientX - rect.left;
-					const mouseY = e.clientY - rect.top;
-					
-					const zoomCenterX = xScaleView.invert(mouseX);
-					const zoomCenterY = yScaleView.invert(mouseY);
-					
-					// Apply zoom with constraints, respecting the wheelAxis configuration
-					zoomViewport(zoomFactor, { x: zoomCenterX, y: zoomCenterY }, wheelAxis);
-				}
-			}
-		};
-	}, [bindDrag, bindDragX, bindDragY, bindDragXInverted, bindDragYInverted, bindDragInverted, bindDragBrush, bindDragXBrush, bindDragYBrush, bindDragXInvertedBrush, bindDragYInvertedBrush, bindDragInvertedBrush, bindGesturesWithPinch, xScaleView, yScaleView, zoomViewport]);
 
 	// Create configurable bindDrag function that selects from pre-configured hooks
 	const bindDragConfigurable = useCallback((config?: Partial<DragConfig>) => {
 		const axis = config?.axis ?? 'both';
 		const invert = config?.invert ?? false;
+		const useFullDataScale = config?.useFullDataScale ?? false;
 		
 		// Select the appropriate pre-configured drag bind
-		if (invert) {
-			if (axis === 'x') return bindDragXInverted();
-			if (axis === 'y') return bindDragYInverted();
-			return bindDragInverted(); // both
+		if (useFullDataScale) {
+			// Use brush-specific handlers with useFullDataScale
+			if (invert) {
+				if (axis === 'x') return bindDragXInvertedBrush();
+				if (axis === 'y') return bindDragYInvertedBrush();
+				return bindDragInvertedBrush(); // both axes inverted
+			} else {
+				if (axis === 'x') return bindDragXBrush();
+				if (axis === 'y') return bindDragYBrush();
+				return bindDragBrush(); // both axes normal
+			}
 		} else {
-			if (axis === 'x') return bindDragX();
-			if (axis === 'y') return bindDragY();
-			return bindDrag(); // both
+			// Use normal handlers without useFullDataScale
+			if (invert) {
+				if (axis === 'x') return bindDragXInverted();
+				if (axis === 'y') return bindDragYInverted();
+				return bindDragInverted(); // both
+			} else {
+				if (axis === 'x') return bindDragX();
+				if (axis === 'y') return bindDragY();
+				return bindDrag(); // both
+			}
 		}
-	}, [bindDrag, bindDragX, bindDragY, bindDragXInverted, bindDragYInverted, bindDragInverted]);
+	}, [bindDrag, bindDragX, bindDragY, bindDragXInverted, bindDragYInverted, bindDragInverted, bindDragBrush, bindDragXBrush, bindDragYBrush, bindDragXInvertedBrush, bindDragYInvertedBrush, bindDragInvertedBrush]);
 
 	const viewportManager: ResponsiveChartViewportType = useMemo(() => ({
 		plotArea: {
@@ -1030,12 +839,9 @@ export function ResponsiveChartViewport<T>({
 		},
 		drag: {
 			bindDrag: bindDragConfigurable,
-			bindWheel: () => ({}), // Placeholder since we use useGesture now
-			bindGestures,
-			bindPinch: () => ({}), // Placeholder since we use useGesture now
 			isDragging,
 		},
-	}), [width, height, xScale, yScale, xScaleView, yScaleView, mouseCoordinates, isMouseOverChart, updateMouseCoordinates, translateViewport, zoomViewport, resetViewport, zoomToExtents, bindDragConfigurable, bindGestures, isDragging]);
+	}), [width, height, xScale, yScale, xScaleView, yScaleView, mouseCoordinates, isMouseOverChart, updateMouseCoordinates, translateViewport, zoomViewport, resetViewport, zoomToExtents, bindDragConfigurable, isDragging]);
 
 	// Expose viewport functions via ref if provided
 	useImperativeHandle(viewportRef, () => viewportManager, [viewportManager]);
@@ -1070,10 +876,8 @@ export function ResponsiveChartViewport<T>({
  *   - `zoom`: Zoom the viewport by a scale factor, optionally around a data-space center point.
  *   - `reset`: Reset the viewport to its initial state (as defined by initialViewport or data extents).
  *   - `zoomToExtents`: Zoom the viewport to fit the full data extents.
- * @property {Object} drag Drag and wheel interaction functions.
+ * @property {Object} drag Drag interaction functions.
  *   - `bindDrag`: Returns gesture bind props for drag interactions with optional configuration.
- *   - `bindWheel`: Returns gesture bind props for wheel interactions.
- *   - `bindGestures`: Returns gesture bind props for combined drag and wheel interactions.
  *   - `isDragging`: Whether a drag operation is currently in progress.
  */
 export function useResponsiveChartViewport(): ResponsiveChartViewportType {

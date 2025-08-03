@@ -13,6 +13,7 @@ import { ResponsiveChartViewport, useResponsiveChartViewport } from "@/context/R
 import { createChartDataContext } from "@/context/ChartDataContext";
 import { useDebugMode } from "@/context/DebugModeContext";
 import { AirlinerSelectionProvider } from "@/context/AirlinerSelectionContext";
+import { AnimatedChartViewport } from "@/context/AnimatedChartViewport";
 
 // [IMPORT] Types/interfaces //
 import type { AirlinerData, AirlinerModel } from "@/lib/data/airliner-types";
@@ -83,8 +84,8 @@ export default function AirlinerChart({ data }: AirlinerChartProps) {
 	 }, [data]);
 
 	// ResizeObserver for plot dimensions
-	const [plotWidth, setPlotWidth] = useState(0);
-	const [plotHeight, setPlotHeight] = useState(0);
+	const [plotWidth, setPlotWidth] = useState(200);
+	const [plotHeight, setPlotHeight] = useState(200);
 	
 	// ResizeObserver callback for measuring plot area
 	const handlePlotResize = (dims: { width: number; height: number }) => {
@@ -94,6 +95,9 @@ export default function AirlinerChart({ data }: AirlinerChartProps) {
 
 	// Store viewport object for button control
 	const viewportRef = useRef<any>(null);
+	
+	// Store animated viewport object for animation control
+	const animatedViewportRef = useRef<any>(null);
 
 	// ResizeObserver ref for plot area
 	const plotResizeRef = useResizeObserver(handlePlotResize);
@@ -224,6 +228,7 @@ export default function AirlinerChart({ data }: AirlinerChartProps) {
 			
 			<hr className="frame-minor" />
 			<div className="chartContainer">
+			<AnimatedChartViewport animatedViewportRef={animatedViewportRef}>
 				{/* Chart area (top-right) */}
 				<ResponsiveSVG
 					divProps={{
@@ -234,7 +239,7 @@ export default function AirlinerChart({ data }: AirlinerChartProps) {
 				>
 					{viewportRef.current && data.length > 0
 						? <AirlinerScatterPlot />
-						: <p>Chart loading...</p>}
+						: <text x={plotWidth / 2} y={plotHeight / 2} fill="var(--text-minor)" textAnchor="middle" dominantBaseline="middle">Chart loading...</text>}
 				</ResponsiveSVG>
 
 				{/* Y-axis brush (top-left) */}
@@ -286,6 +291,7 @@ export default function AirlinerChart({ data }: AirlinerChartProps) {
 				<div className="empty2"></div>
 				<div className="empty3"></div>
 				<div className="empty4"></div>
+			</AnimatedChartViewport>
 			</div>
 		</ResponsiveChartViewport>
 		</AirlinerSelectionProvider>
