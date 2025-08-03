@@ -123,7 +123,7 @@ export default function AirlinerChart({ data }: AirlinerChartProps) {
 
 	// Set viewport constraints
 	const viewportConstraints = useMemo(() => ({
-		x: [0, 1000] as [number | null, number | null],		// X-axis constraints
+		x: [0, 950] as [number | null, number | null],		// X-axis constraints
 		y: [0, 20000] as [number | null, number | null],		// Y-axis constraints
 		extentX: [20, 1000] as [number | null, number | null],	// Zoom X constraints
 		extentY: [1000, 20000] as [number | null, number | null],	// Zoom Y constraints
@@ -171,7 +171,7 @@ export default function AirlinerChart({ data }: AirlinerChartProps) {
 						<p className="text-body-diminished">Airliner Chart by <a href="https://www.shojiushiyama.net/">Shoji Ushiyama</a> / <a href="https://www.kavaeric.com">Kavaeric</a>.</p>
 					</div>
 				</div>
-				<hr className="frame-minor mobile-hidden" />
+				<hr className="frame-minor" />
 				<button
 					className="btn-diminished btn-icon-only mobile-hidden"
 					onClick={() => viewportRef.current.view.move(0, 1000)}
@@ -202,14 +202,14 @@ export default function AirlinerChart({ data }: AirlinerChartProps) {
 				</button>
 				<hr className="frame-minor mobile-hidden" />
 				<button
-					className="btn-diminished btn-icon-only mobile-hidden"
+					className="btn-diminished btn-icon-only"
 					onClick={() => viewportRef.current.view.zoom(1.1)}
 					aria-label="Zoom in"
 				>
 					<span className="material-symbols-sharp" aria-hidden="true">zoom_in</span>
 				</button>
 				<button
-					className="btn-diminished btn-icon-only mobile-hidden"
+					className="btn-diminished btn-icon-only"
 					onClick={() => viewportRef.current.view.zoom(0.9)}
 					aria-label="Zoom out"
 				>
