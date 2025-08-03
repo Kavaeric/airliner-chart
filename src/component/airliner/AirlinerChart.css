@@ -498,15 +498,28 @@
 	stroke: var(--highlight-active-diminished);
 }
 
+/* Highlight background rectangle for selected airliner */
 .airlinerSelectionCapacityHighlight {
 	opacity: 0.1;
 	fill: var(--highlight-hover-diminished);
 }
 
+.airlinerGridLineLabel {
+	font-family: var(--font-family-display);
+	font-size: var(--text-size-400);
+	font-weight: var(--font-weight-regular);
+	letter-spacing: var(--text-tracking-400);
+	fill: var(--highlight-active-minor);
+	writing-mode: sideways-lr;
+	text-anchor: end;
+	transform: translateY(var(--space-negative-100)) translateX(var(--space-negative-100));
+}
+
 
 /* ===== Active Airliner Y-Axis Styling ===== */
 
-.yAxisReadout {
+.yAxisReadout,
+.xAxisReadout {
 	transition: all 0.05s linear;
 }
 
@@ -520,49 +533,65 @@
 @media (pointer: coarse) {
 	.yAxisReadout,
 	.yAxisReadoutLine,
+	.xAxisReadout,
 	.xAxisReadoutLine {
-		transition: all 0.1s ease-in-out;
+		transition: all 0.1s linear;
 		opacity: 0;
 	}
 }
 
 .yAxisReadout.hoveredAirliner,
-.yAxisReadout.selectedAirliner {
+.yAxisReadout.selectedAirliner,
+.xAxisReadout.hoveredAirliner,
+.xAxisReadout.selectedAirliner {
 	opacity: 1;
 }
 
-.yAxisReadoutBox {
+.yAxisReadoutBox,
+.xAxisReadoutBox {
 	fill: var(--surface-minor);
 	stroke: var(--border-minor);
 	stroke-width: var(--border-weight-100);
 	transition: all 0.1s linear;
 }
 
-.yAxisReadoutBox.hoveredAirliner {
+.yAxisReadoutBox.hoveredAirliner,
+.xAxisReadoutBox.hoveredAirliner {
 	stroke: var(--border-major);
 }
 
-.yAxisReadoutBox.selectedAirliner {
+.yAxisReadoutBox.selectedAirliner,
+.xAxisReadoutBox.selectedAirliner {
 	fill: var(--interactive-major);
 }
 
-.yAxisReadoutText {
+.yAxisReadoutText,
+.xAxisReadoutText {
 	font-family: var(--font-family-display);
 	font-size: var(--text-size-300);
 	font-weight: var(--font-weight-medium);
 	text-transform: uppercase;
 	letter-spacing: var(--text-tracking-800);
 	fill: var(--text-minor);
-	transform: translateX(var(--space-negative-050));
 	transition: all 0.1s linear;
 }
 
-.yAxisReadoutText.hoveredAirliner {
+.yAxisReadoutText {
+	transform: translateX(var(--space-negative-050));
+}
+
+.yAxisReadoutText.hoveredAirliner,
+.xAxisReadoutText.hoveredAirliner {
 	fill: var(--text-major);
 }
 
-.yAxisReadoutText.selectedAirliner {
+.yAxisReadoutText.selectedAirliner,
+.xAxisReadoutText.selectedAirliner {
 	font-weight: var(--font-weight-bold);
 	fill: var(--interactive-major-inverse);
 }
 
+
+.xAxisReadout.hidden {
+	opacity: 0;
+}
