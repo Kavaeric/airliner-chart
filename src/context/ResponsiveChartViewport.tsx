@@ -105,7 +105,8 @@ interface ResponsiveChartViewportType {
 		move: (x: number, y: number) => void; // previously translateViewport
 		zoom: (factor: number, center?: { x: number; y: number }, axis?: 'x' | 'y' | 'both') => void; // previously zoomViewport
 		reset: () => void; // previously resetViewport
-		zoomToExtents: () => void; // previously zoomToExtents
+		zoomToExtents: (extents?: { x?: [number, number]; y?: [number, number] }, axis?: 'x' | 'y' | 'both') => void; // previously zoomToExtents
+		zoomToFit: (extents?: { x?: [number, number]; y?: [number, number] }, padding?: number) => void; // Zoom to fit with aspect ratio preservation
 	},
 	drag: {
 		bindDrag: (config?: Partial<DragConfig>) => any;
@@ -646,24 +647,145 @@ export function ResponsiveChartViewport<T>({
 	/**
 	 * @function zoomToExtents
 	 * 
-	 * Zoom the viewport to show the full data extents.
+	 * Zoom the viewport to show specified extents or full data extents.
+	 * 
+	 * @param extents - Optional extents to zoom to. If not provided, uses full data domain.
+	 * @param axis - Optional axis constraint ('x', 'y', or 'both'). Defaults to 'both'.
 	 * 
 	 * @example
 	 * ```jsx
 	 * <button onClick={() => {
 	 * 	if (viewportRef.current) {
-	 * 	  viewportRef.current.view.zoomToExtents();
+	 * 	  viewportRef.current.view.zoomToExtents(); // Show all data
 	 * 	}
 	 * }}>
 	 * 	Show all data
 	 * </button>
+	 * 
+	 * <button onClick={() => {
+	 * 	if (viewportRef.current) {
+	 * 	  viewportRef.current.view.zoomToExtents({ x: [1000, 5000] }); // Zoom to specific X range
+	 * 	}
+	 * }}>
+	 * 	Zoom to X range
+	 * </button>
+	 * 
+	 * <button onClick={() => {
+	 * 	if (viewportRef.current) {
+	 * 	  viewportRef.current.view.zoomToExtents({ x: [1000, 5000], y: [100, 300] }, 'both'); // Zoom to specific area
+	 * 	}
+	 * }}>
+	 * 	Zoom to specific area
+	 * </button>
 	 * ```
 	 */
-	function zoomToExtents() {
-		// Apply constraints to ensure the extents viewport respects all bounds
-		const constrainedXDomain = applyAllConstraints(xDomain, 'x', viewportConstraints);
-		const constrainedYDomain = applyAllConstraints(yDomain, 'y', viewportConstraints);
+	function zoomToExtents(extents?: { x?: [number, number]; y?: [number, number] }, axis: 'x' | 'y' | 'both' = 'both') {
+		// Determine target domains based on provided extents or full data domain
+		const targetXDomain = extents?.x ?? xDomain;
+		const targetYDomain = extents?.y ?? yDomain;
 		
+		// Apply constraints based on axis parameter
+		const constrainedXDomain = axis !== 'y' 
+			? applyAllConstraints(targetXDomain, 'x', viewportConstraints)
+			: viewport.x;
+		const constrainedYDomain = axis !== 'x'
+			? applyAllConstraints(targetYDomain, 'y', viewportConstraints)
+			: viewport.y;
+		
+		setViewport({
+			x: constrainedXDomain,
+			y: constrainedYDomain,
+		});
+	}
+
+	/**
+	 * @function zoomToFit
+	 * 
+	 * Zoom the viewport to fit specified extents while preserving aspect ratio.
+	 * Calculates the appropriate zoom factor and centers the view on the target area.
+	 * 
+	 * @param extents - Optional extents to fit. If not provided, uses full data domain.
+	 * @param padding - Optional padding factor (0-1) to add around the extents. Defaults to 0.1 (10% padding).
+	 * 
+	 * @example
+	 * ```jsx
+	 * <button onClick={() => {
+	 * 	if (viewportRef.current) {
+	 * 	  viewportRef.current.view.zoomToFit(); // Fit all data with padding
+	 * 	}
+	 * }}>
+	 * 	Fit all data
+	 * </button>
+	 * 
+	 * <button onClick={() => {
+	 * 	if (viewportRef.current) {
+	 * 	  viewportRef.current.view.zoomToFit({ x: [1000, 5000], y: [100, 300] }); // Fit specific area
+	 * 	}
+	 * }}>
+	 * 	Fit specific area
+	 * </button>
+	 * 
+	 * <button onClick={() => {
+	 * 	if (viewportRef.current) {
+	 * 	  viewportRef.current.view.zoomToFit({ x: [1000, 5000], y: [100, 300] }, 0.2); // Fit with 20% padding
+	 * 	}
+	 * }}>
+	 * 	Fit with custom padding
+	 * </button>
+	 * ```
+	 */
+	function zoomToFit(extents?: { x?: [number, number]; y?: [number, number] }, padding: number = 0.1) {
+		// Determine target domains based on provided extents or full data domain
+		const targetXDomain = extents?.x ?? xDomain;
+		const targetYDomain = extents?.y ?? yDomain;
+		
+		// Calculate the target area dimensions
+		const targetXRange = targetXDomain[1] - targetXDomain[0];
+		const targetYRange = targetYDomain[1] - targetYDomain[0];
+		
+		// Calculate the center of the target area
+		const targetCenterX = (targetXDomain[0] + targetXDomain[1]) / 2;
+		const targetCenterY = (targetYDomain[0] + targetYDomain[1]) / 2;
+		
+		// Calculate the current viewport dimensions
+		const currentXRange = viewport.x[1] - viewport.x[0];
+		const currentYRange = viewport.y[1] - viewport.y[0];
+		
+		// Calculate the aspect ratios
+		const targetAspectRatio = targetXRange / targetYRange;
+		const viewportAspectRatio = width / height;
+		
+		// Determine which dimension constrains the zoom factor
+		let zoomFactor: number;
+		if (targetAspectRatio < viewportAspectRatio) {
+			// X dimension constrains (uses X range for zoom calculation)
+			zoomFactor = currentXRange / (targetXRange * (1 + padding));
+		} else {
+			// Y dimension constrains (uses Y range for zoom calculation)
+			zoomFactor = currentYRange / (targetYRange * (1 + padding));
+		}
+		
+		// Calculate the new viewport dimensions based on zoom factor
+		const newXRange = currentXRange / zoomFactor;
+		const newYRange = currentYRange / zoomFactor;
+		
+		// Calculate the new viewport bounds centered on the target area
+		const newViewport = {
+			x: [
+				targetCenterX - (newXRange / 2),
+				targetCenterX + (newXRange / 2)
+			] as [number, number],
+			y: [
+				targetCenterY - (newYRange / 2),
+				targetCenterY + (newYRange / 2)
+			] as [number, number]
+		};
+		
+		// Apply all constraints to ensure the viewport stays within allowed bounds
+		const constrainedXDomain = applyAllConstraints(newViewport.x, 'x', viewportConstraints);
+		const constrainedYDomain = applyAllConstraints(newViewport.y, 'y', viewportConstraints);
+		
+		// Update the viewport state directly
 		setViewport({
 			x: constrainedXDomain,
 			y: constrainedYDomain,
@@ -836,12 +958,13 @@ export function ResponsiveChartViewport<T>({
 			zoom: zoomViewport,
 			reset: resetViewport,
 			zoomToExtents: zoomToExtents,
+			zoomToFit: zoomToFit,
 		},
 		drag: {
 			bindDrag: bindDragConfigurable,
 			isDragging,
 		},
-	}), [width, height, xScale, yScale, xScaleView, yScaleView, mouseCoordinates, isMouseOverChart, updateMouseCoordinates, translateViewport, zoomViewport, resetViewport, zoomToExtents, bindDragConfigurable, isDragging]);
+	}), [width, height, xScale, yScale, xScaleView, yScaleView, mouseCoordinates, isMouseOverChart, updateMouseCoordinates, translateViewport, zoomViewport, resetViewport, zoomToExtents, zoomToFit, bindDragConfigurable, isDragging]);
 
 	// Expose viewport functions via ref if provided
 	useImperativeHandle(viewportRef, () => viewportManager, [viewportManager]);

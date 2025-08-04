@@ -15,6 +15,15 @@ interface AirlinerGridLinesProps {
 }
 
 /**
+ * Passenger class name mapping for display labels
+ */
+const PAX_CLASS_NAMES = {
+	pax1Class: "1-Class Capacity",
+	pax2Class: "2-Class Capacity", 
+	pax3Class: "3-Class Capacity"
+} as const;
+
+/**
  * Utility function to get passenger class markers from a marker series
  * Filters markers to only include pax3Class, pax2Class, and pax1Class
  */
@@ -68,7 +77,7 @@ export default function AirlinerGridLines({
 }: AirlinerGridLinesProps) {
 	
 	// === Grid Line Calculation ===
-	// Calculate grid lines for hovered/selected airliners
+	// Calculate grid lines for hovered/selected airliners with pre-calculated passenger class info
 	const activeAirlinerAxisLines = useMemo(() => {
 		const lines: Array<{
 			x1: number;
@@ -78,6 +87,7 @@ export default function AirlinerGridLines({
 			type: 'vertical' | 'horizontal';
 			state: 'hovered' | 'selected';
 			airlinerID: string;
+			paxClassName?: string; // Pre-calculated passenger class name for vertical lines
 		}> = [];
 
 		// Helper function to process airliner and generate grid lines
@@ -90,7 +100,10 @@ export default function AirlinerGridLines({
 			if (!bounds) return;
 
 			// Draw vertical lines from each marker across entire plot area
+			// Pre-calculate passenger class name for each vertical line
 			paxClassMarkers.forEach((marker) => {
+				const paxClassName = PAX_CLASS_NAMES[marker.markerClass as keyof typeof PAX_CLASS_NAMES];
+				
 				lines.push({
 					x1: marker.markerCoordinates.x,
 					y1: 0, // Top chart edge
@@ -98,7 +111,8 @@ export default function AirlinerGridLines({
 					y2: height, // Bottom chart edge
 					type: 'vertical',
 					state,
-					airlinerID
+					airlinerID,
+					paxClassName // Store the passenger class name for text labels
 				});
 			});
 
@@ -176,6 +190,21 @@ export default function AirlinerGridLines({
 					className={`airlinerGridLine airlinerGridLine${line.type.charAt(0).toUpperCase() + line.type.slice(1)} airlinerGridLine${line.state.charAt(0).toUpperCase() + line.state.slice(1)}`}
 				/>
 			))}
+
+			{/* Text labels for vertical lines - only render for selected airliners */}
+			{activeAirlinerAxisLines
+				?.filter(line => line.airlinerID === selectedAirlinerID && line.type === 'vertical' && line.paxClassName)
+				.map((line, index) => (
+					<text
+						key={`grid-line-label-${line.airlinerID}-${line.type}-${line.state}-${index}`}
+						x={line.x1}
+						y={height}
+						textAnchor="middle"
+						className="airlinerGridLineLabel"
+					>
+						{line.paxClassName}
+					</text>
+				))}
 		</g>
 	);
 } 

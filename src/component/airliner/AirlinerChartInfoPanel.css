@@ -1,0 +1,69 @@
+/* AirlinerChartInfoPanel.css */
+
+/* Styling will be added here as needed */ 
+
+.airlinerInfoPanel {
+	position: absolute;
+	top: var(--space-800);
+	right: 0;
+	width: 25em;
+	max-width: 90vw;
+	background: var(--surface-minor);
+	overflow-y: auto;
+	transition: transform 0.05s ease-in-out;
+	z-index: 1000;
+}
+
+.airlinerInfoPanel--visible {
+	transform: translateX(0);
+}
+
+.airlinerInfoPanel--hidden {
+	transform: translateX(100%);
+}
+
+.airlinerInfoPanel .airlinerName {
+	margin: 0;
+	text-transform: none;
+}
+
+.airlinerInfoPanel .airlinerStats {
+	display: grid;
+	grid-template-columns: 6em 1fr;
+	grid-template-rows: 1fr;
+	gap: var(--space-050) var(--space-200);
+	align-items: first baseline;
+}
+
+.airlinerInfoPanel .airlinerStatLabel {
+	margin: 0;
+	line-height: var(--text-leading-400);
+	text-align: right;
+	white-space: nowrap;
+}
+
+.airlinerInfoPanel .airlinerStatValue {
+	line-height: var(--text-leading-400);
+	margin: 0;
+	white-space: nowrap;
+}
+
+.airlinerInfoPanel .airlinerDescription {
+	min-height: 10em;
+	padding: var(--space-200);
+}
+
+.airlinerInfoPanel .airlinerDescription blockquote:last-of-type {
+	font-family: var(--font-family-display);
+	font-style: italic;
+	letter-spacing: var(--text-tracking-400);
+	margin: 0;
+	margin-top: var(--space-400);
+}
+
+.airlinerInfoPanel .airlinerDescription blockquote:last-of-type p {
+	margin: 0;
+	font-size: var(--text-size-400);
+	line-height: var(--text-leading-300);
+	color: var(--text-diminished);
+}

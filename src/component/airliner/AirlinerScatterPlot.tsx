@@ -2,12 +2,16 @@
 
 // [IMPORT] React //
 import React, { useMemo, useRef, useCallback, useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 
 // [IMPORT] Internal components //
 import AirlinerScatterMarker from './AirlinerScatterMarker';
 import AirlinerScatterLine from './AirlinerScatterLine';
 import AirlinerScatterLabel from './AirlinerScatterLabel';
+import AirlinerScatterCluster from './AirlinerScatterCluster';
+import AirlinerScatterClusterMenu from './AirlinerScatterClusterMenu';
 import AirlinerGridLines from './AirlinerGridLines';
+import AirlinerScatterRangeLine from './AirlinerScatterRangeLine';
 import { MarkerPlus } from "../shape/MarkerPlus";
 import { MarkerLeader } from "../shape/MarkerLeader";
 import { MarkerCross } from "../shape/MarkerCross";
@@ -16,7 +20,7 @@ import { GridDots } from "../chart/GridDots";
 // [IMPORT] Context providers/hooks //
 import { useChartData } from "./AirlinerChart";
 import { useDebugMode } from "@/context/DebugModeContext";
-import { useAirlinerViewModel } from "@/lib/data/use-airliner-view-model";
+import { useAirlinerViewModel } from "@/lib/hooks/use-airliner-view-model";
 import { useResponsiveSVG } from "@/context/ResponsiveSVG";
 import { useResponsiveChartViewport } from "@/context/ResponsiveChartViewport";
 import { useAirlinerSelection } from "@/context/AirlinerSelectionContext";
@@ -28,6 +32,7 @@ import type { AirlinerModel } from "@/lib/data/airliner-types";
 // [IMPORT] CSS styling //
 import { RectCentre } from "../shape/RectCentre";
 import { useAnimatedChartViewport } from "@/context/AnimatedChartViewport";
+import { Text } from "@visx/text";
 
 /**
  * AirlinerScatterPlot
@@ -43,7 +48,7 @@ export default function AirlinerScatterPlot() {
 	const { animatedScale, setAnimationDuration } = useAnimatedChartViewport();
 	const data = useChartData() as AirlinerModel[];
 	const { debugMode } = useDebugMode();
-	const { clearSelection, hoveredAirlinerID, selectedAirlinerID, setHoveredAirliner, setSelectedAirliner } = useAirlinerSelection();
+	const { clearSelection, hoveredAirlinerID, selectedAirlinerID, hoveredClusterIndex, selectedClusterIndex, setHoveredAirliner, setSelectedAirliner, setHoveredCluster, setSelectedCluster } = useAirlinerSelection();
 
 	// Hide/consolidate labels in clusters larger than this
 	const labelClusterThreshold = 2;
@@ -118,11 +123,14 @@ export default function AirlinerScatterPlot() {
 					};
 					
 				case 'cluster':
-					// Use cluster bounding box for cluster interaction
+					// Use fixed rendered dimensions for cluster interaction
+					// Rendered clusters use 120x60 fixed size, not actual cluster bounding box
 					const [index, cluster] = element.data;
+					const renderedWidth = 120;
+					const renderedHeight = 60;
 					return {
-						x: [cluster.position.x, cluster.position.x + cluster.dimensions.width],
-						y: [cluster.position.y, cluster.position.y + cluster.dimensions.height]
+						x: [cluster.position.x - renderedWidth / 2, cluster.position.x + renderedWidth / 2],
+						y: [cluster.position.y - renderedHeight / 2, cluster.position.y + renderedHeight / 2]
 					};
 					
 				default:
@@ -210,15 +218,24 @@ export default function AirlinerScatterPlot() {
 		{
 			maxDistance: 20, // Maximum distance for proximity detection
 			onTargetChange: (target) => {
-				// Update hovered airliner based on nearest target
+				// Update hovered airliner or cluster based on nearest target
 				// Only set hover for mouse events, not touch events
 				// Touch events will handle selection directly in handleTouchEnd
-				if (target && target.type !== 'cluster') {
-					// Only set hover state for mouse interactions
-					// Touch events will use nearestTarget for direct selection
-					setHoveredAirliner(target.id);
+				if (target) {
+					if (target.type === 'cluster') {
+						// Extract cluster index from target ID (format: "cluster-{index}")
+						const clusterIndex = parseInt(target.id.replace('cluster-', ''));
+						setHoveredCluster(clusterIndex);
+						setHoveredAirliner(null);
+					} else {
+						// Airliner line or label interaction
+						setHoveredAirliner(target.id);
+						setHoveredCluster(null);
+					}
 				} else {
+					// No target - clear both hover states
 					setHoveredAirliner(null);
+					setHoveredCluster(null);
 				}
 			}
 		}
@@ -276,22 +293,35 @@ export default function AirlinerScatterPlot() {
 	 */
 	const handleClick = useCallback((event: React.MouseEvent) => {
 		// Check if we have a current target from proximity detection
-		if (proximityDetection.nearestTarget && proximityDetection.nearestTarget.type !== 'cluster') {
-			// Clicked on an interactive element - select it
-			const airlinerID = proximityDetection.nearestTarget.id;
-			
-			// Toggle selection if clicking on already selected airliner
-			if (selectedAirlinerID === airlinerID) {
-				clearSelection();
+		if (proximityDetection.nearestTarget) {
+			if (proximityDetection.nearestTarget.type === 'cluster') {
+				// Clicked on a cluster - select it
+				const clusterIndex = parseInt(proximityDetection.nearestTarget.id.replace('cluster-', ''));
+				
+				// Toggle selection if clicking on already selected cluster
+				if (selectedClusterIndex === clusterIndex) {
+					clearSelection();
+				} else {
+					// Select the new cluster
+					setSelectedCluster(clusterIndex);
+				}
 			} else {
-				// Select the new airliner
-				setSelectedAirliner(airlinerID);
+				// Clicked on an airliner line or label - select it
+				const airlinerID = proximityDetection.nearestTarget.id;
+				
+				// Toggle selection if clicking on already selected airliner
+				if (selectedAirlinerID === airlinerID) {
+					clearSelection();
+				} else {
+					// Select the new airliner
+					setSelectedAirliner(airlinerID);
+				}
 			}
 		} else {
 			// Clicked on empty chart area - clear selection
 			clearSelection();
 		}
-	}, [proximityDetection, selectedAirlinerID, clearSelection, setSelectedAirliner]);
+	}, [proximityDetection, selectedAirlinerID, selectedClusterIndex, clearSelection, setSelectedAirliner, setSelectedCluster]);
 
 	/**
 	 * handleTouchStart
@@ -318,22 +348,35 @@ export default function AirlinerScatterPlot() {
 		event.preventDefault();
 		
 		// Check if we have a current target from proximity detection
-		if (proximityDetection.nearestTarget && proximityDetection.nearestTarget.type !== 'cluster') {
-			// Touched on an interactive element - select it
-			const airlinerID = proximityDetection.nearestTarget.id;
-			
-			// Toggle selection if touching on already selected airliner
-			if (selectedAirlinerID === airlinerID) {
-				clearSelection();
+		if (proximityDetection.nearestTarget) {
+			if (proximityDetection.nearestTarget.type === 'cluster') {
+				// Touched on a cluster - select it
+				const clusterIndex = parseInt(proximityDetection.nearestTarget.id.replace('cluster-', ''));
+				
+				// Toggle selection if touching on already selected cluster
+				if (selectedClusterIndex === clusterIndex) {
+					clearSelection();
+				} else {
+					// Select the new cluster
+					setSelectedCluster(clusterIndex);
+				}
 			} else {
-				// Select the new airliner
-				setSelectedAirliner(airlinerID);
+				// Touched on an airliner line or label - select it
+				const airlinerID = proximityDetection.nearestTarget.id;
+				
+				// Toggle selection if touching on already selected airliner
+				if (selectedAirlinerID === airlinerID) {
+					clearSelection();
+				} else {
+					// Select the new airliner
+					setSelectedAirliner(airlinerID);
+				}
 			}
 		} else {
 			// Touched on empty chart area - clear selection
 			clearSelection();
 		}
-	}, [proximityDetection, selectedAirlinerID, clearSelection, setSelectedAirliner]);
+	}, [proximityDetection, selectedAirlinerID, selectedClusterIndex, clearSelection, setSelectedAirliner, setSelectedCluster]);
 
 	/**
 	 * handleKeyDown
@@ -407,6 +450,58 @@ export default function AirlinerScatterPlot() {
 		[airlinerEntries]
 	);
 
+	// === Rendered Elements Tracking ===
+	// Track which elements are currently being rendered to validate selection states
+	
+	// Get currently rendered airliner IDs (labels that are actually shown)
+	const renderedAirlinerIDs = useMemo(() => {
+		if (!areLabelsMeasured) return new Set<string>();
+		
+		return new Set(
+			Array.from(airlinerEntries.values())
+				.filter(airliner => {
+					const label = airliner.labels;
+					return label?.labelCoordinates;
+				})
+				.map(airliner => airliner.airlinerID)
+		);
+	}, [airlinerEntries, areLabelsMeasured, labelClusterThreshold]);
+
+	// Get currently rendered cluster indices
+	const renderedClusterIndices = useMemo(() => {
+		if (!airlinerLabelClusters) return new Set<number>();
+		
+		return new Set(
+			Array.from(airlinerLabelClusters.entries())
+				.filter(([clusterIndex, cluster]) => cluster.labelIDs.length > labelClusterThreshold)
+				.map(([clusterIndex, cluster]) => clusterIndex)
+		);
+	}, [airlinerLabelClusters, labelClusterThreshold]);
+
+	// === Selection State Validation ===
+	// Force deselect/de-hover elements that are no longer being rendered
+	
+	// Validate airliner selection/hover states
+	useEffect(() => {
+		// Clear hover if hovered airliner is no longer rendered
+		if (hoveredAirlinerID && !renderedAirlinerIDs.has(hoveredAirlinerID)) {
+			setHoveredAirliner(null);
+		}
+	}, [hoveredAirlinerID, renderedAirlinerIDs, setHoveredAirliner]);
+
+	// Validate cluster selection/hover states
+	useEffect(() => {
+		// Clear hover if hovered cluster is no longer rendered
+		if (hoveredClusterIndex !== null && !renderedClusterIndices.has(hoveredClusterIndex)) {
+			setHoveredCluster(null);
+		}
+		
+		// Clear selection if selected cluster is no longer rendered
+		if (selectedClusterIndex !== null && !renderedClusterIndices.has(selectedClusterIndex)) {
+			clearSelection();
+		}
+	}, [hoveredClusterIndex, selectedClusterIndex, renderedClusterIndices, setHoveredCluster, clearSelection]);
+
 	useEffect(() => {
 		// console.log(`[AirlinerScatterPlot] Ghost labels to be rendered: ${ghostLabelIDs.length}`);
 	}, [ghostLabelIDs]);
@@ -451,7 +546,8 @@ export default function AirlinerScatterPlot() {
 
 	// Render SVG chart
 	return (
-		<g>
+		<>
+			<g>
 			{/* Grid intersection dots */}
 			<GridDots
 				xScale={animatedScale.x}
@@ -470,6 +566,56 @@ export default function AirlinerScatterPlot() {
 				airlinerEntries={airlinerEntries}
 				width={width}
 				height={height}
+			/>
+
+			{/* Range reference lines for common long-haul and regional routes */}
+			<AirlinerScatterRangeLine
+				rangeValue={4000}
+				description="New York to Los Angeles"
+				yScale={animatedScale.y}
+				width={width}
+			/>
+
+			<AirlinerScatterRangeLine
+				rangeValue={5600}
+				description="New York to London"
+				yScale={animatedScale.y}
+				width={width}
+			/>
+
+			<AirlinerScatterRangeLine
+				rangeValue={8300}
+				description="San Francisco to Tokyo"
+				yScale={animatedScale.y}
+				width={width}
+			/>
+
+			<AirlinerScatterRangeLine
+				rangeValue={10500}
+				description="London to Singapore"
+				yScale={animatedScale.y}
+				width={width}
+			/>
+
+			<AirlinerScatterRangeLine
+				rangeValue={12500}
+				description="Sydney to Vancouver"
+				yScale={animatedScale.y}
+				width={width}
+			/>
+
+			<AirlinerScatterRangeLine
+				rangeValue={15300}
+				description="Singapore to New York"
+				yScale={animatedScale.y}
+				width={width}
+			/>
+
+			<AirlinerScatterRangeLine
+				rangeValue={17000}
+				description="London to Sydney"
+				yScale={animatedScale.y}
+				width={width}
 			/>
 			
 			{/* Chart area draggable area with comprehensive interaction handling */}
@@ -490,7 +636,7 @@ export default function AirlinerScatterPlot() {
 				onTouchStart={handleTouchStart}
 				onTouchEnd={handleTouchEnd}
 				style={{ 
-					cursor: proximityDetection.nearestTarget && proximityDetection.nearestTarget.type !== 'cluster' 
+					cursor: proximityDetection.nearestTarget 
 						? 'pointer' 
 						: 'move', 
 					touchAction: 'none',
@@ -510,7 +656,7 @@ export default function AirlinerScatterPlot() {
 				data-chart-viewport="true"
 			/>
 
-			{/* Chart bands */}
+			{/* Debug: Chart bands */}
 			{debugMode && airlinerPlotData?.chartBands.map((band) => (
 				<g key={band.index}>
 					<rect
@@ -536,7 +682,7 @@ export default function AirlinerScatterPlot() {
 				</g>
 			))}
 
-			{/* Chart band occupancy */}
+			{/* Debug: Chart band occupancy */}
 			{debugMode && airlinerPlotData?.occupancy.map((band) => (
 				<g key={band.bandIndex}>
 					{band.occupiedRanges.map((range) => (
@@ -591,6 +737,19 @@ export default function AirlinerScatterPlot() {
 					/>
 				) : null
 			)}
+
+			{/* Cluster rectangles at cluster centroid */}
+			{airlinerLabelClusters && Array.from(airlinerLabelClusters.entries()).map(([clusterIndex, cluster]) => {
+				if (cluster.labelIDs.length <= labelClusterThreshold) return null;
+				
+				return (
+					<AirlinerScatterCluster
+						key={`cluster-${clusterIndex}`}
+						clusterIndex={clusterIndex}
+						cluster={cluster}
+					/>
+				);
+			})}
 
 			{/* Leader lines */}
 			{Array.from(airlinerEntries.values()).map((airliner) => {
@@ -713,9 +872,9 @@ export default function AirlinerScatterPlot() {
 						return (
 							<g key={`cluster-${clusterIndex}`}>
 								{/* Cluster bounding box */}
-								<rect
-									x={cluster.position.x}
-									y={cluster.position.y}
+								<RectCentre
+									cx={cluster.position.x}
+									cy={cluster.position.y}
 									width={cluster.dimensions.width}
 									height={cluster.dimensions.height}
 									fill={fillColor}
@@ -733,8 +892,8 @@ export default function AirlinerScatterPlot() {
 								
 								{/* Cluster label */}
 								<text
-									x={cluster.position.x + 4}
-									y={cluster.position.y - 4}
+									x={cluster.position.x - cluster.dimensions.width / 2 + 4}
+									y={cluster.position.y - cluster.dimensions.height / 2 - 4}
 									fill={strokeColor}
 									fontSize={12}
 									fontWeight="bold"
@@ -836,5 +995,14 @@ export default function AirlinerScatterPlot() {
 				</g>
 			)}
 		</g>
+
+		{/* Cluster Selection Menu */}
+		{selectedClusterIndex !== null && airlinerLabelClusters && (() => {
+			const selectedCluster = airlinerLabelClusters.get(selectedClusterIndex);
+			if (!selectedCluster) return null;
+			
+			return <AirlinerScatterClusterMenu selectedCluster={selectedCluster} airlinerEntries={airlinerEntries} />;
+		})()}
+		</>
 	);
 } 
