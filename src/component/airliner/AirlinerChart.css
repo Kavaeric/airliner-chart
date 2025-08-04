@@ -363,6 +363,7 @@
 	pointer-events: none;
 	fill: var(--border-diminished);
 	shape-rendering: geometricprecision;
+	opacity: var(--opacity-80);
 }
 
 /* Connecting line styling */
