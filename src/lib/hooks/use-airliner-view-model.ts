@@ -484,23 +484,23 @@ function calculateLabelPlacement(
  * @description A cluster of labels.
  * 
  * @property {number} clusterID - The ID of the cluster.
- * @property {object} centroid - The centroid of the cluster.
- * @property {object} position - The position of the cluster.
- * @property {object} dimensions - The dimensions of the cluster.
+ * @property {object} centroid - The centroid of the cluster (average of label anchor points).
+ * @property {object} position - The centre position of the cluster's bounding box.
+ * @property {object} dimensions - The dimensions of the cluster's bounding box.
  * @property {string[]} labelIDs - The IDs of the labels in the cluster.
  * 
  * @example
- * // A cluster of 3 labels with a centroid at (64, 100), and its bounding box being positioned at (32, 100)
+ * // A cluster of 3 labels with a centroid at (64, 100), and its bounding box centre at (182, 118)
  * // with a width of 300 and a height of 236.
  * const cluster: labelCluster = {
  * 	centroid: { x: 64, y: 100 },
- * 	position: { x: 32, y: 100 },
+ * 	position: { x: 182, y: 118 },
  * 	dimensions: { width: 300, height: 236 },
  * 	labelIDs: ['0-A318', '0-A319', '0-A320']
  * }
  * 
  * @example
- * // A cluster of 1 label with a centroid at (50, 10), and its bounding box being positioned at (50, 10)
+ * // A cluster of 1 label with a centroid at (50, 10), and its bounding box centre at (50, 10)
  * // with a width of 100 and a height of 20. This label is isolated: its centroid and position are the same,
  * // and its dimensions are the same as the label's dimensions.
  * const cluster: labelCluster = {
@@ -510,7 +510,7 @@ function calculateLabelPlacement(
  * 	labelIDs: ['0-A318']
  * }
  */
-type labelCluster = {
+export type labelCluster = {
 	centroid: { x: number, y: number };
 	position: { x: number, y: number };
 	dimensions: { width: number, height: number };
@@ -596,7 +596,7 @@ export function detectLabelClusters(
 		
 		clusterMap.set(clusterIndex, {
 			centroid: { x: centroidX, y: centroidY },
-			position: { x: minX, y: minY },
+			position: { x: (minX + maxX) / 2, y: (minY + maxY) / 2 },
 			dimensions: { width: maxX - minX, height: maxY - minY },
 			labelIDs: clusterLabels.map(label => label.id)
 		});
@@ -620,8 +620,8 @@ export function detectLabelClusters(
 		clusterMap.set(clusterIndex, {
 			centroid: { x: label.anchor.x, y: label.anchor.y },
 			position: { 
-				x: label.anchor.x - label.dimensions.width / 2, 
-				y: label.anchor.y - label.dimensions.height / 2 
+				x: label.anchor.x, 
+				y: label.anchor.y 
 			},
 			dimensions: { width: label.dimensions.width, height: label.dimensions.height },
 			labelIDs: [label.id]

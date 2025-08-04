@@ -333,6 +333,23 @@
 	stroke-width: 2;
 }
 
+/* ===== Range reference lines ===== */
+
+.airlinerRangeReferenceLine {
+	stroke: var(--border-diminished);
+	stroke-width: var(--border-weight-100);
+	stroke-dasharray: 8, 4, 4, 4;
+}
+
+.airlinerRangeReferenceLabel {
+	font-family: var(--font-family-display);
+	transform: translateX(var(--space-050));
+	font-size: var(--text-size-400);
+	font-weight: var(--font-weight-light);
+	letter-spacing: var(--text-tracking-400);
+	fill: var(--border-minor);
+}
+
 /* ===== AirlinerScatterPlot Component Styling ===== */
 
 /* Grid styling */
@@ -355,15 +372,6 @@
 	stroke-linecap: butt;
 	shape-rendering: geometricprecision;
 	transition: all 0.2s ease-in-out;
-}
-
-.markerConnectingLineMajor {
-	cursor: pointer;
-	fill: var(--interactive-augmented);
-	stroke: rgb(0 0 0 / 20%);
-	stroke-width: 1;
-	shape-rendering: geometricprecision;
-	transition: all 0.1s ease-in-out;
 }
 
 .markerLeader {
@@ -438,6 +446,7 @@
 }
 
 .airlinerLabel.hoveredAirliner {
+	font-weight: var(--font-weight-bold);
 	fill: var(--text-major);
 }
 
@@ -446,8 +455,14 @@
 	fill: var(--text-major);
 }
 
-
-/* ===== Interactive State ===== */
+.markerConnectingLineMajor {
+	cursor: pointer;
+	fill: var(--interactive-augmented);
+	stroke: var(--surface-depth-diminished);
+	stroke-width: 1;
+	shape-rendering: geometricprecision;
+	transition: all 0.1s ease-in-out;
+}
 
 .markerConnectingLineMajor.hoveredAirliner {
 	fill: var(--interactive-augmented-hover);
@@ -472,6 +487,62 @@
 	stroke-width: 1;
 }
 
+/* ===== Cluster Styling ===== */
+
+.clusterBoundingBox {
+	fill: var(--surface-depth-major);
+	stroke: var(--border-diminished);
+	stroke-width: 1;
+	transition: all 0.05s linear;
+	shape-rendering: geometricprecision;
+}
+
+.clusterBoundingBox.hoveredCluster {
+	fill: var(--highlight-hover-minor);
+	stroke: var(--border-major);
+}
+
+.clusterBoundingBox.selectedCluster {
+	fill: var(--highlight-hover-minor);
+	stroke: var(--border-major);
+}
+
+.clusterCentreMarker {
+	fill: var(--border-diminished);
+	transition: all 0.05s linear;
+	shape-rendering: geometricprecision;
+}
+
+.clusterCentreMarker.hoveredCluster {
+	fill: var(--border-major);
+}
+
+.clusterCentreMarker.selectedCluster {
+	fill: var(--border-major);
+}
+
+.clusterMenu {
+	transform: translate(-50%, -50%);
+	pointer-events: auto;
+	z-index: 1000;
+	box-shadow: 
+		0 0 0 var(--space-100)
+		light-dark(
+			rgba(255, 255, 255, var(--opacity-30)),
+			rgba(0, 0, 0, var(--opacity-30))
+		);
+	animation: fade-in 0.1s ease-in-out;
+}
+
+.clusterMenu > div {
+	background: var(--surface-minor);
+}
+
+.clusterMenu > div button.btn-diminished {
+	padding: var(--space-100);
+	font-size: var(--text-size-350);
+	text-transform: none;
+}
 
 /* ===== Active Airliner Grid Lines ===== */
 

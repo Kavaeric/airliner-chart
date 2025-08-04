@@ -10,15 +10,23 @@ import React, { createContext, useContext, useState, useCallback, ReactNode } fr
  * 
  * @property {string | null} selectedAirlinerID - The currently selected airliner ID, or null if none selected
  * @property {string | null} hoveredAirlinerID - The currently hovered airliner ID, or null if none hovered
+ * @property {number | null} selectedClusterIndex - The currently selected cluster index, or null if none selected
+ * @property {number | null} hoveredClusterIndex - The currently hovered cluster index, or null if none hovered
  * @property {function} setSelectedAirliner - Function to set the selected airliner ID
  * @property {function} setHoveredAirliner - Function to set the hovered airliner ID
+ * @property {function} setSelectedCluster - Function to set the selected cluster index
+ * @property {function} setHoveredCluster - Function to set the hovered cluster index
  * @property {function} clearSelection - Function to clear both selection and hover states
  */
 interface AirlinerSelectionState {
 	selectedAirlinerID: string | null;
 	hoveredAirlinerID: string | null;
+	selectedClusterIndex: number | null;
+	hoveredClusterIndex: number | null;
 	setSelectedAirliner: (id: string | null) => void;
 	setHoveredAirliner: (id: string | null) => void;
+	setSelectedCluster: (index: number | null) => void;
+	setHoveredCluster: (index: number | null) => void;
 	clearSelection: () => void;
 }
 
@@ -52,14 +60,16 @@ export function AirlinerSelectionProvider({ children }: AirlinerSelectionProvide
 	// Track currently selected and hovered airliner IDs
 	const [selectedAirlinerID, setSelectedAirlinerID] = useState<string | null>(null);
 	const [hoveredAirlinerID, setHoveredAirlinerID] = useState<string | null>(null);
+	
+	// Track currently selected and hovered cluster indices
+	const [selectedClusterIndex, setSelectedClusterIndex] = useState<number | null>(null);
+	const [hoveredClusterIndex, setHoveredClusterIndex] = useState<number | null>(null);
 
 	// === Action Handlers ===
 	// Set the selected airliner ID
 	const setSelectedAirliner = useCallback((id: string | null) => {
 		clearSelection();
-		setTimeout(() => {
-			setSelectedAirlinerID(id);
-		}, 1);
+		setSelectedAirlinerID(id);
 	}, []);
 
 	// Set the hovered airliner ID
@@ -67,10 +77,23 @@ export function AirlinerSelectionProvider({ children }: AirlinerSelectionProvide
 		setHoveredAirlinerID(id);
 	}, []);
 
+	// Set the selected cluster index
+	const setSelectedCluster = useCallback((index: number | null) => {
+		clearSelection();
+		setSelectedClusterIndex(index);
+	}, []);
+
+	// Set the hovered cluster index
+	const setHoveredCluster = useCallback((index: number | null) => {
+		setHoveredClusterIndex(index);
+	}, []);
+
 	// Clear both selection and hover states
 	const clearSelection = useCallback(() => {
 		setSelectedAirlinerID(null);
 		setHoveredAirlinerID(null);
+		setSelectedClusterIndex(null);
+		setHoveredClusterIndex(null);
 	}, []);
 
 	// === Context Value ===
@@ -78,8 +101,12 @@ export function AirlinerSelectionProvider({ children }: AirlinerSelectionProvide
 	const contextValue: AirlinerSelectionState = {
 		selectedAirlinerID,
 		hoveredAirlinerID,
+		selectedClusterIndex,
+		hoveredClusterIndex,
 		setSelectedAirliner,
 		setHoveredAirliner,
+		setSelectedCluster,
+		setHoveredCluster,
 		clearSelection
 	};
 

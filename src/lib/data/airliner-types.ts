@@ -60,6 +60,7 @@ export type AirlinerData = {
  * @property {AirlinerStats} airlinerData - The raw data for the airliner as extracted from the CSV.
  * @property {AirlinerMarkerSeries[]} markerSeries - An array of marker series, each containing an array of markers and a bounding box for the series.
  * @property {AirlinerLabel} labels - A label, containing text, a bounding box for the label, and the coordinates of the label.
+ * @property {string} description - Optional markdown description content for the airliner. Loaded from files named by airlinerID (e.g., "16-A359.md").
  */
 export type AirlinerModel = AirlinerData & {
 	// Markers
@@ -67,6 +68,9 @@ export type AirlinerModel = AirlinerData & {
 
 	// Labels
 	labels?: AirlinerLabel;
+	
+	// Description
+	description?: string;
 }
 
 /**

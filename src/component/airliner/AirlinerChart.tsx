@@ -7,12 +7,14 @@ import YAxis from "@/component/chart/ChartYAxis";
 import XAxis from "@/component/chart/ChartXAxis";
 import ChartBrush from "@/component/chart/ChartBrush";
 import AirlinerScatterBrush from "./AirlinerScatterBrush";
+import AirlinerChartInfoBar from "./AirlinerChartInfoBar";
+import AirlinerChartInfoPanel from "./AirlinerChartInfoPanel";
 
 // [IMPORT] Context providers/hooks //
 import { ResponsiveChartViewport, useResponsiveChartViewport } from "@/context/ResponsiveChartViewport";
 import { createChartDataContext } from "@/context/ChartDataContext";
 import { useDebugMode } from "@/context/DebugModeContext";
-import { AirlinerSelectionProvider } from "@/context/AirlinerSelectionContext";
+import { AirlinerSelectionProvider} from "@/context/AirlinerSelectionContext";
 import { AnimatedChartViewport } from "@/context/AnimatedChartViewport";
 
 // [IMPORT] Types/interfaces //
@@ -71,9 +73,9 @@ interface AirlinerChartProps {
  * clear separation of layout, measurement, and rendering concerns.
  */
 export default function AirlinerChart({ data }: AirlinerChartProps) {
-
-	// Debug mode state management
-	const { debugMode, setDebugMode } = useDebugMode();
+	
+	// Info panel visibility state
+	const [isInfoPanelVisible, setIsInfoPanelVisible] = useState(true);
 	
 	 // Transform raw CSV into chart-ready Airliner data with IDs
 	 const chartData: AirlinerData[] = useMemo(() => {
@@ -130,6 +132,7 @@ export default function AirlinerChart({ data }: AirlinerChartProps) {
 	}), [xAxisData, chartData]);
 
 
+
 	// ChartDataContext provides the airliner data array
 	// AirlinerSelectionProvider provides selection and hover state management
 	// ResponsiveChartViewport provides the viewport and zoom controls
@@ -158,17 +161,8 @@ export default function AirlinerChart({ data }: AirlinerChartProps) {
 		>
 			<div className="chartControls frame-flex-horizontal">
 				<div className="frame-flex-horizontal">
-				<label className="input-switch">
-					<input
-						type="checkbox"
-						checked={debugMode}
-						onChange={() => setDebugMode(!debugMode)}
-					/>
-						Debug
-					</label>
-					<hr className="frame-minor" />
 					<div style={{ display: "flex", padding: "var(--space-100)", alignItems: "center" }}>
-						<p className="text-body-diminished">Airliner Chart by <a href="https://www.shojiushiyama.net/">Shoji Ushiyama</a> / <a href="https://www.kavaeric.com">Kavaeric</a>.</p>
+						<AirlinerChartInfoBar />
 					</div>
 				</div>
 				<hr className="frame-minor" />
@@ -223,6 +217,14 @@ export default function AirlinerChart({ data }: AirlinerChartProps) {
 				>
 					<span className="material-symbols-sharp" aria-hidden="true">zoom_out_map</span>
 					Reset zoom
+				</button>
+				<hr className="frame-minor" />
+				<button
+						className={`${isInfoPanelVisible ? "btn-major" : "btn-diminished"} btn-icon-only`}
+						aria-label="Info"
+						onClick={() => setIsInfoPanelVisible(!isInfoPanelVisible)}
+					>
+						<span className="material-symbols-sharp" aria-hidden="true">flight</span>
 				</button>
 			</div>
 			
@@ -294,9 +296,14 @@ export default function AirlinerChart({ data }: AirlinerChartProps) {
 			</AnimatedChartViewport>
 			</div>
 		</ResponsiveChartViewport>
+		
+		{/* Info Panel */}
+		<AirlinerChartInfoPanel isVisible={isInfoPanelVisible} />
+		
 		</AirlinerSelectionProvider>
 		</ChartDataContext.Provider>
 		<hr className="frame-minor" style={{ margin: "0" }} />
 		</>
 	);
 }
+
