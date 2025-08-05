@@ -140,10 +140,22 @@
 	--surface-minor: light-dark(var(--grey-900), var(--grey-100));
 	--surface-diminished: light-dark(var(--grey-800), var(--grey-200));
 
-	--surface-augmented-rgb: light-dark(rgb(var(--red-treble-500-rgb)), rgb(var(--red-bass-600-rgb)));
-	--surface-major-rgb: light-dark(rgb(var(--grey-950-rgb)), rgb(var(--grey-050-rgb)));
-	--surface-minor-rgb: light-dark(rgb(var(--grey-900-rgb)), rgb(var(--grey-100-rgb)));
-	--surface-diminished-rgb: light-dark(rgb(var(--grey-800-rgb)), rgb(var(--grey-200-rgb)));
+	--surface-augmented-rgb: light-dark(
+		rgb(var(--red-treble-500-rgb)),
+		rgb(var(--red-bass-600-rgb))
+	);
+	--surface-major-rgb: light-dark(
+		rgb(var(--grey-950-rgb)),
+		rgb(var(--grey-050-rgb))
+	);
+	--surface-minor-rgb: light-dark(
+		rgb(var(--grey-900-rgb)),
+		rgb(var(--grey-100-rgb))
+	);
+	--surface-diminished-rgb: light-dark(
+		rgb(var(--grey-800-rgb)),
+		rgb(var(--grey-200-rgb))
+	);
 
 	--surface-depth-augmented: light-dark(
 		rgb(var(--grey-1000-rgb), var(--opacity-40)),

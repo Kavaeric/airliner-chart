@@ -2,28 +2,28 @@
 
 /* Thin - 100 */
 @font-face {
-	font-family: 'HK Nova';
+	font-family: "HK Nova";
 	font-style: normal;
 	font-weight: 100;
-	src: url('/fonts/HKNova/HKNova-Thin.woff2') format('woff2');
+	src: url("/fonts/HKNova/HKNova-Thin.woff2") format("woff2");
 	font-display: swap;
 }
 
 /* ExtraLight - 200 */
 @font-face {
-	font-family: 'HK Nova';
+	font-family: "HK Nova";
 	font-style: normal;
 	font-weight: 200;
-	src: url('/fonts/HKNova/HKNova-ExtraLight.woff2') format('woff2');
+	src: url("/fonts/HKNova/HKNova-ExtraLight.woff2") format("woff2");
 	font-display: swap;
 }
 
 /* Light - 300 */
 @font-face {
-	font-family: 'HK Nova';
+	font-family: "HK Nova";
 	font-style: normal;
 	font-weight: 300;
-	src: url('/fonts/HKNova/HKNova-Light.woff2') format('woff2');
+	src: url("/fonts/HKNova/HKNova-Light.woff2") format("woff2");
 	font-display: swap;
 }
 
@@ -74,9 +74,9 @@
 
 /* Heavy - 900 */
 @font-face {
-	font-family: 'HK Nova';
+	font-family: "HK Nova";
 	font-style: normal;
 	font-weight: 900;
-	src: url('/fonts/HKNova/HKNova-Heavy.woff2') format('woff2');
+	src: url("/fonts/HKNova/HKNova-Heavy.woff2") format("woff2");
 	font-display: swap;
-} 
+}
