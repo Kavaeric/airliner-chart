@@ -169,7 +169,8 @@ body {
 	letter-spacing: var(--text-tracking-400);
 }
 
-body, p,
+body,
+p,
 .text-body-minor {
 	margin-top: 0;
 	margin-bottom: var(--space-100);
@@ -463,7 +464,6 @@ button.btn-major:focus,
 	outline-offset: var(--space-negative-050);
 }
 
-
 /* Minor buttons */
 button.btn-minor,
 .btn-group.btn-minor {
@@ -500,7 +500,6 @@ button.btn-minor:focus,
 .btn-group.btn-minor > button:focus {
 	outline: var(--border-weight-200) solid var(--interactive-augmented);
 }
-
 
 /* Diminished buttons */
 button.btn-diminished,
@@ -700,7 +699,6 @@ input[type="radio"]:checked::before {
 	transform: translateX(calc(100% - var(--space-150)));
 }
 
-
 /* ===== Frames ===== */
 
 /* Frame borders */
@@ -820,7 +818,6 @@ hr {
 .surface-depth-diminished {
 	background-color: var(--surface-depth-diminished);
 }
-
 
 /* ===== Table styles ===== */
 

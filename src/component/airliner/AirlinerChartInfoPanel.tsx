@@ -95,6 +95,7 @@ export default function AirlinerChartInfoPanel({ isVisible }: { isVisible: boole
 	
 	return (
 		<div className={`airlinerInfoPanel frame-flex-vertical frame-major ${isVisible ? 'airlinerInfoPanel--visible' : 'airlinerInfoPanel--hidden'}`}>
+			<div className="airlinerInfoPanelContent">
 			{selectedAirliner ? (
 				<>
 					<div className="frame-flex-vertical frame-content">
@@ -217,6 +218,7 @@ export default function AirlinerChartInfoPanel({ isVisible }: { isVisible: boole
 					</div>
 				</>
 			)}
+			</div>
 		</div>
 	);
 } 
